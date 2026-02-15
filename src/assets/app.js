@@ -1,4 +1,5 @@
 import { initProfilePage } from "./pages/profile.js";
+import "./style.css";
 
 const $ = (s, r = document) => r.querySelector(s);
 const on = (el, ev, fn, opt) => el && el.addEventListener(ev, fn, opt);

@@ -7,6 +7,7 @@ export default defineConfig({
   build: {
     outDir: path.resolve(process.cwd(), "_site"),
     emptyOutDir: false,
+    manifest: true,
     rollupOptions: {
       input: {
         app: path.resolve(process.cwd(), "src/assets/app.js")
