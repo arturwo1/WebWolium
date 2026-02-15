@@ -5,7 +5,7 @@
   "main": "sw.js",
   "scripts": {
     "dev": "eleventy --serve",
-    "build": "eleventy"
+    "build": "eleventy && node scripts/postbuild.mjs"
   },
   "keywords": [],
   "author": "",
