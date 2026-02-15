@@ -1,0 +1,4 @@
+window.APP_CONFIG = {
+  SUPABASE_URL: "https://vjetvdatachseiztroqa.supabase.co",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqZXR2ZGF0YWNoc2VpenRyb3FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2NTY3OTIsImV4cCI6MjA4MjIzMjc5Mn0.9n2z5pRb7phB09PvQGNq3-K6xUhFUsP1Sqeg397zOeM",
+};

@@ -1,0 +1,34 @@
+<header class="topbar">
+  <button class="icon-btn mobile-only" id="btnMenu" aria-label="Меню">☰</button>
+
+  <div class="server-switch" id="serverSwitch" aria-hidden="true">
+    <button class="pill" id="serverPill" type="button">
+      <span class="dot"></span>
+      <span id="serverName">Server didn’t choose</span>
+      <span class="chev">▾</span>
+    </button>
+
+    <div class="dropdown" id="serverDropdown" role="menu">
+      <button class="dd-item" data-server="AstroCommunity" type="button">AstroCommunity</button>
+      <button class="dd-item" data-server="NightRaid" type="button">NightRaid</button>
+      <button class="dd-item" data-server="WoliumTest" type="button">WoliumTest</button>
+    </div>
+  </div>
+
+  <div class="spacer"></div>
+
+  <button class="pill" id="btnLogin" type="button">Log In with Discord</button>
+
+  <div class="user" id="userBox" hidden>
+    <button class="avatar" id="btnAvatar" type="button" aria-haspopup="menu" aria-expanded="false">
+      <img alt="User avatar" id="userAvatarImg" src="https://cdn.discordapp.com/embed/avatars/0.png" />
+    </button>
+
+    <div class="dropdown dropdown--right" id="userDropdown" role="menu">
+      <a class="dd-item" href="/profile/">Profile</a>
+      <a class="dd-item" href="/settings/">Settings</a>
+      <div class="dd-sep"></div>
+      <button class="dd-item dd-item--danger" data-action="logout" type="button">Log Out</button>
+    </div>
+  </div>
+</header>

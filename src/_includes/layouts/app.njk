@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  {# ---- defaults ---- #}
+  {% set siteName = "Wolium" %}
+  {% set siteUrl = "https://Wolium.netlify.app" %}
+  {% set siteDesc = "A website where you can easily edit and track everything in this discord bot!" %}
+  {% set siteKeywords = "Wolium, arturwol, bot, discord" %}
+  {% set siteAuthor = "arturwol" %}
+  {% set siteLocale = "en_US" %}
+  {% set siteTheme = "#0b0b0b" %}
+  {% set siteIcon = "/images/Wolium.webp" %}
+  {% set siteTwitter = "@artnrwol" %}
+
+  {% set pageTitle = siteName %}
+  {% if title %}
+    {% set pageTitle = title %}
+  {% else %}
+    {% set pageTitle = Wolium %}
+  {% endif %}
+
+  {% set pageDesc = description or siteDesc %}
+
+  {% set pagePath = "/" %}
+  {% if page and page.url %}
+    {% set pagePath = page.url %}
+  {% endif %}
+
+  {% set pageUrl = canonical or (siteUrl ~ pagePath) %}
+
+  {# ---- OG/Twitter defaults ---- #}
+  {% set defaultOgImg = og_default_image or (siteUrl ~ siteIcon) %}
+  {% set ogImg = og_image or twitter_image or defaultOgImg %}
+  {% set ogAlt = og_image_alt or "Wolium preview image" %}
+  {% set twAlt = twitter_image_alt or ogAlt %}
+
+  <!-- Basic -->
+  <title>{{ pageTitle }}</title>
+  <meta name="description" content="{{ pageDesc }}">
+  <meta name="keywords" content="{{ keywords or siteKeywords }}">
+  <meta name="author" content="{{ author or siteAuthor }}">
+  <meta name="robots" content="{{ robots or "index, follow" }}">
+  <meta name="theme-color" content="{{ theme_color or siteTheme }}">
+  <link rel="canonical" href="{{ pageUrl }}">
+  <link rel="icon" href="{{ favicon or siteIcon }}" type="image/x-icon">
+
+  <!-- Apple -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="{{ apple_title or pageTitle }}">
+
+  <!-- Microsoft -->
+  <meta name="msapplication-TileColor" content="{{ ms_tile_color or (theme_color or siteTheme) }}">
+  <meta name="msapplication-TileImage" content="{{ ms_tile_image or siteIcon }}">
+
+  <!-- Open Graph / Facebook / Discord / LinkedIn -->
+  <meta property="og:title" content="{{ og_title or pageTitle }}">
+  <meta property="og:description" content="{{ og_description or pageDesc }}">
+  <meta property="og:type" content="{{ og_type or "website" }}">
+  <meta property="og:url" content="{{ og_url or pageUrl }}">
+  <meta property="og:image" content="{{ ogImg }}">
+  <meta property="og:image:alt" content="{{ ogAlt }}">
+  <meta property="og:site_name" content="{{ og_site_name or pageTitle }}">
+  <meta property="og:locale" content="{{ og_locale or siteLocale }}">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="{{ twitter_card or "summary_large_image" }}">
+  <meta name="twitter:title" content="{{ twitter_title or pageTitle }}">
+  <meta name="twitter:description" content="{{ twitter_description or pageDesc }}">
+  <meta name="twitter:image" content="{{ twitter_image or ogImg }}">
+  <meta name="twitter:image:alt" content="{{ twAlt }}">
+  <meta name="twitter:site" content="{{ twitter_site or siteTwitter }}">
+
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+
+<body data-page="{{ pageId or '' }}">
+  {% include "partials/gate.njk" %}
+
+  <div class="app" id="appShell" hidden>
+    {% include "partials/topbar.njk" %}
+    {% include "partials/sidebar.njk" %}
+
+    <main class="main" id="pageRoot">
+      {{ content | safe }}
+    </main>
+
+    <div class="overlay" id="overlay"></div>
+  </div>
+
+  {% include "partials/modals.njk" %}
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/assets/config.js"></script>
+  <script type="module" src="/assets/app.js"></script>
+</body>
+</html>

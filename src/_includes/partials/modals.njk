@@ -1,0 +1,34 @@
+<div class="modal" id="chartModal" aria-hidden="true">
+  <div class="modal__panel" role="dialog" aria-modal="true">
+    <div class="modal__head">
+      <div class="modal__title" id="chartTitle">Graphic</div>
+      <button class="icon-btn" id="chartClose" type="button" aria-label="Close">✕</button>
+    </div>
+
+    <div class="modal__controls">
+      <select class="input input--sm" id="chartPreset">
+        <option value="7d">7 days</option>
+        <option value="30d" selected>30 days</option>
+        <option value="90d">90 days</option>
+        <option value="custom">Period...</option>
+      </select>
+
+      <input class="input input--sm" id="chartFrom" type="datetime-local" />
+      <input class="input input--sm" id="chartTo" type="datetime-local" />
+
+      <div class="modal__sum" id="chartSum">—</div>
+    </div>
+
+    <div class="chart">
+      <canvas class="chart__canvas" id="chartCanvas"></canvas>
+
+      <div class="tooltip" id="chartTooltip">
+        <div class="tooltip__time" id="tipTime">—</div>
+        <div class="tooltip__val" id="tipVal">—</div>
+        <div class="preview" id="tipPreview"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" aria-live="polite" aria-atomic="true"></div>

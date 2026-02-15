@@ -1,0 +1,27 @@
+---
+layout: app.njk
+title: Wolium | Server Editor
+pageId: server-edit
+permalink: /servers/edit/
+---
+
+<h1 class="h1">Server Editor</h1>
+
+<article class="card section">
+  <h2 class="section-title" style="font-size:22px;margin:0 0 12px">Choosed Server</h2>
+  <div class="kv">
+    <div class="k">Server:</div>
+    <div class="v" id="chosenServerText">didnt choosed</div>
+  </div>
+</article>
+
+<article class="card section">
+  <h2 class="section-title" style="font-size:22px;margin:0 0 12px">Settings</h2>
+
+  <div class="kv" style="gap:10px">
+    <label class="k" for="srvTitle">Name</label>
+    <input class="input" id="srvTitle" placeholder="Example: AstroCommunity" />
+
+    <button class="nav__item" id="btnSaveServer" type="button" style="text-align:center">Save</button>
+  </div>
+</article>
