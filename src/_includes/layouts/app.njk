@@ -73,6 +73,10 @@
   <meta name="twitter:image" content="{{ twitter_image or ogImg }}">
   <meta name="twitter:image:alt" content="{{ twAlt }}">
   <meta name="twitter:site" content="{{ twitter_site or siteTwitter }}">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" data-vite-ignore></script>
+  <script src="/assets/config.js" data-vite-ignore></script>
+  <script type="module" src="/assets/app.js"></script>
 </head>
 
 <body data-page="{{ pageId or '' }}">
@@ -90,29 +94,5 @@
   </div>
 
   {% include "partials/modals.njk" %}
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <script type="module" id="appEntry" src="/assets/app.js"></script>
-
-  <script>
-    (function () {
-      var entry = document.getElementById("appEntry");
-      if (!entry) return;
-      
-      var appSrc = entry.getAttribute("src");
-      entry.remove();
-
-      var cfg = document.createElement("script");
-      cfg.src = "/assets/config.js";
-      cfg.onload = function () {
-        var app = document.createElement("script");
-        app.type = "module";
-        app.src = appSrc;
-        document.body.appendChild(app);
-      };
-      document.head.appendChild(cfg);
-    })();
-  </script>
 </body>
 </html>
