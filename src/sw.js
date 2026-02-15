@@ -1,4 +1,4 @@
-const CACHE_NAME = "wolium-v1";
+const CACHE_NAME = "wolium-v1.01";
 
 const CORE_ASSETS = [
   "/",
