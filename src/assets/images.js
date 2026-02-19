@@ -21,5 +21,3 @@ export function img(name) {
 }
 
 export const ALL_IMAGES = map;
-
-console.log(Object.keys(map));
