@@ -123,6 +123,27 @@ function formatAxisTime(ms, rangeMs, viewMinMs, viewMaxMs) {
   return `${YYYY}`;
 }
 
+function formatDiscordTime(ts) {
+  if (!ts) return "";
+  let d;
+
+  if (typeof ts === "number") {
+    d = new Date(ts < 1e12 ? ts * 1000 : ts);
+  } else {
+    d = new Date(ts);
+  }
+
+  if (Number.isNaN(d.getTime())) return String(ts);
+
+  return d.toLocaleString("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
 function formatTsFull(ms) {
   const d = new Date(ms);
   const p = (n) => String(n).padStart(2, "0");
@@ -218,6 +239,10 @@ export function initProfileChart(sb, queueRequest, opts = {}) {
     cooldownMs: Number(opts.cooldownMs ?? 1_500),
     timeoutMs: Number(opts.timeoutMs ?? 80_000)
   };
+  const viewer = {
+    name: opts.viewer?.name ?? "User",
+    avatar: opts.viewer?.avatar ?? null
+  };
 
   const state = {
     type: "messages",
@@ -301,37 +326,58 @@ export function initProfileChart(sb, queueRequest, opts = {}) {
 
   function renderMessagePreview(p) {
     const meta = p?.meta ?? {};
+
     const guildName = meta.guild_name ?? "Server";
     const channelName = meta.channel_name ?? "channel";
 
+    const ts = meta.created_at ?? meta.timestamp ?? null;
+
+    const authorName = viewer.name ?? "User";
+    const authorAvatar = viewer.avatar ?? null;
+
     const text = String(p?.sample_content ?? "").trim();
-    const url = p?.sample_url ?? null;
+    const url = p?.sample_url ?? discordMessageUrl(meta);
+
+    const safeText = text || "(no preview)";
 
     const bodyHtml = (typeof renderDiscordMarkdownToHtml === "function")
-      ? renderDiscordMarkdownToHtml(text || "(no preview)")
-      : escapeHtml(text || "(no preview)").replace(/\n/g, "<br>");
+      ? renderDiscordMarkdownToHtml(safeText)
+      : escapeHtml(safeText).replace(/\n/g, "<br>");
 
     return `
-      <div class="prev-msg">
-        <div class="prev-msg__top">
-          <span class="prev-dot" aria-hidden="true"></span>
-          <div class="prev-title">${escapeHtml(guildName)}</div>
-          <div class="prev-sub">#${escapeHtml(channelName)}</div>
-        </div>
-
-        <div class="prev-body md">
-          ${bodyHtml}
-        </div>
-
-        ${url ? `
-          <div class="prev-hint">
-            <span class="prev-hint__kbd">Click</span>
-            <span class="prev-hint__text">Open in Discord</span>
-          </div>
-        ` : ""}
+      <div class="msg-preview__bar">
+        <span class="msg-preview__dot" aria-hidden="true"></span>
+        <div class="msg-preview__guild" title="${escapeHtml(guildName)}">${escapeHtml(guildName)}</div>
+        <div class="msg-preview__channel" title="#${escapeHtml(channelName)}">#${escapeHtml(channelName)}</div>
       </div>
-    `;
-  }
+
+      <div class="msg-preview__row">
+        <div class="msg-preview__avatar" aria-hidden="true">
+          ${authorAvatar
+            ? `<img class="msg-preview__avatarImg" src="${escapeHtml(authorAvatar)}" alt="" loading="lazy" />`
+            : `<span class="msg-preview__avatarFallback">${escapeHtml((authorName[0] || "U").toUpperCase())}</span>`
+          }
+        </div>
+
+        <div class="msg-preview__content">
+          <div class="msg-preview__meta">
+            <span class="msg-preview__author">${escapeHtml(authorName)}</span>
+            ${ts ? `<span class="msg-preview__time">${escapeHtml(formatDiscordTime(ts))}</span>` : ``}
+          </div>
+
+          <div class="msg-preview__text md">
+            ${bodyHtml}
+          </div>
+        </div>
+      </div>
+      
+      ${url ? `
+        <div class="msg-preview__hint">
+          <span class="msg-preview__kbd">Click</span>
+          <span class="msg-preview__hintText">Open in Discord</span>
+        </div>
+      ` : ``}`;
+    }
 
   function renderVoicePreview(p) {
     const meta = p?.meta ?? {};
