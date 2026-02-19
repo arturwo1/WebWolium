@@ -1,4 +1,4 @@
-const modules = import.meta.glob("../images/**/*", {
+const modules = import.meta.glob("@img/**/*", {
   eager: true,
   query: "?url",
   import: "default"
@@ -21,3 +21,5 @@ export function img(name) {
 }
 
 export const ALL_IMAGES = map;
+
+console.log(Object.keys(map));

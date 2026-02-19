@@ -34,9 +34,14 @@ export default function (eleventyConfig) {
       },
       resolve: {
         alias: {
-          "/node_modules": path.resolve(".", "node_modules")
+          "/node_modules": path.resolve(".", "node_modules"),
+          "@img": path.resolve(".", "src/images")
         }
-      }
+      },
+      server: {
+        middlewareMode: true,
+        fs: { allow: [path.resolve(".")] }
+      },
     }
   });
 }
