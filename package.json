@@ -5,7 +5,7 @@
   "main": "sw.js",
   "scripts": {
     "dev": "eleventy --serve",
-    "build": "eleventy && node scripts/postbuild.mjs"
+    "build": "eleventy"
   },
   "keywords": [],
   "author": "",
@@ -16,6 +16,7 @@
   },
   "devDependencies": {
     "@11ty/eleventy": "^3.1.2",
+    "@11ty/eleventy-img": "^6.0.4",
     "@11ty/eleventy-plugin-vite": "^7.0.0",
     "vite": "^7.3.1"
   }
