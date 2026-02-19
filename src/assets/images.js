@@ -1,16 +1,23 @@
-export const IMAGES = import.meta.glob("../images/**/*", {
+const modules = import.meta.glob("./images/**/*", {
   eager: true,
   query: "?url",
   import: "default"
 });
 
-export function img(path) {
-  const clean = String(path || "").replace(/^\/+/, "");
-  const key = `../images/${clean}`;
+const map = {};
 
-  const url = IMAGES[key];
-  if (url) return url;
-
-  console.warn("[img] not found:", key);
-  return undefined;
+for (const path in modules) {
+  const name = path.split("/").pop();
+  map[name] = modules[path];
 }
+
+export function img(name) {
+  const url = map[name];
+  if (!url) {
+    console.warn("[img] not found:", name);
+    return null;
+  }
+  return url;
+}
+
+export const ALL_IMAGES = map;
