@@ -54,9 +54,18 @@ function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
-async function rpcCreateWithCooldown(sb, kind, payload, tries = 4) {
-  let delay = 1200;
+function parseReject(err) {
+  const msg = String(err?.message || "");
+  const mReason = /REJECT:([A-Z0-9_]+)/i.exec(msg);
+  const mRetry = /RETRY_AFTER_MS=(\d+)/i.exec(msg);
+  return {
+    reason: mReason ? mReason[1].toUpperCase() : null,
+    retryAfterMs: mRetry ? Number(mRetry[1]) : null,
+    msg
+  };
+}
 
+async function rpcCreateWithCooldown(sb, kind, payload, tries = 8) {
   for (let i = 0; i < tries; i++) {
     const { data: id, error } = await sb.rpc("create_web_request", {
       p_kind: kind,
@@ -65,19 +74,18 @@ async function rpcCreateWithCooldown(sb, kind, payload, tries = 4) {
 
     if (!error) return id;
 
-    const msg = String(error.message || "");
-    const code = String(error.code || "");
-
-    if (code === "P0001" && msg.toLowerCase().includes("cooldown")) {
-      await sleep(delay);
-      delay = Math.min(10_000, Math.floor(delay * 1.7));
-      continue;
+    if (String(error.code || "") === "P0001") {
+      const p = parseReject(error);
+      if (p.retryAfterMs != null) {
+        await sleep(Math.min(30_000, p.retryAfterMs + 50));
+        continue;
+      }
     }
 
     throw error;
   }
 
-  throw new Error("cooldown");
+  throw new Error("RPC_REJECTED_TOO_MANY_TIMES");
 }
 
 async function waitWebRequestDone(sb, id, timeoutMs = 80_000) {
@@ -86,7 +94,7 @@ async function waitWebRequestDone(sb, id, timeoutMs = 80_000) {
     let finished = false;
 
     let pollTimer = null;
-    let pollDelay = 2_000;
+    let pollDelay = 500;
     const pollMax = 15_000;
 
     const cleanup = () => {
@@ -188,9 +196,10 @@ export async function queueRequest(sb, kind, payload = {}, opts = {}) {
   if (running) return running;
 
   const p = (async () => {
-    const cd = COOLDOWN_UNTIL.get(rKey) || 0;
+    const cdKey = `cd:${userId}:${kind}`;
+    const cd = COOLDOWN_UNTIL.get(cdKey) || 0;
     if (cd > nowMs()) await sleep(cd - nowMs());
-    COOLDOWN_UNTIL.set(rKey, nowMs() + cooldownMs);
+    COOLDOWN_UNTIL.set(cdKey, nowMs() + cooldownMs);
 
     const savedId = localStorage.getItem(aKey);
     if (savedId) {
@@ -234,6 +243,47 @@ export async function queueRequest(sb, kind, payload = {}, opts = {}) {
   }
 }
 
+export function makeLatestDebouncedQueue(queueRequestFn, {
+  debounceMs = 200,
+  kinds = new Set(["messages_series", "voice_series"])
+} = {}) {
+  const timers = new Map();
+  const latest = new Map();
+  const running = new Set();
+
+  async function run(kind) {
+    if (running.has(kind)) return;
+    const job = latest.get(kind);
+    if (!job) return;
+
+    running.add(kind);
+    try {
+      const res = await queueRequestFn(job.sb, job.kind, job.payload, job.opts);
+      job.resolve(res);
+    } catch (e) {
+      job.reject(e);
+    } finally {
+      running.delete(kind);
+      if (latest.get(kind) !== job) run(kind);
+    }
+  }
+
+  return function debouncedQueue(sb, kind, payload = {}, opts = {}) {
+    if (!kinds.has(kind)) {
+      return queueRequestFn(sb, kind, payload, opts);
+    }
+
+    return new Promise((resolve, reject) => {
+      latest.set(kind, { sb, kind, payload, opts, resolve, reject });
+
+      const t = timers.get(kind);
+      if (t) clearTimeout(t);
+
+      timers.set(kind, setTimeout(() => run(kind), debounceMs));
+    });
+  };
+}
+
 export async function initProfilePage(sb) {
   const statMessages = $("#statMessages");
   const statVoice = $("#statVoice");
@@ -248,6 +298,11 @@ export async function initProfilePage(sb) {
   const profilePfp = $("#profilePfp");
   const profileName = $("#profileName");
   const profileTag = $("#profileTag");
+
+  const queueChart = makeLatestDebouncedQueue(queueRequest, {
+    debounceMs: 200,
+    kinds: new Set(["messages_series", "voice_series"])
+  });
 
   async function fillIdentity() {
     const cachedRaw = localStorage.getItem("wolium:last_identity");
@@ -348,12 +403,15 @@ export async function initProfilePage(sb) {
   try {
     await loadStats();
 
-    const chart = initProfileChart(sb, queueRequest, {
+    const chart = initProfileChart(sb, queueChart, {
       cacheTtlMs: 30_000,
       cooldownMs: 1_500,
       timeoutMs: 80_000,
       defaultDays: 30,
-      snapMs: 60_000
+      viewer: {
+        name: profileName.textContent,
+        avatar: profilePfp.src
+      }
     });
 
     document.querySelectorAll("[data-chart]").forEach((btn) => {
