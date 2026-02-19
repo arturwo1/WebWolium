@@ -1,8 +1,20 @@
 import path from "node:path";
 import EleventyVitePlugin from "@11ty/eleventy-plugin-vite";
+import { eleventyImageTransformPlugin } from "@11ty/eleventy-img";
 
 export default function (eleventyConfig) {
+  eleventyConfig.addPassthroughCopy({ "src/assets": "assets" });
   eleventyConfig.addPassthroughCopy({ "src/sw.js": "sw.js" });
+
+  eleventyConfig.addPlugin(eleventyImageTransformPlugin, {
+    extensions: "html",
+    formats: ["auto"],
+    widths: ["auto"],
+    urlPath: "/assets/img/",
+    outputDir: "_site/assets/img/",
+    filenameFormat: (id, src, width, format) => `${id}.${format}`,
+    transformOnRequest: true
+  });
 
   eleventyConfig.addPlugin(EleventyVitePlugin, {
     viteOptions: {

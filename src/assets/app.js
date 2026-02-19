@@ -1,27 +1,59 @@
+import { createClient } from "@supabase/supabase-js";
+import CFG from "./config.js";
+
 import { initProfilePage } from "./pages/profile.js";
 import "./style.css";
+
+import { img } from "./images.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const on = (el, ev, fn, opt) => el && el.addEventListener(ev, fn, opt);
 
-const CFG = window.APP_CONFIG || {};
+const IDENTITY_KEY = "wolium:last_identity";
+
+function saveIdentity(session) {
+  try {
+    const u = session?.user;
+    if (!u) return;
+    const m = u.user_metadata || {};
+    localStorage.setItem(IDENTITY_KEY, JSON.stringify({
+      userId: u.id,
+      name: m.full_name || m.name || m.username || u.email || "",
+      avatar: m.avatar_url || m.picture || null,
+      ts: Date.now()
+    }));
+  } catch {}
+}
+
+function readIdentity() {
+  try {
+    const raw = localStorage.getItem(IDENTITY_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 let sb = null;
+
+if (CFG?.SUPABASE_URL && CFG?.SUPABASE_ANON_KEY) {
+  sb = createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  });
+} else {
+  console.error("[app] Supabase client not configured.");
+}
 
 const PUBLIC_PAGES = new Set(["rules", "terms-of-service", "privacy"]);
 function isPublicPage() {
   const pid = document.body.dataset.page || "";
   if (PUBLIC_PAGES.has(pid)) return true;
-
   const p = location.pathname;
   return p.startsWith("/rules/") || p.startsWith("/terms-of-service/") || p.startsWith("/privacy-policy/");
-}
-
-if (window.supabase && CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY) {
-  sb = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY);
-}
-
-if (!sb) {
-  console.error("[app] Supabase client not configured.");
 }
 
 function registerSW() {
@@ -53,19 +85,32 @@ function registerSW() {
   });
 }
 
-function setLoggedInUI(session) {
+function bindHeadImages() {
+  const icon = img("Wolium.webp");
+  if (!icon) return;
+
+  const linkIcon = document.querySelector("[data-dyn-icon]");
+  if (linkIcon) linkIcon.href = icon;
+
+  const og = document.querySelector("[data-dyn-og]");
+  if (og) og.setAttribute("content", icon);
+
+  const tw = document.querySelector("[data-dyn-tw]");
+  if (tw) tw.setAttribute("content", icon);
+}
+
+function setLoggedInUI(session, cached) {
   const btnLogin = $("#btnLogin");
   const userBox = $("#userBox");
   const avatarImg = $("#userAvatarImg");
 
-  const loggedIn = !!session;
+  const meta = session?.user?.user_metadata || {};
+  const url = meta.avatar_url || meta.picture || cached?.avatar || null;
+
+  const loggedIn = !!session || !!cached;
   if (btnLogin) btnLogin.hidden = loggedIn;
   if (userBox) userBox.hidden = !loggedIn;
 
-  const meta = session?.user?.user_metadata || {};
-  const name = meta.full_name || meta.name || meta.username || session?.user?.email || "";
-
-  const url = meta.avatar_url || meta.picture || null;
   if (avatarImg && url) avatarImg.src = url;
 }
 
@@ -89,21 +134,29 @@ async function startLogin() {
 
 async function syncAuthUI() {
   const publicPage = isPublicPage();
+  const cached = readIdentity();
 
   if (!sb) {
-    setLoggedInUI(null);
-    if (publicPage) showShell();
+    setLoggedInUI(null, cached);
+    if (publicPage || cached) showShell();
     else showGate();
     return null;
   }
 
-  const { data } = await sb.auth.getSession().catch(() => ({ data: null }));
-  const session = data?.session || null;
+  let session = null;
+  try {
+    const { data } = await sb.auth.getSession();
+    session = data?.session || null;
+  } catch {
+    session = null;
+  }
 
-  setLoggedInUI(session);
+  if (session) saveIdentity(session);
+
+  setLoggedInUI(session, cached);
 
   if (!session) {
-    if (publicPage) showShell();
+    if (publicPage || (!navigator.onLine && cached)) showShell();
     else showGate();
   } else {
     showShell();
@@ -212,6 +265,7 @@ let profileStarted = false;
 
 async function boot() {
   registerSW();
+  bindHeadImages();
 
   highlightNav();
   initDropdowns();
@@ -225,7 +279,7 @@ async function boot() {
 
   if (sb) {
     sb.auth.onAuthStateChange(async (_e, newSession) => {
-      setLoggedInUI(newSession);
+      setLoggedInUI(newSession, readIdentity());
 
       const publicPage = isPublicPage();
 

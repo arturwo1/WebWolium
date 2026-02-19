@@ -45,7 +45,7 @@
   <meta name="robots" content="{{ robots or "index, follow" }}">
   <meta name="theme-color" content="{{ theme_color or siteTheme }}">
   <link rel="canonical" href="{{ pageUrl }}">
-  <link rel="icon" href="{{ favicon or siteIcon }}" type="image/x-icon">
+  <link rel="icon" href="{{ favicon or siteIcon }}" type="image/x-icon" data-dyn-icon>
 
   <!-- Apple -->
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -61,7 +61,7 @@
   <meta property="og:description" content="{{ og_description or pageDesc }}">
   <meta property="og:type" content="{{ og_type or "website" }}">
   <meta property="og:url" content="{{ og_url or pageUrl }}">
-  <meta property="og:image" content="{{ ogImg }}">
+  <meta property="og:image" content="{{ ogImg }}" data-dyn-og>
   <meta property="og:image:alt" content="{{ ogAlt }}">
   <meta property="og:site_name" content="{{ og_site_name or pageTitle }}">
   <meta property="og:locale" content="{{ og_locale or siteLocale }}">
@@ -70,12 +70,10 @@
   <meta name="twitter:card" content="{{ twitter_card or "summary_large_image" }}">
   <meta name="twitter:title" content="{{ twitter_title or pageTitle }}">
   <meta name="twitter:description" content="{{ twitter_description or pageDesc }}">
-  <meta name="twitter:image" content="{{ twitter_image or ogImg }}">
+  <meta name="twitter:image" content="{{ twitter_image or ogImg }}" data-dyn-tw>
   <meta name="twitter:image:alt" content="{{ twAlt }}">
   <meta name="twitter:site" content="{{ twitter_site or siteTwitter }}">
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" data-vite-ignore></script>
-  <script src="/assets/config.js" data-vite-ignore></script>
   <script type="module" src="/assets/app.js"></script>
 </head>
 
