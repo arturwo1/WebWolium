@@ -250,6 +250,15 @@ export async function initProfilePage(sb) {
   const profileTag = $("#profileTag");
 
   async function fillIdentity() {
+    const cachedRaw = localStorage.getItem("wolium:last_identity");
+    if (cachedRaw) {
+      try {
+        const cached = JSON.parse(cachedRaw);
+        if (profileTag && cached?.name) profileTag.textContent = cached.name;
+        if (profilePfp && cached?.avatar) profilePfp.src = cached.avatar;
+      } catch {}
+    }
+    
     try {
       const { data } = await sb.auth.getSession();
       const u = data?.session?.user;
@@ -265,31 +274,73 @@ export async function initProfilePage(sb) {
   }
 
   async function loadStats() {
-    const res = await queueRequest(sb, "profile_stats", {}, {
-      cacheTtlMs: 30_000,
-      cooldownMs: 1_500,
-      timeoutMs: 80_000
-    });
+    const { data: sessData } = await sb.auth.getSession();
+    const userId = sessData?.session?.user?.id || "anon";
+    const lastKey = `wolium:last_profile_stats:${userId}`;
+  
+    try {
+      const res = await queueRequest(sb, "profile_stats", {}, {
+        cacheTtlMs: 30_000,
+        cooldownMs: 1_500,
+        timeoutMs: 80_000
+      });
+  
+      try {
+        localStorage.setItem(lastKey, JSON.stringify({ t: Date.now(), res }));
+      } catch {}
 
-    if (statMessages) statMessages.textContent = String(res?.messages ?? 0);
-    if (statVoice) statVoice.textContent = String(res?.voice_time ?? "00:00");
-    if (statActivities) statActivities.textContent = String(res?.activity_seconds ?? "00:00");
+      if (statMessages) statMessages.textContent = String(res?.messages ?? 0);
+      if (statVoice) statVoice.textContent = String(res?.voice_time ?? "00:00");
+      if (statActivities) statActivities.textContent = String(res?.activity_seconds ?? "00:00");
+  
+      if (statMoneyTotal) statMoneyTotal.textContent = "€" + String(Math.round((res?.total_balance ?? 0) * 100) / 100);
+      if (statMoneyBank) statMoneyBank.textContent = "€" + String(Math.round((res?.bank_balance ?? 0) * 100) / 100);
+      if (statMoneyCash) statMoneyCash.textContent = "€" + String(Math.round((res?.balance ?? 0) * 100) / 100);
+  
+      if (profileXpLine) profileXpLine.textContent = `${res?.xp_now ?? 0}/${res?.xp_need ?? 0} (${res?.xp ?? 0}) XP`;
+      if (profileLevel) profileLevel.textContent = `${res?.lvl ?? 0} LvL`;
+  
+      if (profileXpBar) {
+        const now = Number(res?.xp_now ?? 0);
+        const need = Number(res?.xp_need ?? 0);
+        const pct = need > 0 ? (now / need) * 100 : 0;
+        profileXpBar.style.width = `${Math.min(100, Math.max(0, pct))}%`;
+      }
+  
+      if (profileName) profileName.textContent = String(res?.user_name ?? "Unknown Name");
+      
+      return res;
+    } catch (e) {
+      try {
+        const raw = localStorage.getItem(lastKey);
+        const saved = raw ? JSON.parse(raw) : null;
+        const res = saved?.res;
+  
+        if (res) {
+          if (statMessages) statMessages.textContent = String(res?.messages ?? 0);
+          if (statVoice) statVoice.textContent = String(res?.voice_time ?? "00:00");
+          if (statActivities) statActivities.textContent = String(res?.activity_seconds ?? "00:00");
+          if (statMoneyTotal) statMoneyTotal.textContent = "€" + String(Math.round((res?.total_balance ?? 0) * 100) / 100);
+          if (statMoneyBank) statMoneyBank.textContent = "€" + String(Math.round((res?.bank_balance ?? 0) * 100) / 100);
+          if (statMoneyCash) statMoneyCash.textContent = "€" + String(Math.round((res?.balance ?? 0) * 100) / 100);
 
-    if (statMoneyTotal) statMoneyTotal.textContent = "€" + String(Math.round((res?.total_balance ?? 0) * 100) / 100);
-    if (statMoneyBank) statMoneyBank.textContent = "€" + String(Math.round((res?.bank_balance ?? 0) * 100) / 100);
-    if (statMoneyCash) statMoneyCash.textContent = "€" + String(Math.round((res?.balance ?? 0) * 100) / 100);
-
-    if (profileXpLine) profileXpLine.textContent = `${res?.xp_now ?? 0}/${res?.xp_need ?? 0} (${res?.xp ?? 0}) XP`;
-    if (profileLevel) profileLevel.textContent = `${res?.lvl ?? 0} LvL`;
-
-    if (profileXpBar) {
-      const now = Number(res?.xp_now ?? 0);
-      const need = Number(res?.xp_need ?? 0);
-      const pct = need > 0 ? (now / need) * 100 : 0;
-      profileXpBar.style.width = `${Math.min(100, Math.max(0, pct))}%`;
+          if (profileXpLine) profileXpLine.textContent = `${res?.xp_now ?? 0}/${res?.xp_need ?? 0} (${res?.xp ?? 0}) XP`;
+          if (profileLevel) profileLevel.textContent = `${res?.lvl ?? 0} LvL`;
+          
+          if (profileXpBar) {
+            const now = Number(res?.xp_now ?? 0);
+            const need = Number(res?.xp_need ?? 0);
+            const pct = need > 0 ? (now / need) * 100 : 0;
+            profileXpBar.style.width = `${Math.min(100, Math.max(0, pct))}%`;
+          }
+          
+          if (profileName) profileName.textContent = String(res?.user_name ?? "Unknown Name");
+          
+          return res;
+        }
+      } catch {}
+      throw e;
     }
-
-    if (profileName) profileName.textContent = String(res?.user_name ?? "Unknown Name");
   }
 
   await fillIdentity();
