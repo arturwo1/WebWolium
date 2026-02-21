@@ -1,287 +1,33 @@
+import {
+  $,
+  lsJSONGet,
+  lsJSONSet,
+  readIdentity
+} from "@/lib/index.js";
+
+import { createWebRequestService } from "@/services/index.js";
 import { initProfileChart } from "./profile_chart.js";
 
-const $ = (s, r = document) => r.querySelector(s);
-
-const MEM_CACHE = new Map();
-const INFLIGHT = new Map();
-const COOLDOWN_UNTIL = new Map();
-
-function nowMs() {
-  return Date.now();
+function setText(el, value) {
+  if (el) el.textContent = String(value ?? "");
 }
 
-function stableStringify(obj) {
-  if (!obj || typeof obj !== "object") return String(obj ?? "");
-  const keys = Object.keys(obj).sort();
-  const out = {};
-  for (const k of keys) out[k] = obj[k];
-  return JSON.stringify(out);
+function formatMoneyEUR(n) {
+  const v = Math.round((Number(n) || 0) * 100) / 100;
+  return `€${v}`;
 }
 
-function cacheGet(key) {
-  const m = MEM_CACHE.get(key);
-  if (m && m.exp > nowMs()) return m.val;
-
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return null;
-    const obj = JSON.parse(raw);
-    if (obj && obj.exp > nowMs()) {
-      MEM_CACHE.set(key, obj);
-      return obj.val;
-    }
-  } catch { }
-  return null;
+function setModalOpen(modal, open) {
+  if (!modal) return;
+  modal.classList.toggle("is-open", open);
+  modal.setAttribute("aria-hidden", open ? "false" : "true");
 }
 
-function cacheSet(key, val, ttlMs) {
-  const obj = { exp: nowMs() + ttlMs, val };
-  MEM_CACHE.set(key, obj);
-  try {
-    localStorage.setItem(key, JSON.stringify(obj));
-  } catch { }
-}
-
-function resultCacheKey(userId, kind, payload) {
-  return `wr_cache:${userId}:${kind}:${stableStringify(payload || {})}`;
-}
-
-function activeKey(userId, kind, payload) {
-  return `active_wr:${userId}:${kind}:${stableStringify(payload || {})}`;
-}
-
-function sleep(ms) {
-  return new Promise(r => setTimeout(r, ms));
-}
-
-function parseReject(err) {
-  const msg = String(err?.message || "");
-  const mReason = /REJECT:([A-Z0-9_]+)/i.exec(msg);
-  const mRetry = /RETRY_AFTER_MS=(\d+)/i.exec(msg);
-  return {
-    reason: mReason ? mReason[1].toUpperCase() : null,
-    retryAfterMs: mRetry ? Number(mRetry[1]) : null,
-    msg
-  };
-}
-
-async function rpcCreateWithCooldown(sb, kind, payload, tries = 8) {
-  for (let i = 0; i < tries; i++) {
-    const { data: id, error } = await sb.rpc("create_web_request", {
-      p_kind: kind,
-      p_payload: payload
-    });
-
-    if (!error) return id;
-
-    if (String(error.code || "") === "P0001") {
-      const p = parseReject(error);
-      if (p.retryAfterMs != null) {
-        await sleep(Math.min(30_000, p.retryAfterMs + 50));
-        continue;
-      }
-    }
-
-    throw error;
-  }
-
-  throw new Error("RPC_REJECTED_TOO_MANY_TIMES");
-}
-
-async function waitWebRequestDone(sb, id, timeoutMs = 80_000) {
-  return await new Promise((resolve, reject) => {
-    const channel = sb.channel(`wr:${id}`);
-    let finished = false;
-
-    let pollTimer = null;
-    let pollDelay = 500;
-    const pollMax = 15_000;
-
-    const cleanup = () => {
-      if (pollTimer) clearTimeout(pollTimer);
-      sb.removeChannel(channel);
-    };
-
-    const finishOk = (result) => {
-      if (finished) return;
-      finished = true;
-      cleanup();
-      resolve(result);
-    };
-
-    const finishErr = (err) => {
-      if (finished) return;
-      finished = true;
-      cleanup();
-      reject(err instanceof Error ? err : new Error(String(err)));
-    };
-
-    const checkOnce = async () => {
-      const { data, error } = await sb
-        .from("web_requests")
-        .select("status,result,error")
-        .eq("id", id)
-        .single();
-
-      if (error || !data) return { status: "unknown" };
-
-      if (data.status === "done") {
-        finishOk(data.result);
-        return { status: "done" };
-      }
-
-      if (data.status === "error") {
-        finishErr(data.error || "bot error");
-        return { status: "error" };
-      }
-
-      return { status: data.status || "pending" };
-    };
-
-    const schedulePoll = async () => {
-      if (finished) return;
-
-      await checkOnce();
-      if (finished) return;
-
-      pollDelay = Math.min(pollMax, Math.floor(pollDelay * 1.4));
-      pollTimer = setTimeout(schedulePoll, pollDelay);
-    };
-
-    channel.on(
-      "postgres_changes",
-      { event: "UPDATE", schema: "public", table: "web_requests", filter: `id=eq.${id}` },
-      (ev) => {
-        const row = ev.new;
-        if (row?.status === "done") finishOk(row.result);
-        else if (row?.status === "error") finishErr(row.error || "bot error");
-      }
-    );
-
-    channel.subscribe(async (st) => {
-      await checkOnce();
-      if (finished) return;
-
-      if (st === "SUBSCRIBED" || st === "CHANNEL_ERROR" || st === "TIMED_OUT") {
-        if (!pollTimer) pollTimer = setTimeout(schedulePoll, pollDelay);
-      }
-    });
-
-    setTimeout(() => {
-      checkOnce().finally(() => {
-        if (!finished) finishErr(new Error("timeout"));
-      });
-    }, timeoutMs);
-  });
-}
-
-export async function queueRequest(sb, kind, payload = {}, opts = {}) {
-  const cacheTtlMs = opts.cacheTtlMs ?? 30_000;
-  const cooldownMs = opts.cooldownMs ?? 1_500;
-  const timeoutMs = opts.timeoutMs ?? 80_000;
-
-  const { data: sessData } = await sb.auth.getSession();
-  const session = sessData?.session;
-  if (!session) throw new Error("NOT_LOGGED_IN");
-
-  const userId = session.user.id;
-
-  const rKey = resultCacheKey(userId, kind, payload);
-  const aKey = activeKey(userId, kind, payload);
-
-  const cached = cacheGet(rKey);
-  if (cached != null) return cached;
-
-  const running = INFLIGHT.get(rKey);
-  if (running) return running;
-
-  const p = (async () => {
-    const cdKey = `cd:${userId}:${kind}`;
-    const cd = COOLDOWN_UNTIL.get(cdKey) || 0;
-    if (cd > nowMs()) await sleep(cd - nowMs());
-    COOLDOWN_UNTIL.set(cdKey, nowMs() + cooldownMs);
-
-    const savedId = localStorage.getItem(aKey);
-    if (savedId) {
-      const { data } = await sb
-        .from("web_requests")
-        .select("status,result,error")
-        .eq("id", savedId)
-        .single();
-
-      if (data?.status === "done") {
-        cacheSet(rKey, data.result, cacheTtlMs);
-        localStorage.removeItem(aKey);
-        return data.result;
-      }
-
-      if (data?.status === "pending") {
-        const res = await waitWebRequestDone(sb, savedId, timeoutMs);
-        cacheSet(rKey, res, cacheTtlMs);
-        localStorage.removeItem(aKey);
-        return res;
-      }
-
-      localStorage.removeItem(aKey);
-    }
-
-    const id = await rpcCreateWithCooldown(sb, kind, payload);
-    localStorage.setItem(aKey, id);
-
-    const res = await waitWebRequestDone(sb, id, timeoutMs);
-
-    localStorage.removeItem(aKey);
-    cacheSet(rKey, res, cacheTtlMs);
-    return res;
-  })();
-
-  INFLIGHT.set(rKey, p);
-  try {
-    return await p;
-  } finally {
-    INFLIGHT.delete(rKey);
-  }
-}
-
-export function makeLatestDebouncedQueue(queueRequestFn, {
-  debounceMs = 200,
-  kinds = new Set(["messages_series", "voice_series"])
-} = {}) {
-  const timers = new Map();
-  const latest = new Map();
-  const running = new Set();
-
-  async function run(kind) {
-    if (running.has(kind)) return;
-    const job = latest.get(kind);
-    if (!job) return;
-
-    running.add(kind);
-    try {
-      const res = await queueRequestFn(job.sb, job.kind, job.payload, job.opts);
-      job.resolve(res);
-    } catch (e) {
-      job.reject(e);
-    } finally {
-      running.delete(kind);
-      if (latest.get(kind) !== job) run(kind);
-    }
-  }
-
-  return function debouncedQueue(sb, kind, payload = {}, opts = {}) {
-    if (!kinds.has(kind)) {
-      return queueRequestFn(sb, kind, payload, opts);
-    }
-
-    return new Promise((resolve, reject) => {
-      latest.set(kind, { sb, kind, payload, opts, resolve, reject });
-
-      const t = timers.get(kind);
-      if (t) clearTimeout(t);
-
-      timers.set(kind, setTimeout(() => run(kind), debounceMs));
-    });
-  };
+function chartTitle(type) {
+  if (type === "messages") return "Messages";
+  if (type === "voice") return "Voice";
+  if (type === "activities") return "Activities";
+  return "Graphic";
 }
 
 export async function initProfilePage(sb) {
@@ -299,21 +45,29 @@ export async function initProfilePage(sb) {
   const profileName = $("#profileName");
   const profileTag = $("#profileTag");
 
-  const queueChart = makeLatestDebouncedQueue(queueRequest, {
+  const statsRoot = $("#profileStats");
+  const chartModal = $("#chartModal");
+  const chartClose = $("#chartClose");
+  const chartTitleEl = $("#chartTitle");
+
+  if (!statsRoot || !chartModal || !chartClose || !chartTitleEl) return null;
+
+  const wr = createWebRequestService(sb, {
+    defaultCacheTtlMs: 30_000,
+    defaultCooldownMs: 1_500,
+    defaultTimeoutMs: 80_000
+  });
+
+  const queueChart = wr.makeLatestDebouncedQueue({
     debounceMs: 200,
     kinds: new Set(["messages_series", "voice_series"])
   });
 
   async function fillIdentity() {
-    const cachedRaw = localStorage.getItem("wolium:last_identity");
-    if (cachedRaw) {
-      try {
-        const cached = JSON.parse(cachedRaw);
-        if (profileTag && cached?.name) profileTag.textContent = cached.name;
-        if (profilePfp && cached?.avatar) profilePfp.src = cached.avatar;
-      } catch {}
-    }
-    
+    const cached = readIdentity();
+    if (cached?.name) setText(profileTag, cached.name);
+    if (profilePfp && cached?.avatar) profilePfp.src = cached.avatar;
+
     try {
       const { data } = await sb.auth.getSession();
       const u = data?.session?.user;
@@ -323,114 +77,109 @@ export async function initProfilePage(sb) {
       const name = m.full_name || m.name || m.username || u.email || "User";
       const avatar = m.avatar_url || m.picture || null;
 
-      if (profileTag) profileTag.textContent = name;
+      setText(profileTag, name);
       if (profilePfp && avatar) profilePfp.src = avatar;
-    } catch { }
+    } catch {}
+  }
+
+  function renderStats(res) {
+    setText(statMessages, res?.messages ?? 0);
+    setText(statVoice, res?.voice_time ?? "00:00");
+    setText(statActivities, res?.activity_seconds ?? "00:00");
+
+    setText(statMoneyTotal, formatMoneyEUR(res?.total_balance ?? 0));
+    setText(statMoneyBank, formatMoneyEUR(res?.bank_balance ?? 0));
+    setText(statMoneyCash, formatMoneyEUR(res?.balance ?? 0));
+
+    setText(profileXpLine, `${res?.xp_now ?? 0}/${res?.xp_need ?? 0} (${res?.xp ?? 0}) XP`);
+    setText(profileLevel, `${res?.lvl ?? 0} LvL`);
+
+    if (profileXpBar) {
+      const now = Number(res?.xp_now ?? 0);
+      const need = Number(res?.xp_need ?? 0);
+      const pct = need > 0 ? (now / need) * 100 : 0;
+      profileXpBar.style.width = `${Math.min(100, Math.max(0, pct))}%`;
+    }
+
+    setText(profileName, res?.user_name ?? "Unknown Name");
   }
 
   async function loadStats() {
-    const { data: sessData } = await sb.auth.getSession();
-    const userId = sessData?.session?.user?.id || "anon";
+    const { data } = await sb.auth.getSession();
+    const userId = data?.session?.user?.id || "anon";
     const lastKey = `wolium:last_profile_stats:${userId}`;
-  
+
     try {
-      const res = await queueRequest(sb, "profile_stats", {}, {
+      const res = await wr.queue("profile_stats", {}, {
         cacheTtlMs: 30_000,
         cooldownMs: 1_500,
         timeoutMs: 80_000
       });
-  
-      try {
-        localStorage.setItem(lastKey, JSON.stringify({ t: Date.now(), res }));
-      } catch {}
 
-      if (statMessages) statMessages.textContent = String(res?.messages ?? 0);
-      if (statVoice) statVoice.textContent = String(res?.voice_time ?? "00:00");
-      if (statActivities) statActivities.textContent = String(res?.activity_seconds ?? "00:00");
-  
-      if (statMoneyTotal) statMoneyTotal.textContent = "€" + String(Math.round((res?.total_balance ?? 0) * 100) / 100);
-      if (statMoneyBank) statMoneyBank.textContent = "€" + String(Math.round((res?.bank_balance ?? 0) * 100) / 100);
-      if (statMoneyCash) statMoneyCash.textContent = "€" + String(Math.round((res?.balance ?? 0) * 100) / 100);
-  
-      if (profileXpLine) profileXpLine.textContent = `${res?.xp_now ?? 0}/${res?.xp_need ?? 0} (${res?.xp ?? 0}) XP`;
-      if (profileLevel) profileLevel.textContent = `${res?.lvl ?? 0} LvL`;
-  
-      if (profileXpBar) {
-        const now = Number(res?.xp_now ?? 0);
-        const need = Number(res?.xp_need ?? 0);
-        const pct = need > 0 ? (now / need) * 100 : 0;
-        profileXpBar.style.width = `${Math.min(100, Math.max(0, pct))}%`;
-      }
-  
-      if (profileName) profileName.textContent = String(res?.user_name ?? "Unknown Name");
-      
+      lsJSONSet(lastKey, { t: Date.now(), res });
+      renderStats(res);
       return res;
     } catch (e) {
-      try {
-        const raw = localStorage.getItem(lastKey);
-        const saved = raw ? JSON.parse(raw) : null;
-        const res = saved?.res;
-  
-        if (res) {
-          if (statMessages) statMessages.textContent = String(res?.messages ?? 0);
-          if (statVoice) statVoice.textContent = String(res?.voice_time ?? "00:00");
-          if (statActivities) statActivities.textContent = String(res?.activity_seconds ?? "00:00");
-          if (statMoneyTotal) statMoneyTotal.textContent = "€" + String(Math.round((res?.total_balance ?? 0) * 100) / 100);
-          if (statMoneyBank) statMoneyBank.textContent = "€" + String(Math.round((res?.bank_balance ?? 0) * 100) / 100);
-          if (statMoneyCash) statMoneyCash.textContent = "€" + String(Math.round((res?.balance ?? 0) * 100) / 100);
-
-          if (profileXpLine) profileXpLine.textContent = `${res?.xp_now ?? 0}/${res?.xp_need ?? 0} (${res?.xp ?? 0}) XP`;
-          if (profileLevel) profileLevel.textContent = `${res?.lvl ?? 0} LvL`;
-          
-          if (profileXpBar) {
-            const now = Number(res?.xp_now ?? 0);
-            const need = Number(res?.xp_need ?? 0);
-            const pct = need > 0 ? (now / need) * 100 : 0;
-            profileXpBar.style.width = `${Math.min(100, Math.max(0, pct))}%`;
-          }
-          
-          if (profileName) profileName.textContent = String(res?.user_name ?? "Unknown Name");
-          
-          return res;
-        }
-      } catch {}
+      const saved = lsJSONGet(lastKey, null);
+      if (saved?.res) {
+        renderStats(saved.res);
+        return saved.res;
+      }
       throw e;
     }
   }
 
   await fillIdentity();
 
+  let chart = null;
   try {
     await loadStats();
+  } catch (e) {
+    console.warn("[profile] init failed:", e);
+  }
 
-    const chart = initProfileChart(sb, queueChart, {
+  function ensureChart() {
+    if (chart) return chart;
+    chart = initProfileChart(queueChart, {
       cacheTtlMs: 30_000,
       cooldownMs: 1_500,
       timeoutMs: 80_000,
       defaultDays: 30,
       viewer: {
-        name: profileName.textContent,
-        avatar: profilePfp.src
+        name: profileName?.textContent || profileTag?.textContent || "User",
+        avatar: profilePfp?.src || null
       }
     });
-
-    document.querySelectorAll("[data-chart]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const t = String(btn.getAttribute("data-chart") || "");
-        chart?.setType(t);
-      });
-    });
-
     return chart;
-  } catch (e) {
-    console.warn("[profile_stats] failed:", e);
-    if (statMessages) statMessages.textContent = "0";
-    if (statVoice) statVoice.textContent = "00:00";
-    if (statActivities) statActivities.textContent = "00:00";
-    if (statMoneyTotal) statMoneyTotal.textContent = "€0";
-    if (statMoneyBank) statMoneyBank.textContent = "€0";
-    if (statMoneyCash) statMoneyCash.textContent = "€0";
-    if (profileName) profileName.textContent = "—";
-    return null;
   }
+
+  function openChart(type) {
+    setText(chartTitleEl, chartTitle(type));
+    setModalOpen(chartModal, true);
+
+    const existed = !!chart;
+    const c = ensureChart();
+    if (existed) c?.setType(type);
+    else if (type && type !== "messages") c?.setType(type);
+  }
+
+  function closeChart() {
+    setModalOpen(chartModal, false);
+  }
+
+  statsRoot.addEventListener("click", (e) => {
+    const btn = e.target.closest(".stat--link");
+    const type = btn?.dataset?.chart;
+    if (!type) return;
+    openChart(type);
+  });
+
+  chartClose.addEventListener("click", closeChart);
+  chartModal.addEventListener("click", (e) => {
+    if (e.target === chartModal) closeChart();
+  });
+
+  setText(chartTitleEl, "Graphic");
+
+  return chart;
 }

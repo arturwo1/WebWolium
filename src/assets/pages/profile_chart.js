@@ -1,166 +1,17 @@
-const $ = (s, r = document) => r.querySelector(s);
+import {
+  $,
+  clamp,
+  escapeHtml,
+  formatAxisTime,
+  formatDiscordTime,
+  formatDuration,
+  formatTsFull,
+  on,
+  parseLocalInput,
+  renderDiscordMarkdownToHtml,
+  toLocalDatetimeValue
+} from "@/lib/index.js";
 
-function escapeHtml(s) {
-  return String(s ?? "").replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;"
-  }[c]));
-}
-
-function safeLink(url) {
-  try {
-    const u = new URL(url, window.location.href);
-    if (u.protocol === "http:" || u.protocol === "https:") return u.href;
-  } catch { }
-  return null;
-}
-
-function renderDiscordMarkdownToHtml(input) {
-  const raw = String(input ?? "");
-  if (!raw) return "";
-
-  let s = escapeHtml(raw);
-
-  const blocks = [];
-  s = s.replace(/```([\s\S]*?)```/g, (_, code) => {
-    const idx = blocks.length;
-    blocks.push(code);
-    return `\u0000BLOCK${idx}\u0000`;
-  });
-
-  const inlines = [];
-  s = s.replace(/`([^`\n]+)`/g, (_, code) => {
-    const idx = inlines.length;
-    inlines.push(code);
-    return `\u0000INLINE${idx}\u0000`;
-  });
-
-  s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => {
-    const safe = safeLink(url);
-    if (!safe) return text;
-    return `<a class="prev-link" href="${safe}" target="_blank" rel="noopener noreferrer">${text}</a>`;
-  });
-
-  s = s.replace(/\|\|([\s\S]+?)\|\|/g, `<span class="md-spoiler">$1</span>`);
-
-  s = s.replace(/\*\*([\s\S]+?)\*\*/g, `<strong>$1</strong>`);
-  s = s.replace(/__([\s\S]+?)__/g, `<u>$1</u>`);
-  s = s.replace(/~~([\s\S]+?)~~/g, `<s>$1</s>`);
-  s = s.replace(/(\*|_)([^*_][\s\S]*?)\1/g, `<em>$2</em>`);
-
-  s = s.replace(/\n/g, "<br>");
-
-  s = s.replace(/\u0000INLINE(\d+)\u0000/g, (_, i) => {
-    const code = inlines[Number(i)] ?? "";
-    return `<code class="md-code">${code}</code>`;
-  });
-
-  s = s.replace(/\u0000BLOCK(\d+)\u0000/g, (_, i) => {
-    const code = blocks[Number(i)] ?? "";
-    return `<pre class="md-pre"><code>${code}</code></pre>`;
-  });
-
-  return s;
-}
-
-function discordMessageUrl(meta) {
-  const g = meta?.guild_id;
-  const c = meta?.channel_id;
-  const m = meta?.message_id;
-  if (g && c && m) return `https://discord.com/channels/${g}/${c}/${m}`;
-  if (g && c) return `https://discord.com/channels/${g}/${c}`;
-  return null;
-}
-
-function clamp(v, a, b) {
-  return Math.max(a, Math.min(b, v));
-}
-
-function formatDuration(sec) {
-  sec = Math.max(0, Math.floor(Number(sec) || 0));
-  const h = Math.floor(sec / 3600);
-  const m = Math.floor((sec % 3600) / 60);
-  const s = sec % 60;
-  if (h > 0) return `${h}h ${m}m`;
-  if (m > 0) return `${m}m ${s}s`;
-  return `${s}s`;
-}
-
-function formatAxisTime(ms, rangeMs, viewMinMs, viewMaxMs) {
-  const d = new Date(ms);
-
-  const p2 = (n) => String(n).padStart(2, "0");
-  const DD = p2(d.getDate());
-  const hh = p2(d.getHours());
-  const mm = p2(d.getMinutes());
-  const ss = p2(d.getSeconds());
-
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const MMM = months[d.getMonth()];
-  const YYYY = String(d.getFullYear());
-
-  const crossesYears = new Date(viewMinMs).getFullYear() !== new Date(viewMaxMs).getFullYear();
-
-  if (rangeMs <= 2 * 60 * 60 * 1000) {
-    return `${hh}:${mm}:${ss}`;
-  }
-
-  if (rangeMs <= 2 * 864e5) {
-    return `${DD} ${MMM} ${hh}:${mm}`;
-  }
-
-  if (rangeMs <= 120 * 864e5) {
-    return crossesYears ? `${DD} ${MMM} ${YYYY}` : `${DD} ${MMM}`;
-  }
-
-  if (rangeMs <= 3 * 365 * 864e5) {
-    return `${MMM} ${YYYY}`;
-  }
-
-  return `${YYYY}`;
-}
-
-function formatDiscordTime(ts) {
-  if (!ts) return "";
-  let d;
-
-  if (typeof ts === "number") {
-    d = new Date(ts < 1e12 ? ts * 1000 : ts);
-  } else {
-    d = new Date(ts);
-  }
-
-  if (Number.isNaN(d.getTime())) return String(ts);
-
-  return d.toLocaleString("ru-RU", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-}
-
-function formatTsFull(ms) {
-  const d = new Date(ms);
-  const p = (n) => String(n).padStart(2, "0");
-  return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${String(d.getFullYear()).slice(2)} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
-}
-
-function parseLocalInput(v) {
-  if (!v) return null;
-  const t = new Date(v).getTime();
-  return Number.isFinite(t) ? t : null;
-}
-
-function toLocalDatetimeValue(ms) {
-  const d = new Date(ms);
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
 
 function niceBucketMs(rangeMs, widthPx) {
   const targetPoints = clamp(Math.floor(widthPx / 4), 120, 260);
@@ -211,7 +62,7 @@ function normalizeSeriesPoint(p) {
   };
 }
 
-export function initProfileChart(sb, queueRequest, opts = {}) {
+export function initProfileChart(queueRequest, opts = {}) {
   const canvas = $("#chartCanvas");
   const chartFrom = $("#chartFrom");
   const chartTo = $("#chartTo");
@@ -289,10 +140,6 @@ export function initProfileChart(sb, queueRequest, opts = {}) {
     if (debug) console.log("[chart]", ...a);
   }
 
-  function on(el, ev, fn, opt) {
-    el.addEventListener(ev, fn, opt);
-  }
-
   function cssVar(name) {
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   }
@@ -336,7 +183,7 @@ export function initProfileChart(sb, queueRequest, opts = {}) {
     const authorAvatar = viewer.avatar ?? null;
 
     const text = String(p?.sample_content ?? "").trim();
-    const url = p?.sample_url ?? discordMessageUrl(meta);
+    const url = meta.url ?? null;
 
     const safeText = text || "(no preview)";
 
@@ -348,7 +195,7 @@ export function initProfileChart(sb, queueRequest, opts = {}) {
       <div class="msg-preview__bar">
         <span class="msg-preview__dot" aria-hidden="true"></span>
         <div class="msg-preview__guild" title="${escapeHtml(guildName)}">${escapeHtml(guildName)}</div>
-        <div class="msg-preview__channel" title="#${escapeHtml(channelName)}">#${escapeHtml(channelName)}</div>
+        <div class="msg-preview__channel" title="#${escapeHtml(channelName)}">${escapeHtml(channelName)}</div>
       </div>
 
       <div class="msg-preview__row">
@@ -371,10 +218,15 @@ export function initProfileChart(sb, queueRequest, opts = {}) {
         </div>
       </div>
       
-      ${url ? `
+      ${url && Math.round(p.y)==1 ? `
         <div class="msg-preview__hint">
           <span class="msg-preview__kbd">Click</span>
           <span class="msg-preview__hintText">Open in Discord</span>
+        </div>
+      ` : url ? `
+        <div class="msg-preview__hint">
+          <span class="msg-preview__kbd">Scroll</span>
+          <span class="msg-preview__hintText">Scroll down to click</span>
         </div>
       ` : ``}`;
     }
@@ -654,7 +506,7 @@ export function initProfileChart(sb, queueRequest, opts = {}) {
     };
 
     try {
-      const rows = await queueRequest(sb, kindForType(), payload, reqOpts);
+      const rows = await queueRequest(kindForType(), payload, reqOpts);
       if (mySeq !== reqSeq) return;
 
       const arr = Array.isArray(rows) ? rows : [];

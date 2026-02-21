@@ -4,6 +4,12 @@ import path from "path";
 export default defineConfig({
   root: "src",
   base: "/",
+  resolve: {
+    alias: {
+      "@": path.resolve(process.cwd(), "src", "assets"),
+      "@img": path.resolve(process.cwd(), "src", "images")
+    }
+  },
   build: {
     outDir: path.resolve(process.cwd(), "_site"),
     emptyOutDir: false,
