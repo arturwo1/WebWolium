@@ -1,7 +1,7 @@
 import { img } from "../../images.js";
 
 export function bindHeadImages() {
-  const icon = img("Wolium.webp");
+  const icon = img("Wolium.png");
   if (!icon) return;
 
   const linkIcon = document.querySelector("[data-dyn-icon]");

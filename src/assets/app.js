@@ -20,6 +20,21 @@ import {
 
 import { initProfilePage } from "./pages/profile.js";
 
+import { initI18n, applyDomI18n, t } from "@/lib/text/i18n.js";
+
+await initI18n();
+
+const mo = new MutationObserver((muts) => {
+  for (const m of muts) {
+    for (const n of m.addedNodes) {
+      if (n.nodeType !== 1) continue;
+      applyDomI18n(n);
+    }
+  }
+});
+
+mo.observe(document.documentElement, { childList: true, subtree: true });
+
 const started = new Set();
 
 function pageId() {
@@ -92,7 +107,7 @@ async function boot() {
     try {
       await startOAuthLogin(sb, { provider: "discord", redirectPath: "/profile/" });
     } catch {
-      alert("Supabase not configured");
+      alert(t("app.supabase_not_configured"));
     }
   };
 

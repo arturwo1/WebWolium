@@ -12,6 +12,7 @@ import {
   toLocalDatetimeValue
 } from "@/lib/index.js";
 
+import { t, onLangChange } from '@/lib/text/i18n.js';
 
 function niceBucketMs(rangeMs, widthPx) {
   const targetPoints = clamp(Math.floor(widthPx / 4), 120, 260);
@@ -91,7 +92,7 @@ export function initProfileChart(queueRequest, opts = {}) {
     timeoutMs: Number(opts.timeoutMs ?? 80_000)
   };
   const viewer = {
-    name: opts.viewer?.name ?? "User",
+    name: opts.viewer?.name ?? t("common.user"),
     avatar: opts.viewer?.avatar ?? null
   };
 
@@ -158,34 +159,34 @@ export function initProfileChart(queueRequest, opts = {}) {
   function summaryText() {
     if (!state.series.length) {
       return state.type === "messages"
-        ? "For period: 0 messages"
-        : "For period: 0s";
-    }
-
-    if (state.type === "messages") {
-      const sum = state.series.reduce((a, p) => a + (p.y || 0), 0);
-      return `For period: ${Math.round(sum)} messages`;
+        ? t("chart.summary.messages", { count: 0 })
+        : t("chart.summary.time", { value: "0s" });
     }
 
     const sum = state.series.reduce((a, p) => a + (p.y || 0), 0);
-    return `For period: ${formatDuration(sum)}`;
+
+    if (state.type === "messages") {
+      return t("chart.summary.messages", { count: Math.round(sum) });
+    }
+
+    return t("chart.summary.time", { value: formatDuration(sum) });
   }
 
   function renderMessagePreview(p) {
     const meta = p?.meta ?? {};
 
-    const guildName = meta.guild_name ?? "Server";
-    const channelName = meta.channel_name ?? "channel";
+    const guildName = meta.guild_name ?? t("common.server");
+    const channelName = meta.channel_name ?? t("common.channel");
 
     const ts = meta.created_at ?? meta.timestamp ?? null;
 
-    const authorName = viewer.name ?? "User";
+    const authorName = viewer.name ?? t("common.user");
     const authorAvatar = viewer.avatar ?? null;
 
     const text = String(p?.sample_content ?? "").trim();
     const url = meta.url ?? null;
 
-    const safeText = text || "(no preview)";
+    const safeText = text || t("chart.preview.no_preview");
 
     const bodyHtml = (typeof renderDiscordMarkdownToHtml === "function")
       ? renderDiscordMarkdownToHtml(safeText)
@@ -220,21 +221,24 @@ export function initProfileChart(queueRequest, opts = {}) {
       
       ${url && Math.round(p.y)==1 ? `
         <div class="msg-preview__hint">
-          <span class="msg-preview__kbd">Click</span>
-          <span class="msg-preview__hintText">Open in Discord</span>
+          <span class="msg-preview__kbd">${t("chart.preview.click")}</span>
+          <span class="msg-preview__hintText" >${t("chart.preview.discord")}</span>
         </div>
       ` : url ? `
         <div class="msg-preview__hint">
-          <span class="msg-preview__kbd">Scroll</span>
-          <span class="msg-preview__hintText">Scroll down to click</span>
+          <span class="msg-preview__kbd">${t("chart.preview.scroll")}</span>
+          <span class="msg-preview__hintText">${t("chart.preview.scroll_down")}</span>
         </div>
-      ` : ``}`;
+      ` : `
+        <div class="msg-preview__hint">
+          <span class="msg-preview__hintText">${t("chart.preview.unavailable")}</span>
+        </div>`}`;
     }
 
   function renderVoicePreview(p) {
     const meta = p?.meta ?? {};
-    const guild = meta.guild_id ?? meta.guild ?? "Server";
-    const chan = meta.channel_id ?? meta.channel ?? "Voice";
+    const guild = meta.guild_id ?? meta.guild ?? t("common.server");
+    const chan = meta.channel_id ?? meta.channel ?? t("chart.type.voice");
     return `
       <div class="prev-voice">
         <div class="prev-voice__row">
@@ -247,7 +251,7 @@ export function initProfileChart(queueRequest, opts = {}) {
 
   function renderActivityPreview(p) {
     const meta = p?.meta ?? {};
-    const name = meta.name ?? meta.activity ?? "Activity";
+    const name = meta.name ?? meta.activity ?? t("chart.type.activities");
     return `
       <div class="prev-act">
         <div class="prev-body">${escapeHtml(name)}</div>
@@ -311,13 +315,13 @@ export function initProfileChart(queueRequest, opts = {}) {
       : formatTsFull(p.ts);
 
     if (state.type === "messages") {
-      tipVal.textContent = `Messages: ${Math.round(p.y)}`;
+      tipVal.textContent = `${t("chart.tooltip.messages")}: ${Math.round(p.y)}`;
       tipPreview.innerHTML = renderMessagePreview(p);
     } else if (state.type === "voice") {
-      tipVal.textContent = `Time: ${formatDuration(p.y || 0)}`;
+      tipVal.textContent = `${t("chart.tooltip.voice")}: ${formatDuration(p.y || 0)}`;
       tipPreview.innerHTML = renderVoicePreview(p);
     } else {
-      tipVal.textContent = `Time: ${formatDuration(p.y || 0)}`;
+      tipVal.textContent = `${t("chart.tooltip.time")}: ${formatDuration(p.y || 0)}`;
       tipPreview.innerHTML = renderActivityPreview(p);
     }
 
@@ -427,7 +431,7 @@ export function initProfileChart(queueRequest, opts = {}) {
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillStyle = `rgba(${rgbSecondary}, 1)`;
-      ctx.fillText("No data for selected range", W / 2, H / 2);
+      ctx.fillText(t("chart.no_data"), W / 2, H / 2);
       return;
     }
 
@@ -740,6 +744,11 @@ export function initProfileChart(queueRequest, opts = {}) {
       if (hasTip) hideTip();
       scheduleRefresh(0);
     });
+  });
+
+  onLangChange(() => {
+    if (chartSum) chartSum.textContent = summaryText();
+    if (state.series.length) renderWhenVisible();
   });
 
   scheduleRefresh(0);

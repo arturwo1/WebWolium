@@ -5,23 +5,23 @@ pageId: server-edit
 permalink: /servers/edit/
 ---
 
-<h1 class="h1">Server Editor</h1>
+<h1 class="h1" data-i18n="server.edit">Server Editor</h1>
 
 <article class="card section">
-  <h2 class="section-title" style="font-size:22px;margin:0 0 12px">Choosed Server</h2>
+  <h2 class="section-title" style="font-size:22px;margin:0 0 12px" data-i18n="server.choosed">Choosed Server</h2>
   <div class="kv">
-    <div class="k">Server:</div>
-    <div class="v" id="chosenServerText">didnt choosed</div>
+    <div class="k" data-i18n="server.label">Server:</div>
+    <div class="v" id="chosenServerText" data-i18n="server.choosed.none">didnt choosed</div>
   </div>
 </article>
 
 <article class="card section">
-  <h2 class="section-title" style="font-size:22px;margin:0 0 12px">Settings</h2>
+  <h2 class="section-title" style="font-size:22px;margin:0 0 12px" data-i18n="settings">Settings</h2>
 
   <div class="kv" style="gap:10px">
-    <label class="k" for="srvTitle">Name</label>
-    <input class="input" id="srvTitle" placeholder="Example: AstroCommunity" />
+    <label class="k" for="srvTitle" data-i18n="name">Name</label>
+    <input class="input" id="srvTitle" placeholder="Example: AstroCommunity" data-i18n-attr="placeholder: server.placeholder" />
 
-    <button class="nav__item" id="btnSaveServer" type="button" style="text-align:center">Save</button>
+    <button class="nav__item" id="btnSaveServer" type="button" style="text-align:center" data-i18n="save">Save</button>
   </div>
 </article>

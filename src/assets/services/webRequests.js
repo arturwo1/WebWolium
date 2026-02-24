@@ -1,3 +1,4 @@
+import { t } from "@/lib/text/i18n.js";
 import { stableStringify } from "@/lib/index.js";
 import { nowMs, sleep } from "@/lib/index.js";
 import { ttlGet, ttlSet } from "@/lib/index.js";
@@ -208,7 +209,7 @@ export function createWebRequestService(sb, {
         ttlSet(rKey, res, cacheTtlMs);
         return res;
       } catch (e) {
-        if (typeof hud?.error === "function") hud.error(e, { title: "Loading error" });
+        if (typeof hud?.error === "function") hud.error(e, { title: t("error.loading_title") });
         throw e;
       } finally {
         stopHud();

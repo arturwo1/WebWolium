@@ -5,11 +5,11 @@ pageId: profile
 permalink: /profile/
 ---
 
-<h1 class="h1">Profile</h1>
+<h1 class="h1" data-i18n="profile">Profile</h1>
 
 <article class="card profile-card">
   <div class="profile-top">
-    <img class="pfp" id="profilePfp" alt="User avatar" />
+    <img class="pfp" id="profilePfp" alt="User avatar" data-i18n-attr="alt: profile.avatar_alt" />
 
     <div class="user-lines">
       <div class="name" id="profileName">—</div>
@@ -19,13 +19,13 @@ permalink: /profile/
     <div class="level" id="profileLevel">— LvL</div>
   </div>
 
-  <div class="bar" aria-label="XP progress">
+  <div class="bar" aria-label="XP progress" data-i18n-attr="aria-label: profile.xp_progress">
     <div id="profileXpBar" style="width:0%"></div>
   </div>
 
   <div class="xp-line" id="profileXpLine">—</div>
 
-  <div class="icon-row" aria-label="Quick icons">
+  <div class="icon-row" aria-label="Quick icons" data-i18n-attr="aria-label: profile.quick_icons">
     <div class="icon" title="Discord">💬</div>
     <div class="icon" title="Leaderboards">👑</div>
     <div class="icon" title="Servers">🏛️</div>
@@ -34,32 +34,32 @@ permalink: /profile/
 
 <div class="card section stats" id="profileStats">
   <button class="stat stat--link" data-chart="messages" type="button">
-    <div class="stat__label">Messages</div>
+    <div class="stat__label" data-i18n="profile.messages">Messages</div>
     <div class="stat__value" id="statMessages">—</div>
   </button>
 
   <button class="stat stat--link" data-chart="voice" type="button">
-    <div class="stat__label">Voice</div>
+    <div class="stat__label" data-i18n="profile.voice">Voice</div>
     <div class="stat__value" id="statVoice">—</div>
   </button>
 
   <button class="stat stat--link" data-chart="activities" type="button">
-    <div class="stat__label">Activity</div>
+    <div class="stat__label" data-i18n="profile.activities">Activity</div>
     <div class="stat__value" id="statActivities">—</div>
   </button>
 
   <div class="stat">
-    <div class="stat__label">Total Balance</div>
+    <div class="stat__label" data-i18n="profile.balance.total">Total Balance</div>
     <div class="stat__value" id="statMoneyTotal">—</div>
   </div>
 
   <div class="stat">
-    <div class="stat__label">Bank Balance</div>
+    <div class="stat__label" data-i18n="profile.balance.bank">Bank Balance</div>
     <div class="stat__value" id="statMoneyBank">—</div>
   </div>
 
   <div class="stat">
-    <div class="stat__label">Balance</div>
+    <div class="stat__label" data-i18n="profile.balance">Cash Balance</div>
     <div class="stat__value" id="statMoneyCash">—</div>
   </div>
 </div>

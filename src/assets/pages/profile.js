@@ -7,6 +7,7 @@ import {
 
 import { createWebRequestService } from "@/services/index.js";
 import { initProfileChart } from "./profile_chart.js";
+import { t, onLangChange } from "@/lib/text/i18n.js";
 
 function setText(el, value) {
   if (el) el.textContent = String(value ?? "");
@@ -24,10 +25,10 @@ function setModalOpen(modal, open) {
 }
 
 function chartTitle(type) {
-  if (type === "messages") return "Messages";
-  if (type === "voice") return "Voice";
-  if (type === "activities") return "Activities";
-  return "Graphic";
+  if (type === "messages") return t("chart.type.messages");
+  if (type === "voice") return t("chart.type.voice");
+  if (type === "activities") return t("chart.type.activities");
+  return t("chart.title");
 }
 
 export async function initProfilePage(sb) {
@@ -74,7 +75,7 @@ export async function initProfilePage(sb) {
       if (!u) return;
 
       const m = u.user_metadata || {};
-      const name = m.full_name || m.name || m.username || u.email || "User";
+      const name = m.full_name || m.name || m.username || u.email || t("common.user");
       const avatar = m.avatar_url || m.picture || null;
 
       setText(profileTag, name);
@@ -91,8 +92,8 @@ export async function initProfilePage(sb) {
     setText(statMoneyBank, formatMoneyEUR(res?.bank_balance ?? 0));
     setText(statMoneyCash, formatMoneyEUR(res?.balance ?? 0));
 
-    setText(profileXpLine, `${res?.xp_now ?? 0}/${res?.xp_need ?? 0} (${res?.xp ?? 0}) XP`);
-    setText(profileLevel, `${res?.lvl ?? 0} LvL`);
+    setText(profileXpLine, t("profile.xp_line", { now: res?.xp_now ?? 0, need: res?.xp_need ?? 0, total: res?.xp ?? 0 }));
+    setText(profileLevel, t("profile.level", { level: res?.lvl ?? 0 }));
 
     if (profileXpBar) {
       const now = Number(res?.xp_now ?? 0);
@@ -101,7 +102,7 @@ export async function initProfilePage(sb) {
       profileXpBar.style.width = `${Math.min(100, Math.max(0, pct))}%`;
     }
 
-    setText(profileName, res?.user_name ?? "Unknown Name");
+    setText(profileName, res?.user_name ?? t("profile.unknown_name"));
   }
 
   async function loadStats() {
@@ -146,7 +147,7 @@ export async function initProfilePage(sb) {
       timeoutMs: 80_000,
       defaultDays: 30,
       viewer: {
-        name: profileName?.textContent || profileTag?.textContent || "User",
+        name: profileName?.textContent || profileTag?.textContent || t("common.user"),
         avatar: profilePfp?.src || null
       }
     });
@@ -154,6 +155,7 @@ export async function initProfilePage(sb) {
   }
 
   function openChart(type) {
+    chartModal.dataset.chartType = type || "messages";
     setText(chartTitleEl, chartTitle(type));
     setModalOpen(chartModal, true);
 
@@ -179,7 +181,16 @@ export async function initProfilePage(sb) {
     if (e.target === chartModal) closeChart();
   });
 
-  setText(chartTitleEl, "Graphic");
+  setText(chartTitleEl, t("chart.title"));
+
+  onLangChange(() => {
+    const currentType = chartModal?.dataset?.chartType || "messages";
+    if (chartModal?.classList.contains("is-open")) {
+      setText(chartTitleEl, chartTitle(currentType));
+    } else {
+      setText(chartTitleEl, t("chart.title"));
+    }
+  });
 
   return chart;
 }

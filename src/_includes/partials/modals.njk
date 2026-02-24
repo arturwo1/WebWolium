@@ -1,16 +1,16 @@
 <div class="modal" id="chartModal" aria-hidden="true">
   <div class="modal__panel" role="dialog" aria-modal="true">
     <div class="modal__head">
-      <div class="modal__title" id="chartTitle">Graphic</div>
-      <button class="icon-btn" id="chartClose" type="button" aria-label="Close">✕</button>
+      <div class="modal__title" id="chartTitle" data-i18n="chart.title">Graphic</div>
+      <button class="icon-btn" id="chartClose" type="button" aria-label="Close" data-i18n-attr="aria-label: common.close">✕</button>
     </div>
 
     <div class="modal__controls">
       <select class="input input--sm" id="chartPreset">
-        <option value="7d">7 days</option>
-        <option value="30d" selected>30 days</option>
-        <option value="90d">90 days</option>
-        <option value="custom">Period...</option>
+        <option value="7d" data-i18n="chart.preset.7d">7 days</option>
+        <option value="30d" selected data-i18n="chart.preset.30d">30 days</option>
+        <option value="90d" data-i18n="chart.preset.90d">90 days</option>
+        <option value="custom" data-i18n="chart.preset.custom">Period...</option>
       </select>
 
       <input class="input input--sm" id="chartFrom" type="datetime-local" />

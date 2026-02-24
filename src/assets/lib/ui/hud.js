@@ -1,3 +1,5 @@
+import { t } from '@/lib/text/i18n.js';
+
 const DOCK_ID = "toast";
 const MAX_ITEMS = 4;
 
@@ -38,20 +40,20 @@ function textOf(err) {
 
 function prettyErrorMessage(err) {
   const msg = textOf(err);
-  if (!msg) return "Unknown error.";
+  if (!msg) return t("error.unknown");
 
-  if (msg === "NOT_LOGGED_IN") return "Need to log in.";
-  if (msg === "timeout") return "Server is too slow to respond.";
-  if (msg === "RPC_REJECTED_TOO_MANY_TIMES") return "Too many requests in a row. Try again later.";
+  if (msg === "NOT_LOGGED_IN") return t("error.not_logged_in");
+  if (msg === "timeout") return t("error.timeout");
+  if (msg === "RPC_REJECTED_TOO_MANY_TIMES") return t("error.too_many_requests");
 
   return msg.split("\n")[0].slice(0, 220);
 }
 
 function kindLabel(kind) {
-  if (!kind) return "Loading…";
-  if (kind === "messages_series") return "Loading messages…";
-  if (kind === "voice_series") return "Loading voice…";
-  return "Loading data…";
+  if (!kind) return t("loading");
+  if (kind === "messages_series") return t("loading.messages");
+  if (kind === "voice_series") return t("loading.voice");
+  return t("loading");
 }
 
 function makeItem({
@@ -106,7 +108,7 @@ function makeItem({
     close.className = "toast__close";
     close.type = "button";
     close.textContent = "×";
-    close.setAttribute("aria-label", "Close");
+    close.setAttribute("aria-label", t("common.close"));
     close.addEventListener("click", () => animateOutAndRemove(el));
     meta.appendChild(close);
   }
@@ -197,7 +199,7 @@ export const hud = {
     const dock = ensureDock();
     if (!dock) return;
 
-    const title = ctx.title || "Error";
+    const title = ctx.title || t("error");
     const text = ctx.text || prettyErrorMessage(err);
     const key = ctx.key || hashKey("error", title, text);
 

@@ -1,10 +1,10 @@
 <header class="topbar">
-  <button class="icon-btn mobile-only" id="btnMenu" aria-label="Menu">☰</button>
+  <button class="icon-btn mobile-only" id="btnMenu" aria-label="Menu" data-i18n-attr="aria-label: common.menu">☰</button>
 
   <div class="server-switch" id="serverSwitch" aria-hidden="true">
     <button class="pill" id="serverPill" type="button">
       <span class="dot"></span>
-      <span id="serverName">Server didn’t choose</span>
+      <span id="serverName" data-i18n="server.name">Server didn’t choose</span>
       <span class="chev">▾</span>
     </button>
 
@@ -17,18 +17,18 @@
 
   <div class="spacer"></div>
 
-  <button class="pill" id="btnLogin" type="button">Log In with Discord</button>
+  <button class="pill" id="btnLogin" type="button" data-i18n="login.discord">Log In with Discord</button>
 
   <div class="user" id="userBox" hidden>
     <button class="avatar" id="btnAvatar" type="button" aria-haspopup="menu" aria-expanded="false">
-      <img alt="User avatar" id="userAvatarImg" src="https://cdn.discordapp.com/embed/avatars/0.png" />
+      <img alt="User avatar" id="userAvatarImg" src="https://cdn.discordapp.com/embed/avatars/0.png" data-i18n-attr="alt: user.avatar_alt" />
     </button>
 
     <div class="dropdown dropdown--right" id="userDropdown" role="menu">
-      <a class="dd-item" href="/profile/">Profile</a>
-      <a class="dd-item" href="/settings/">Settings</a>
+      <a class="dd-item" href="/profile/" data-i18n="profile">Profile</a>
+      <a class="dd-item" href="/settings/" data-i18n="settings">Settings</a>
       <div class="dd-sep"></div>
-      <button class="dd-item dd-item--danger" data-action="logout" type="button">Log Out</button>
+      <button class="dd-item dd-item--danger" data-action="logout" type="button" data-i18n="logout">Log Out</button>
     </div>
   </div>
 </header>

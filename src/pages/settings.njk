@@ -5,19 +5,49 @@ pageId: settings
 permalink: /settings/
 ---
 
-<h1 class="h1">Settings</h1>
+<h1 class="h1" data-i18n="settings">Settings</h1>
 
 <article class="card section">
   <div class="kv" style="gap:10px">
-    <label class="k" for="lang">Language</label>
-    <select class="input" id="lang">
-      <option>en</option>
-      <option>ru</option>
-    </select>
+    <label class="k" for="lang" data-i18n="language">Language</label>
 
-    <label class="k" for="theme">Theme</label>
-    <select class="input" id="theme">
-      <option>Dark</option>
+    <select class="input" id="lang" data-lang-select>
+      {% for code in i18n_locales %}
+        <option value="{{ code }}">{{ code }}</option>
+      {% endfor %}
     </select>
   </div>
 </article>
+
+<script type="module">
+  import { getLang, setLang, onLangChange, getSupportedLangs, getLanguageNativeName } from "@/lib/text/i18n.js";
+
+  const $lang = document.querySelector("[data-lang-select]");
+
+  function languageLabel(code) {
+    return `${getLanguageNativeName(code)}`;
+  }
+
+  function syncLangSelect() {
+    const uiLang = getLang();
+    const supported = new Set(getSupportedLangs());
+
+    for (const opt of [...$lang.options]) {
+      if (!supported.has(opt.value)) opt.remove();
+    }
+
+    $lang.value = uiLang;
+
+    for (const opt of $lang.options) {
+      opt.textContent = languageLabel(opt.value);
+    }
+  }
+
+  syncLangSelect();
+
+  onLangChange(() => syncLangSelect());
+
+  $lang.addEventListener("change", () => {
+    setLang($lang.value);
+  });
+</script>
