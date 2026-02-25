@@ -736,11 +736,23 @@ export function initProfileChart(queueRequest, opts = {}) {
   }
 
   document.querySelectorAll("[data-chart-type]").forEach((el) => {
-    on(el, "click", () => {
+    on(el, "click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
       const t = String(el.getAttribute("data-chart-type") || "");
-      state.type = t === "voice" ? "voice" : t === "activities" ? "activities" : "messages";
+      const newType = t === "voice"
+        ? "voice"
+        : t === "activities"
+        ? "activities"
+        : "messages";
+
+      if (newType === state.type) return;
+
+      state.type = newType;
       state.viewMin = 0;
       state.viewMax = 0;
+
       if (hasTip) hideTip();
       scheduleRefresh(0);
     });
