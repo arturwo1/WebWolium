@@ -4,6 +4,7 @@ import { eleventyImageTransformPlugin } from "@11ty/eleventy-img";
 
 export default function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy({ "src/assets": "assets" });
+  eleventyConfig.addWatchTarget("./src/assets/locales/");
 
   eleventyConfig.addPlugin(eleventyImageTransformPlugin, {
     extensions: "html",
@@ -19,7 +20,8 @@ export default function (eleventyConfig) {
       clearScreen: false,
       appType: "mpa",
       server: {
-        middlewareMode: true
+        middlewareMode: true,
+        fs: { allow: [path.resolve(".")] }
       },
       build: {
         emptyOutDir: true,
@@ -38,11 +40,7 @@ export default function (eleventyConfig) {
           "@img": path.resolve(".", "src/images"),
           "@": path.resolve(".", "src/assets")
         }
-      },
-      server: {
-        middlewareMode: true,
-        fs: { allow: [path.resolve(".")] }
-      },
+      }
     }
   });
 }

@@ -1,15 +1,13 @@
+const localeModules = import.meta.glob("../../locales/*.json");
+
 const STORAGE_KEY = "lang";
 const FALLBACK = "en";
-const SUPPORTED_LANGS = ["en", "ru", "es", "lt"];
 
-const NATIVE_LANGUAGE_NAMES = Object.freeze({
-  en: "English",
-  ru: "Русский",
-  es: "Español",
-  lt: "Lietuviu"
-});
+const SUPPORTED_LANGS = Object.freeze(
+  Object.keys(localeModules).map((p) => p.split("/").pop().replace(".json", ""))
+);
 
-const localeModules = import.meta.glob("../../locales/*.json");
+let NATIVE_LANGUAGE_NAMES = Object.freeze({});
 
 let dict = {};
 let fallbackDict = {};
@@ -37,10 +35,15 @@ function format(str, vars) {
   return str.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? `{${k}}`));
 }
 
+function findLocalePath(code) {
+  const suffix = `/${code}.json`;
+  return Object.keys(localeModules).find((p) => p.endsWith(suffix)) || "";
+}
+
 async function loadLocale(rawCode) {
   const code = resolveLang(rawCode);
-  const path = `../../locales/${code}.json`;
-  const loader = localeModules[path];
+  const path = findLocalePath(code);
+  const loader = path ? localeModules[path] : null;
 
   if (!loader) {
     if (code !== FALLBACK) return loadLocale(FALLBACK);
@@ -54,6 +57,30 @@ async function loadLocale(rawCode) {
     console.error("[i18n] failed to load locale", code, e);
     if (code !== FALLBACK) return loadLocale(FALLBACK);
     return {};
+  }
+}
+
+async function ensureNativeName(rawCode) {
+  const code = resolveLang(rawCode, "");
+  if (!code) return;
+
+  if (NATIVE_LANGUAGE_NAMES[code]) return;
+
+  const path = findLocalePath(code);
+  const loader = path ? localeModules[path] : null;
+
+  if (!loader) {
+    NATIVE_LANGUAGE_NAMES = Object.freeze({ ...NATIVE_LANGUAGE_NAMES, [code]: code });
+    return;
+  }
+
+  try {
+    const mod = await loader();
+    const data = mod.default ?? mod ?? {};
+    const name = data["i18n.native_name"] || code;
+    NATIVE_LANGUAGE_NAMES = Object.freeze({ ...NATIVE_LANGUAGE_NAMES, [code]: name });
+  } catch {
+    NATIVE_LANGUAGE_NAMES = Object.freeze({ ...NATIVE_LANGUAGE_NAMES, [code]: code });
   }
 }
 
@@ -90,7 +117,9 @@ function notifyLangChanged(nextLang) {
   }
 
   try {
-    document.dispatchEvent(new CustomEvent("i18n:change", { detail: { lang: nextLang } }));
+    document.dispatchEvent(
+      new CustomEvent("i18n:change", { detail: { lang: nextLang } })
+    );
   } catch {}
 }
 
@@ -131,6 +160,16 @@ export function getLanguageNativeName(code) {
   return NATIVE_LANGUAGE_NAMES[c] || String(code || "");
 }
 
+export async function getLanguageNativeNameAsync(code) {
+  const c = resolveLang(code, normalizeLangCode(code) || FALLBACK);
+  await ensureNativeName(c);
+  return NATIVE_LANGUAGE_NAMES[c] || String(code || "");
+}
+
+export async function warmLanguageNativeNames(codes = SUPPORTED_LANGS) {
+  await Promise.all(codes.map((c) => ensureNativeName(c)));
+}
+
 export function onLangChange(fn) {
   listeners.add(fn);
   return () => listeners.delete(fn);
@@ -153,6 +192,8 @@ export async function setLang(nextLang, { save = true } = {}) {
   if (!Object.keys(fallbackDict).length) {
     fallbackDict = await loadLocale(FALLBACK);
   }
+
+  await ensureNativeName(resolved);
 
   if (resolved === lang && Object.keys(dict).length) {
     if (save) {
@@ -182,6 +223,7 @@ export async function setLang(nextLang, { save = true } = {}) {
 
 export async function initI18n({ defaultLang = FALLBACK } = {}) {
   if (!Object.keys(fallbackDict).length) {
+    await ensureNativeName(FALLBACK);
     fallbackDict = await loadLocale(FALLBACK);
   }
 
@@ -195,6 +237,7 @@ export async function initI18n({ defaultLang = FALLBACK } = {}) {
     initial = resolveLang(detectBrowserLang(), initial);
   }
 
+  await ensureNativeName(initial);
   await setLang(initial, { save: false });
 }
 

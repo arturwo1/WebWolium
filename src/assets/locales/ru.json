@@ -75,5 +75,6 @@
   "server.placeholder": "Пример: AstroCommunity",
   "settings": "Настройки",
   "tos": "Условия использования",
-  "user.avatar_alt": "Аватар пользователя"
+  "user.avatar_alt": "Аватар пользователя",
+  "i18n.native_name": "Русский"
 }

@@ -75,5 +75,6 @@
   "server.placeholder": "Pvz.: AstroCommunity",
   "settings": "Nustatymai",
   "tos": "Naudojimo sąlygos",
-  "user.avatar_alt": "Naudotojo avataras"
+  "user.avatar_alt": "Naudotojo avataras",
+  "i18n.native_name": "Lietuvių"
 }

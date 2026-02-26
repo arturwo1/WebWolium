@@ -75,5 +75,6 @@
   "server.placeholder": "Example: AstroCommunity",
   "settings": "Settings",
   "tos": "Terms of Service",
-  "user.avatar_alt": "User avatar"
+  "user.avatar_alt": "User avatar",
+  "i18n.native_name": "English"
 }
