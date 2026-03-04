@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="0"
+  height="0"
+  style="
+    position:absolute;
+    left:-9999px;
+    top:-9999px;
+    overflow:hidden;
+    pointer-events:none;
+  ">
+  <symbol id="offline" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="12" fill="rgb(var(--rgb-primary))"/>
+    <circle cx="12" cy="12" r="10" fill="rgb(var(--rgb-bg))"/>
+  </symbol>
+
+  <symbol id="online" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="12" fill="rgb(var(--rgb-primary))"/>
+    <circle cx="12" cy="12" r="10" fill="rgb(var(--rgb-white))"/>
+  </symbol>
+
+  <symbol id="dnd" viewBox="0 0 24 24">
+    <path style="fill:rgb(var(--rgb-primary))" d="M 24,12 A 12,12 0 0 1 12,24 12,12 0 0 1 0,12 12,12 0 0 1 12,0 12,12 0 0 1 24,12 Z"/>
+    <path style="fill:rgb(var(--rgb-white));stroke-width:1" d="M 22,12 A 10,10 0 0 1 12,22 10,10 0 0 1 2,12 10,10 0 0 1 12,2 10,10 0 0 1 22,12 Z"/>
+    <path style="fill:rgb(var(--rgb-primary));stroke-width:6.09999;stroke-linecap:round;stroke-linejoin:bevel;stroke-miterlimit:9000" d="m 7,11 h 10 c 0.554,0 1,0.446 1,1 0,0.554 -0.446,1 -1,1 H 7 C 6.446,13 6,12.554 6,12 6,11.446 6.446,11 7,11 Z"/>
+  </symbol>
+
+  <symbol id="idle" viewBox="0 0 24 24">
+    <path
+      fill="rgb(var(--rgb-white))"
+      stroke="rgb(var(--rgb-primary))"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      d="M12 1.73A9.99 10.48 0 0 0 10.67 1.82 6.42 6.83 0 0 1 15.07 8.3 6.42 6.83 0 0 1 8.66 15.1 6.42 6.83 0 0 1 2.85 9.64 9.99 10.48 0 0 0 2.56 12.24 9.99 10.48 0 0 0 12 22.27 9.99 10.48 0 0 0 21.44 12.24 9.99 10.48 0 0 0 12 1.73Z"/>
+  </symbol>
+
+  <symbol id="profile" viewBox="0 0 24 24">
+    <path style="fill:rgb(var(--rgb-primary))" d="M 18,6 A 6,6 0 0 1 12,12 6,6 0 0 1 6,6 6,6 0 0 1 12,0 6,6 0 0 1 18,6 Z"/>
+    <path style="fill:rgb(var(--rgb-white))" d="M 16,6 A 4,4 0 0 1 12,10 4,4 0 0 1 8,6 4,4 0 0 1 12,2 4,4 0 0 1 16,6 Z"/>
+    <path style="fill:rgb(var(--rgb-white));stroke:rgb(var(--rgb-primary));stroke-width:2" d="m 1.0058796,22.70292 c 0.1876659,-4.734424 4.8445344,-8.54458 10.6310584,-8.69811 0.20046,-0.0053 0.525679,-0.0053 0.726159,10e-7 5.817905,0.154377 10.49386,4.005149 10.633683,8.775255 C 23.000339,22.901493 22.901503,23 22.78,23 H 12.22 1.2971573 C 1.1330419,23 0.99937987,22.866896 1.0058796,22.70292 Z"/>
+  </symbol>
+
+  <symbol id="servers-editor" viewBox="0 0 24 24">
+    <rect style="fill:rgb(var(--rgb-primary))" width="24" rx="2" ry="2" height="24"/>
+    <rect style="fill:rgb(var(--rgb-white))" width="20" height="20" x="2" y="2" rx="2" ry="2"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="22" height="2" x="1" y="7"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="8" height="2" x="12.5" y="3.5" rx="1" ry="1"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="22" height="2" x="1" y="15"/>
+    <circle style="fill:rgb(var(--rgb-primary))" cx="4.5" cy="4.5" r="1"/>
+    <circle style="fill:rgb(var(--rgb-primary))" cx="7.5" cy="4.5" r="1"/>
+    <circle style="fill:rgb(var(--rgb-primary))" cx="10.5" cy="4.5" r="1"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="8" height="2" x="12.5" y="11" rx="1" ry="1"/>
+    <circle style="fill:rgb(var(--rgb-primary))" cx="4.5" cy="12" r="1"/>
+    <circle style="fill:rgb(var(--rgb-primary))" cx="7.5" cy="12" r="1"/>
+    <circle style="fill:rgb(var(--rgb-primary))" cx="10.5" cy="12" r="1"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="8" height="2" x="12.5" y="18.5" rx="1" ry="1"/>
+    <circle style="fill:rgb(var(--rgb-primary))" cx="4.5" cy="19.5" r="1"/>
+    <circle style="fill:rgb(var(--rgb-primary))" cx="7.5" cy="19.5" r="1"/>
+    <circle style="fill:rgb(var(--rgb-primary))" cx="10.5" cy="19.5" r="1"/>
+  </symbol>
+
+  <symbol id="leaderboard" viewBox="0 0 24 24">
+    <rect style="fill:rgb(var(--rgb-primary))" width="16" height="16" y="8" rx="2" ry="2"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="16" height="8" x="8" y="16" rx="2" ry="2"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="8" height="24" x="8" rx="2" ry="2"/>
+    <rect style="fill:rgb(var(--rgb-white))" width="6" height="12" x="2" y="10" rx="1" ry="1"/>
+    <rect style="fill:rgb(var(--rgb-white))" width="6" height="4" x="16" y="18" rx="1" ry="1"/>
+    <rect style="fill:rgb(var(--rgb-white))" width="4" height="20" x="10" y="2" rx="1" ry="1"/>
+  </symbol>
+
+  <symbol id="settings" viewBox="0 0 24 24">
+    <path style="fill:rgb(var(--rgb-primary))" d="m 12,0 a 12,12 0 0 0 -0.55,0.01 l -0.98,2.52 a 9.59,9.59 0 0 0 -3.63,1.39 l -2.41,-1.23 a 12,12 0 0 0 -1.3,1.22 l 1.09,2.48 a 9.59,9.59 0 0 0 -1.58,3.54 L 0.06,10.76 A 12,12 0 0 0 0,12 12,12 0 0 0 0.01,12.55 L 2.53,13.53 a 9.59,9.59 0 0 0 1.38,3.63 l -1.23,2.41 a 12,12 0 0 0 1.23,1.3 l 2.48,-1.09 a 9.59,9.59 0 0 0 3.54,1.59 l 0.83,2.57 a 12,12 0 0 0 1.24,0.06 12,12 0 0 0 0.55,-0.01 l 0.98,-2.52 a 9.59,9.59 0 0 0 3.63,-1.38 l 2.41,1.23 a 12,12 0 0 0 1.3,-1.23 l -1.09,-2.48 a 9.59,9.59 0 0 0 1.59,-3.54 l 2.57,-0.83 a 12,12 0 0 0 0.06,-1.24 12,12 0 0 0 -0.01,-0.55 l -2.52,-0.98 a 9.59,9.59 0 0 0 -1.39,-3.63 l 1.23,-2.41 a 12,12 0 0 0 -1.22,-1.3 l -2.48,1.09 a 9.59,9.59 0 0 0 -3.54,-1.58 l -0.83,-2.58 a 12,12 0 0 0 -1.24,-0.06 z"/>
+    <path style="fill:rgb(var(--rgb-white))" d="m 12,2 a 10,10 0 0 0 -0.46,0.01 l -0.81,2.1 a 7.99,7.99 0 0 0 -3.03,1.16 v 0 l -2.01,-1.03 a 10,10 0 0 0 -1.08,1.02 l 0.91,2.06 a 7.99,7.99 0 0 0 -1.32,2.95 l -2.15,0.69 a 10,10 0 0 0 -0.05,1.03 10,10 0 0 0 0.01,0.46 l 2.1,0.82 a 7.99,7.99 0 0 0 1.15,3.02 l -1.03,2.01 a 10,10 0 0 0 1.02,1.08 l 2.06,-0.91 a 7.99,7.99 0 0 0 2.97,1.33 l 0.69,2.15 v 0 a 10,10 0 0 0 1.03,0.05 10,10 0 0 0 0.46,-0.01 l 0.82,-2.1 a 7.99,7.99 0 0 0 3.02,-1.15 v 0 l 2.01,1.03 a 10,10 0 0 0 1.08,-1.02 l -0.91,-2.06 a 7.99,7.99 0 0 0 1.32,-2.95 l 2.15,-0.69 a 10,10 0 0 0 0.05,-1.03 10,10 0 0 0 -0.01,-0.46 l -2.1,-0.83 a 7.99,7.99 0 0 0 -1.16,-3.03 l 1.03,-2.01 a 10,10 0 0 0 -1.02,-1.08 l -2.06,0.91 a 7.99,7.99 0 0 0 -2.96,-1.32 l -0.69,-2.15 a 10,10 0 0 0 -1.03,-0.05 z"/>
+    <circle style="fill:rgb(var(--rgb-primary))" cx="12" r="6" cy="12"/>
+    <circle style="fill:rgb(var(--rgb-white))" cx="12" cy="12" r="4"/>
+  </symbol>
+
+  <symbol id="menu" viewBox="0 0 24 24">
+    <rect style="fill:rgb(var(--rgb-primary))" width="24" height="6" rx="2" ry="2"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="24" height="6" rx="2" ry="2" y="9"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="24" height="6" rx="2" ry="2" y="18"/>
+    <rect style="fill:rgb(var(--rgb-white))" width="20" height="2" rx="1" ry="1" x="2" y="2"/>
+    <rect style="fill:rgb(var(--rgb-white))" width="20" height="2" rx="1" ry="1" x="2" y="11"/>
+    <rect style="fill:rgb(var(--rgb-white))" width="20" height="2" rx="1" ry="1" x="2" y="20"/>
+  </symbol>
+
+  <symbol id="close" viewBox="0 0 24 24">
+    <rect style="fill:rgb(var(--rgb-primary))" width="29.023211" height="7.2558026" x="2.4589589" y="-3.6279013" rx="2" ry="2" transform="rotate(45)"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="29.023211" height="7.2558026" x="-14.511605" y="13.342663" rx="2" ry="2" transform="rotate(-45)"/>
+    <rect style="fill:rgb(var(--rgb-white))" width="3.8784232" height="25.209755" x="15.031369" y="-12.604874" rx="1" ry="1" transform="rotate(45)"/>
+    <rect style="fill:rgb(var(--rgb-white))" width="3.8784232" height="25.209755" x="-1.9392078" y="4.3657022" rx="1" ry="1" transform="rotate(-45)"/>
+  </symbol>
+
+  <symbol id="wolium" viewBox="0 0 24 24">
+    <defs>
+      <linearGradient id="gradient" x1="7.4" y1="5.6" x2="7" y2="0.3">
+        <stop style="stop-color:rgb(var(--rgb-primary))" offset="0.6" id="stop1"/>
+        <stop style="stop-color:rgb(var(--rgb-white));stop-opacity:0.8" offset="1" id="stop2"/>
+      </linearGradient>
+      <linearGradient href="#gradient" x1="12" y1="0" x2="12" y2="24" id="linearGradient15" gradientUnits="userSpaceOnUse"/>
+    </defs>
+
+    <path 
+      fill="url(#linearGradient15)" 
+      d="m 0,4.5 c 0.5,1.3 1.4,2.5 1.7,3.9 0.4,1.1 0.9,2.2 1.1,3.4 0.2,1.9 1.1,3.5 1.2,5.3 0.3,1.3 0.5,2.7 0.8,4 0.5,1 0,2.7 1.4,2.9 1.1,-0.6 1.3,-2.2 1.8,-3.2 0.3,-1.5 1,-3 1.6,-4.5 1,-1.5 1.1,-3.4 1.8,-5 1.2,-0.5 0.8,1.4 1.2,2.1 0.1,1.7 0.6,3.2 1.1,4.8 0.3,1.2 0.6,2.6 1.5,3.4 0.7,0.8 1.9,0.8 2.5,-0.2 0.8,-1.2 1,-2.8 1.7,-4 0.6,-1.1 1.1,-2.2 1.4,-3.5 0.6,-1.8 1.2,-3.6 1.7,-5.4 0,-1 0.3,-1.9 0.6,-2.9 0,-1.1 0.3,-2.3 0.6,-3.4 0,-0.5 0.6,-2 0,-2.2 -0.7,0.8 -1.8,1.5 -2.2,2.6 -0.3,2 0,4.1 -0.8,6 -0.2,1 -0.7,2 -0.8,3.1 -0.6,1.9 -1.5,3.7 -2.1,5.6 -0.5,0.8 -0.7,2.5 -1.7,2.5 -0.5,-0.9 -0.9,-2 -1,-3 C 15.2,15.7 14.9,14.6 14.5,13.6 14.2,12.4 13.9,11.1 13.3,9.9 13.1,8.3 11.2,8.5 10.8,9.9 9.9,11 9.7,12.5 8.9,13.6 8.4,14.9 8.1,16.2 7.6,17.5 7.3,18.1 7,19.8 6.5,19.7 5.7,18.4 5.6,17 5.6,15.7 5.1,14.3 4.4,12.9 4.3,11.3 4.3,9.7 3.1,8.4 2.5,7 1.8,6 1.3,4.6 0,4.5 Z"
+    />
+  </symbol>
+</svg>

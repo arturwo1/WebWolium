@@ -40,6 +40,7 @@ export async function initProfilePage(sb) {
   const statMoneyCash = $("#statMoneyCash");
   const profileXpLine = $("#profileXpLine");
   const profileXpBar = $("#profileXpBar");
+  const profileXpBarContainer = $("#profileXpBarContainer");
   const profileLevel = $("#profileLevel");
 
   const profilePfp = $("#profilePfp");
@@ -100,6 +101,7 @@ export async function initProfilePage(sb) {
       const need = Number(res?.xp_need ?? 0);
       const pct = need > 0 ? (now / need) * 100 : 0;
       profileXpBar.style.width = `${Math.min(100, Math.max(0, pct))}%`;
+      profileXpBarContainer.ariaValueNow = Math.round(Math.min(100, Math.max(0, pct)));
     }
 
     setText(profileName, res?.user_name ?? t("profile.unknown_name"));

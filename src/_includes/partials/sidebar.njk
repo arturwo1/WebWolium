@@ -1,18 +1,44 @@
 <aside class="sidebar" id="sidebar">
   <div class="brand">
-    <div class="logo">W</div>
+    <svg class="logo">
+      <use href="#wolium"></use>
+    </svg>
     <div>
       <div class="brand__name">Wolium</div>
     </div>
     <div class="spacer"></div>
-    <button class="icon-btn mobile-only" id="btnClose" aria-label="Close" data-i18n-attr="aria-label: common.close">✕</button>
+    <button class="icon-btn mobile-only" id="btnClose" aria-label="Close" data-i18n-attr="aria-label: common.close">
+      <svg class="icon">
+        <use href="#close"></use>
+      </svg>
+    </button>
   </div>
 
   <nav class="nav">
-    <a class="nav__item" data-nav="profile" href="/profile/" data-i18n="profile">Profile</a>
-    <a class="nav__item" data-nav="server-edit" href="/servers/edit/" data-i18n="server.edit">Server Editor</a>
-    <a class="nav__item" data-nav="leaderboard" href="/leaderboard/" data-i18n="leaderboard">Leaderboard</a>
-    <a class="nav__item" data-nav="settings" href="/settings/" data-i18n="settings">Settings</a>
+    <a class="nav__item" data-nav="profile" href="/profile/">
+      <svg class="icon side">
+        <use href="#profile"></use>
+      </svg>
+      <span data-i18n="profile">Profile</span>
+    </a>
+    <a class="nav__item" data-nav="server-edit" href="/servers/edit/">
+      <svg class="icon side">
+        <use href="#servers-editor"></use>
+      </svg>
+      <span data-i18n="server.edit">Servers Editor</span>
+    </a>
+    <a class="nav__item" data-nav="leaderboard" href="/leaderboard/">
+      <svg class="icon side">
+        <use href="#leaderboard"></use>
+      </svg>
+      <span data-i18n="leaderboard">Leaderboard</span>
+    </a>
+    <a class="nav__item" data-nav="settings" href="/settings/">
+      <svg class="icon side">
+        <use href="#settings"></use>
+      </svg>
+      <span data-i18n="settings">Settings</span>
+    </a>
   </nav>
 
   <div class="sidebar__bottom">

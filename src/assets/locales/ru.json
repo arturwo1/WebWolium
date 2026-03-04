@@ -76,5 +76,8 @@
   "settings": "Настройки",
   "tos": "Условия использования",
   "user.avatar_alt": "Аватар пользователя",
-  "i18n.native_name": "Русский"
+  "i18n.native_name": "Русский",
+  "cookie.text": "Этот сайт использует cookies.",
+  "cookie.accept": "Принять",
+  "cookie.decline": "Отклонить"
 }

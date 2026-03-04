@@ -15,6 +15,7 @@ import {
   showShell,
   startOAuthLogin,
   highlightNav,
+  initConsent,
   $
 } from "@/lib/index.js";
 
@@ -23,6 +24,7 @@ import { initProfilePage } from "./pages/profile.js";
 import { initI18n, applyDomI18n, t } from "@/lib/text/i18n.js";
 
 await initI18n();
+initConsent();
 
 const mo = new MutationObserver((muts) => {
   for (const m of muts) {

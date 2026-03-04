@@ -76,5 +76,8 @@
   "settings": "Settings",
   "tos": "Terms of Service",
   "user.avatar_alt": "User avatar",
-  "i18n.native_name": "English"
+  "i18n.native_name": "English",
+  "cookie.text": "This site uses cookies.",
+  "cookie.accept": "Accept",
+  "cookie.decline": "Decline"
 }

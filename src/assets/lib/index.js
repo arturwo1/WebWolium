@@ -29,3 +29,4 @@ export * from "./ui/drawer.js";
 export * from "./ui/headImages.js";
 export * from "./ui/hud.js";
 export * from "./sw/register.js";
+export * from "./consent/index.js";

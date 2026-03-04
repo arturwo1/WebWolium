@@ -74,10 +74,31 @@
   <meta name="twitter:image:alt" content="{{ twAlt }}">
   <meta name="twitter:site" content="{{ twitter_site or siteTwitter }}">
 
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-NL5JFYRXCQ"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      ad_storage: 'denied',
+      analytics_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied'
+    });
+    gtag('js', new Date());
+  </script>
+
+  <!-- Google AdSense -->
+  <meta name="google-adsense-account" content="ca-pub-5853668593158059">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5853668593158059" crossorigin="anonymous"></script>
+
+  <!-- Main -->
   <script type="module" src="/assets/app.js"></script>
 </head>
 
 <body data-page="{{ pageId or '' }}">
+  {{ icons | safe }}
+
   {% include "partials/gate.njk" %}
 
   <div class="app" id="appShell" hidden>

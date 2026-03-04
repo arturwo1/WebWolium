@@ -1,0 +1,106 @@
+---
+layout: app.njk
+title: Wolium | Icons
+pageId: icons
+permalink: /icons/
+---
+
+<style>
+  .icon2 {
+    width: var(--sz); height: var(--sz);
+    display:block;
+  }
+  .name { font-size:13px; color: rgb(var(--rgb-secondary)); }
+</style>
+
+<h1 class="h1" data-i18n="icons">Icons test</h1>
+
+<div class="card">
+  <label class="name">Size</label>
+  <input id="size" type="range" min="16" max="2048" value="48" />
+  <span id="sizeVal" class="name">48px</span>
+  <button id="toggleBg" class="btn">Toggle BG</button>
+  <span id="status" class="name"></span>
+</div>
+
+<div id="sprite" hidden></div>
+
+<div id="grid" class="badge-row"></div>
+
+<script type="module">
+  const grid = document.getElementById("grid");
+  const spriteHost = document.getElementById("sprite");
+  const status = document.getElementById("status");
+
+  const FALLBACK_IDS = [
+    "AI","balance","bank_balance","calendar","clock","dnd","economy","guild","idle",
+    "messages","moderation","offline","online","robot","streaming","upgrade","voice",
+    "Wolium_gif","Wolium_ico","x2buyamount","x2workamount"
+  ];
+
+  function render(ids){
+    grid.innerHTML = "";
+    ids.forEach(id => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <div class="form-row">
+          <svg class="icon2"
+              viewBox="0 0 24 24"
+              preserveAspectRatio="xMidYMid meet"
+              aria-label="${id}">
+            <use href="#${id}"></use>
+          </svg>
+          <button class="btn" data-copy="${id}">Copy</button>
+        </div>
+        <div class="name">${id}</div>
+      `;
+      grid.appendChild(card);
+    });
+
+    grid.querySelectorAll("[data-copy]").forEach(b=>{
+      b.addEventListener("click", async ()=>{
+        const id = b.getAttribute("data-copy");
+        const txt = `<svg class="icon2"><use href="#${id}"></use></svg>`;
+        try { await navigator.clipboard.writeText(txt); b.textContent="Copied"; setTimeout(()=>b.textContent="Copy",700); }
+        catch { b.textContent="No clipboard"; setTimeout(()=>b.textContent="Copy",900); }
+      });
+    });
+  }
+
+  function load() {
+    try {
+      const sprite = document.querySelector("svg[style*='display']") 
+        || document.querySelector("body > svg");
+
+      if (!sprite) throw new Error("Sprite not found");
+
+      const ids = [...sprite.querySelectorAll("symbol[id]")]
+        .map(s => s.id)
+        .sort();
+
+      status.textContent = `Loaded ${ids.length} icons`;
+      render(ids.length ? ids : FALLBACK_IDS);
+    } catch {
+      status.textContent = `Showing fallback list`;
+      render(FALLBACK_IDS);
+    }
+  }
+
+  const size = document.getElementById("size");
+  const sizeVal = document.getElementById("sizeVal");
+  size.addEventListener("input", () => {
+    document.documentElement.style.setProperty("--sz", size.value + "px");
+    sizeVal.textContent = size.value + "px";
+  });
+
+  let bg = 0;
+  document.getElementById("toggleBg").addEventListener("click", ()=>{
+    bg = (bg + 1) % 3;
+    if(bg === 0) document.body.style.background = "rgb(var(--rgb-bg))";
+    if(bg === 1) document.body.style.background = "#0b0f12";
+    if(bg === 2) document.body.style.background = "#ffffff";
+  });
+
+  load();
+</script>
