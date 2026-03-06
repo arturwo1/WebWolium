@@ -1,0 +1,19 @@
+---
+permalink: /sitemap.xml
+eleventyExcludeFromCollections: true
+---
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{%- set allow = ["/", "/privacy-policy/", "/terms-of-service/", "/rules/"] -%}
+
+{%- for page in collections.all | rejectattr("data.eleventyExcludeFromCollections") -%}
+  {%- if page.url and (page.url in allow) -%}
+  <url>
+    <loc>{{ site.url ~ page.url }}</loc>
+    {%- if page.date %}
+    <lastmod>{{ page.date | date("yyyy-MM-dd") }}</lastmod>
+    {%- endif %}
+  </url>
+  {%- endif -%}
+{%- endfor -%}
+</urlset>

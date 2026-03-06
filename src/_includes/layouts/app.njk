@@ -42,7 +42,7 @@
   <meta name="description" content="{{ pageDesc }}">
   <meta name="keywords" content="{{ keywords or siteKeywords }}">
   <meta name="author" content="{{ author or siteAuthor }}">
-  <meta name="robots" content="{{ robots or "index, follow" }}">
+  <meta name="robots" content="{{ robots or (noindex and 'noindex,nofollow' or 'index,follow') }}">
   <meta name="theme-color" content="{{ theme_color or siteTheme }}">
   <link rel="canonical" href="{{ pageUrl }}">
   <link rel="icon" href="{{ favicon or siteIcon }}" type="image/x-icon" data-dyn-icon>

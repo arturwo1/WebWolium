@@ -20,6 +20,7 @@ import {
 } from "@/lib/index.js";
 
 import { initProfilePage } from "./pages/profile.js";
+import { initHomePage } from "./pages/index.js";
 
 import { initI18n, applyDomI18n, t } from "@/lib/text/i18n.js";
 
@@ -83,6 +84,11 @@ async function initCurrentPage(sb, session) {
     if (started.has("profile")) return;
     started.add("profile");
     await initProfilePage(sb);
+    return;
+  } else if (pid === "home") {
+    if (started.has("home")) return;
+    started.add("home");
+    await initHomePage(sb);
     return;
   }
 }

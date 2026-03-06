@@ -1,10 +1,17 @@
 import path from "node:path";
 import EleventyVitePlugin from "@11ty/eleventy-plugin-vite";
 import { eleventyImageTransformPlugin } from "@11ty/eleventy-img";
+import { DateTime } from "luxon";
 
 export default function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy({ "src/assets": "assets" });
   eleventyConfig.addWatchTarget("./src/assets/locales/");
+
+  eleventyConfig.addFilter("date", (value, format = "yyyy-MM-dd") => {
+    if (!value) return "";
+    const d = value instanceof Date ? value : new Date(value);
+    return DateTime.fromJSDate(d, { zone: "utc" }).toFormat(format);
+  });
 
   eleventyConfig.addPlugin(eleventyImageTransformPlugin, {
     extensions: "html",
