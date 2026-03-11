@@ -146,5 +146,7 @@
   "home.cta.text": "Add Wolium, play with profiles and charts, and tell me what to improve next.",
   "home.cta.add": "Add Wolium",
   "home.cta.support": "Support server",
-  "home.cta.docs": "Rules / docs"
+  "home.cta.docs": "Rules / docs",
+  "cookie": "Cookies",
+  "cookie.details": "I accept the use of cookies"
 }

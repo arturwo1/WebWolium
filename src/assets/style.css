@@ -1605,3 +1605,41 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
     justify-content: flex-start;
   }
 }
+
+.input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--c-border);
+  border-radius: 4px;
+  background: var(--c-panel2);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+}
+
+input[type="checkbox"]:checked {
+  border-color: rgb(var(--rgb-primary));
+}
+
+input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 4px;
+  height: 9px;
+  border: 1px solid rgb(var(--rgb-primary));
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}

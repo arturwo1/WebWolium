@@ -146,5 +146,7 @@
   "home.cta.text": "Додайте Wolium, пограйтеся з профілями та графіками і скажіть мені, що покращити далі.",
   "home.cta.add": "Додати Wolium",
   "home.cta.support": "Сервер підтримки",
-  "home.cta.docs": "Правила / документація"
+  "home.cta.docs": "Правила / документація",
+  "cookie": "Файли cookie",
+  "cookie.details": "Я приймаю використання файлів cookie"
 }

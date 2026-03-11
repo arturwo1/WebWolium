@@ -146,5 +146,7 @@
   "home.cta.text": "Añade Wolium, prueba perfiles y gráficos, y dime qué mejorar después.",
   "home.cta.add": "Añadir Wolium",
   "home.cta.support": "Servidor de soporte",
-  "home.cta.docs": "Reglas / documentación"
+  "home.cta.docs": "Reglas / documentación",
+  "cookie": "Cookies",
+  "cookie.details": "Acepto el uso de cookies"
 }

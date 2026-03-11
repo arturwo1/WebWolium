@@ -21,6 +21,7 @@ import {
 
 import { initProfilePage } from "./pages/profile.js";
 import { initHomePage } from "./pages/index.js";
+import { initSettingsPage } from "./pages/settings.js";
 
 import { initI18n, applyDomI18n, t } from "@/lib/text/i18n.js";
 
@@ -89,6 +90,12 @@ async function initCurrentPage(sb, session) {
     if (started.has("home")) return;
     started.add("home");
     await initHomePage(sb);
+    return;
+  } else if (pid === "settings") {
+    if (!session) return;
+    if (started.has("settings")) return;
+    started.add("settings");
+    await initSettingsPage();
     return;
   }
 }

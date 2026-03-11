@@ -11,49 +11,15 @@ noindex: true
 <article class="card section">
   <div class="kv" style="gap:10px">
     <label class="k" for="lang" data-i18n="language">Language</label>
-
     <select class="input" id="lang" data-lang-select>
       {% for code in i18n_locales %}
         <option value="{{ code }}">{{ code }}</option>
       {% endfor %}
     </select>
+
+    <label class="k" for="cookies" data-i18n="cookie">Cookies</label>
+    <label class="input" for="cookies">
+      <input type="checkbox" id="cookie-consent" data-i18n="cookie.detail">I accept the use of cookies
+    </label>
   </div>
 </article>
-
-<script type="module">
-  import { getLang, setLang, onLangChange, getSupportedLangs, getLanguageNativeName, warmLanguageNativeNames } from "@/lib/text/i18n.js";
-
-  const $lang = document.querySelector("[data-lang-select]");
-
-  function languageLabel(code) {
-    return getLanguageNativeName(code);
-  }
-
-  async function syncLangSelect() {
-    const uiLang = getLang();
-    const supported = new Set(getSupportedLangs());
-
-    for (const opt of [...$lang.options]) {
-      if (!supported.has(opt.value)) opt.remove();
-    }
-
-    await warmLanguageNativeNames();
-
-    $lang.value = uiLang;
-
-    for (const opt of $lang.options) {
-      opt.textContent = languageLabel(opt.value);
-    }
-  }
-
-  await syncLangSelect();
-
-  onLangChange(() => {
-    syncLangSelect();
-  });
-
-  $lang.addEventListener("change", async () => {
-    await setLang($lang.value);
-    await syncLangSelect();
-  });
-</script>
