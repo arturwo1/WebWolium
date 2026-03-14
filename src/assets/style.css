@@ -55,6 +55,14 @@
   --sb-thumb: rgba(var(--rgb-secondary), .55);
   --sb-thumb-hover: rgba(var(--rgb-secondary), .72);
   --sb-thumb-active: rgba(var(--rgb-primary), .55);
+
+  --pt-main-dur: .38s;
+  --pt-shell-dur: .52s;
+  --pt-ease: cubic-bezier(.22, 1, .36, 1);
+  --pt-main-shift: 56px;
+  --pt-topbar-shift: 28px;
+  --pt-sidebar-shift: 32px;
+  --pt-blur: 4px;
 }
 
 [hidden] {
@@ -300,7 +308,7 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 }
 
 .logo > * {
-  transform: scale(0.6);
+  transform: scale(0.8);
   transform-origin: center;
 }
 
@@ -724,16 +732,29 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 }
 
 .modal {
-  display: none;
   position: fixed;
   inset: 0;
-  background: rgba(var(--rgb-black), .55);
   z-index: 50;
   padding: 18px;
+  background: rgba(var(--rgb-black), .55);
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transition:
+    opacity .12s ease,
+    visibility 0s linear .12s;
 }
 
 .modal.is-open {
-  display: block;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+
+  transition:
+    opacity .12s ease,
+    visibility 0s linear 0s;
 }
 
 .modal__panel {
@@ -745,6 +766,18 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   backdrop-filter: blur(var(--blur));
   box-shadow: var(--shadow);
   overflow: hidden;
+
+  opacity: 0;
+  transform: translateY(6px) scale(.98);
+
+  transition:
+    opacity .12s ease,
+    transform .12s ease;
+}
+
+.modal.is-open .modal__panel {
+  opacity: 1;
+  transform: translateY(0) scale(1);
 }
 
 .modal__head {
@@ -828,7 +861,9 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   transition:
     opacity .12s ease,
     transform .12s ease,
-    visibility 0s linear 0s;
+    top .12s ease,
+    left .12s ease,
+    visibility 0s linear .12s;
 }
 
 .tooltip__time {
@@ -1271,6 +1306,43 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   padding: 20px;
   background: rgba(var(--rgb-black), .55);
   z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .32s ease;
+}
+
+.gate__stack {
+  transform: translateY(18px) scale(.96);
+  opacity: 0;
+  filter: blur(12px);
+  transition:
+    transform .42s var(--pt-ease),
+    opacity .42s ease,
+    filter .42s ease;
+}
+
+.gate.is-mounted {
+  pointer-events: auto;
+}
+
+.gate.is-visible {
+  opacity: 1;
+}
+
+.gate.is-visible .gate__stack {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+  filter: blur(0);
+}
+
+.gate.is-leaving {
+  opacity: 0;
+}
+
+.gate.is-leaving .gate__stack {
+  transform: translateY(10px) scale(.985);
+  opacity: 0;
+  filter: blur(8px);
 }
 
 .gate__card {
@@ -1297,7 +1369,7 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 }
 
 .gate__logo > * {
-  transform: scale(0.6);
+  transform: scale(0.8);
   transform-origin: center;
 }
 
@@ -1642,4 +1714,89 @@ input[type="checkbox"]:checked::after {
   border: 1px solid rgb(var(--rgb-primary));
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
+}
+
+.page-content,
+.topbar,
+.sidebar,
+.gate__stack {
+  will-change: transform, opacity, filter;
+}
+
+.page-content {
+  transition:
+    transform var(--pt-main-dur) var(--pt-ease),
+    opacity var(--pt-main-dur) ease,
+    filter var(--pt-main-dur) ease;
+}
+
+.topbar,
+.sidebar {
+  transition:
+    transform var(--pt-shell-dur) var(--pt-ease),
+    opacity var(--pt-shell-dur) ease,
+    filter var(--pt-shell-dur) ease;
+}
+
+html.pt-leave-main .page-content {
+  transform: translateY(var(--pt-main-shift));
+  opacity: 0;
+  filter: blur(var(--pt-blur));
+}
+
+html.pt-enter-shell .page-content {
+  transform: translateY(calc(-1 * var(--pt-main-shift)));
+  opacity: 0;
+  filter: blur(var(--pt-blur));
+}
+
+html.pt-enter-shell .topbar {
+  transform: translateY(calc(-1 * var(--pt-topbar-shift)));
+  opacity: 0;
+  filter: blur(8px);
+  transition-delay: .10s;
+}
+
+html.pt-enter-shell .sidebar {
+  transform: translateX(calc(-1 * var(--pt-sidebar-shift)));
+  opacity: 0;
+  filter: blur(8px);
+  transition-delay: .10s;
+}
+
+html.pt-enter-shell.pt-ready .page-content,
+html.pt-enter-shell.pt-ready .topbar,
+html.pt-enter-shell.pt-ready .sidebar {
+  transform: translate(0, 0);
+  opacity: 1;
+  filter: blur(0);
+}
+
+@media (min-width: 861px) {
+  html.pt-enter-shell .sidebar {
+    transform: translateX(calc(-1 * var(--pt-sidebar-shift)));
+    opacity: 0;
+    filter: blur(8px);
+    transition-delay: .10s;
+  }
+
+  html.pt-enter-shell.pt-ready .sidebar {
+    transform: translateX(0);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-content,
+  .topbar,
+  .sidebar,
+  .gate,
+  .gate__stack {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+  }
 }

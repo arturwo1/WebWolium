@@ -1,5 +1,4 @@
 import CFG from "./config.js";
-import "./style.css";
 
 import {
   bindHeadImages,
@@ -23,6 +22,7 @@ import { initProfilePage } from "./pages/profile.js";
 import { initHomePage } from "./pages/index.js";
 import { initSettingsPage } from "./pages/settings.js";
 
+import { initPageTransitions } from "@/lib/ui/pageTransitions.js";
 import { initI18n, applyDomI18n, t } from "@/lib/text/i18n.js";
 
 await initI18n();
@@ -101,8 +101,10 @@ async function initCurrentPage(sb, session) {
 }
 
 async function boot() {
+  initPageTransitions();
+
   registerServiceWorker();
-  bindHeadImages();
+  // bindHeadImages();
 
   highlightNav();
   initMobileDrawer();
@@ -131,6 +133,12 @@ async function boot() {
 
   const session = await syncAuthUI(sb);
   await initCurrentPage(sb, session);
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      document.documentElement.classList.add("pt-ready");
+    });
+  });
 
   if (sb) {
     sb.auth.onAuthStateChange(async (_e, newSession) => {

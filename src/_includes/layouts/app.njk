@@ -11,7 +11,7 @@
   {% set siteKeywords = "Wolium, arturwol, bot, discord" %}
   {% set siteAuthor = "arturwol" %}
   {% set siteLocale = "en_US" %}
-  {% set siteTheme = "#0b0b0b" %}
+  {% set siteTheme = "#23272a" %}
   {% set siteIcon = "/images/Wolium.webp" %}
   {% set siteTwitter = "@artnrwol" %}
 
@@ -45,7 +45,12 @@
   <meta name="robots" content="{{ robots or (noindex and 'noindex,nofollow' or 'index,follow') }}">
   <meta name="theme-color" content="{{ theme_color or siteTheme }}">
   <link rel="canonical" href="{{ pageUrl }}">
-  <link rel="icon" href="{{ favicon or siteIcon }}" type="image/x-icon" data-dyn-icon>
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="/favicon-animate.svg" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="shortcut icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/site.webmanifest" />
 
   <!-- Apple -->
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -74,6 +79,43 @@
   <meta name="twitter:image:alt" content="{{ twAlt }}">
   <meta name="twitter:site" content="{{ twitter_site or siteTwitter }}">
 
+  <!-- TransitionControl -->
+  <script>
+    (() => {
+      const KEY = "wolium:page-transition";
+      const doc = document.documentElement;
+
+      let data = null;
+
+      try {
+        data = JSON.parse(sessionStorage.getItem(KEY) || "null");
+      } catch {
+        data = null;
+      }
+
+      const navEntries = performance.getEntriesByType?.("navigation");
+      const navType = navEntries?.[0]?.type || "navigate";
+
+      if (data?.mode === "internal-link") {
+        doc.classList.add("pt-enter-main");
+        sessionStorage.removeItem(KEY);
+        return;
+      }
+
+      if (navType === "reload") {
+        doc.classList.add("pt-enter-shell");
+        return;
+      }
+
+      if (navType === "back_forward") {
+        doc.classList.add("pt-enter-main");
+        return;
+      }
+
+      doc.classList.add("pt-enter-shell");
+    })();
+  </script>
+
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-NL5JFYRXCQ"></script>
   <script>
@@ -93,6 +135,7 @@
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5853668593158059" crossorigin="anonymous"></script>
 
   <!-- Main -->
+  <link rel="stylesheet" href="/assets/style.css">
   <script type="module" src="/assets/app.js"></script>
 </head>
 
@@ -106,7 +149,9 @@
     {% include "partials/sidebar.njk" %}
 
     <main class="main" id="pageRoot">
-      {{ content | safe }}
+      <div class="page-content" id="pageContent">
+        {{ content | safe }}
+      </div>
     </main>
 
     <div class="overlay" id="overlay"></div>

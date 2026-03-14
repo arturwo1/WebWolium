@@ -255,8 +255,8 @@ export function createWebRequestService(sb, {
       return new Promise((resolve, reject) => {
         latest.set(kind, { kind, payload, opts, resolve, reject });
 
-        const t = timers.get(kind);
-        if (t) clearTimeout(t);
+        const ti = timers.get(kind);
+        if (ti) clearTimeout(ti);
 
         timers.set(kind, setTimeout(() => run(kind), debounceMs));
       });

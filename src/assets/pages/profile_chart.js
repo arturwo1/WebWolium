@@ -117,6 +117,7 @@ export function initProfileChart(queueRequest, opts = {}) {
   let refetchTimer = null;
 
   let tipHover = false;
+  let tipPoint = null;
 
   const HIDE_DELAY_FROM_CANVAS = 0;
   const HIDE_DELAY_FROM_TIP = 10;
@@ -221,7 +222,7 @@ export function initProfileChart(queueRequest, opts = {}) {
       
       ${url && Math.round(p.y)==1 ? `
         <div class="msg-preview__hint">
-          <span class="msg-preview__kbd">${t("chart.preview.click")}</span>
+          <span class="msg-preview__kbd js-preview-click">${t("chart.preview.click")}</span>
           <span class="msg-preview__hintText" >${t("chart.preview.discord")}</span>
         </div>
       ` : url ? `
@@ -262,6 +263,7 @@ export function initProfileChart(queueRequest, opts = {}) {
   function hideTip() {
     if (!hasTip) return;
     tip.classList.remove("is-on");
+    tipPoint = null;
   }
 
   function placeTooltipAtPoint(px, py) {
@@ -325,6 +327,7 @@ export function initProfileChart(queueRequest, opts = {}) {
       tipPreview.innerHTML = renderActivityPreview(p);
     }
 
+    tipPoint = p;
     requestAnimationFrame(() => placeTooltipAtPoint(px, py));
   }
 
@@ -647,12 +650,25 @@ export function initProfileChart(queueRequest, opts = {}) {
     const s = state.series.filter((p) => p.ts >= state.viewMin && p.ts <= state.viewMax);
     if (state.hoverIdx < 0 || state.hoverIdx >= s.length) return;
 
-    const p = s[state.hoverIdx];
+    const point = s[state.hoverIdx];
+    if (Math.round(point.y) !== 1) return;
 
-    if (Math.round(p.y) !== 1) return;
-
-    const url = p?.sample_url;
+    const url = point?.sample_url;
     if (url && typeof url === "string" && (url.startsWith("http://") || url.startsWith("https://"))) {
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+  });
+
+  on(tip, "click", (e) => {
+    const btn = e.target.closest(".js-preview-click");
+    if (!btn) return;
+
+    const url = tipPoint?.sample_url;
+    if (
+      url &&
+      typeof url === "string" &&
+      (url.startsWith("http://") || url.startsWith("https://"))
+    ) {
       window.open(url, "_blank", "noopener,noreferrer");
     }
   });
