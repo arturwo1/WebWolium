@@ -43,7 +43,7 @@
   "login.discord": "Iniciar sesión con Discord",
   "logout": "Cerrar sesión",
   "name": "Nombre",
-  "page.title.home": "Wolium",
+  "page.title.home": "{site} | Inicio",
   "page.title.leaderboard": "{site} | Clasificación",
   "page.title.privacy": "{site} | Privacidad",
   "page.title.profile": "{site} | Perfil",
@@ -65,6 +65,9 @@
   "profile.voice": "Voz",
   "profile.xp_line": "{now}/{need} ({total}) XP",
   "profile.xp_progress": "Progreso de XP",
+  "profile.client.desktop": "PC",
+  "profile.client.mobile": "Teléfono",
+  "profile.client.web": "Navegador",
   "rules": "Reglas",
   "save": "Guardar",
   "server.choosed": "Servidor seleccionado",
@@ -80,6 +83,8 @@
   "cookie.text": "Este sitio utiliza cookies.",
   "cookie.accept": "Aceptar",
   "cookie.decline": "Rechazar",
+  "cookie": "Cookies",
+  "cookie.details": "Acepto el uso de cookies",
   "home.hero.aria": "Introducción",
   "home.hero.title": "Actividad del servidor — por fin legible.",
   "home.hero.subtitle": "Perfiles, gráficos, clasificaciones, economía y privacidad — en un solo bot. Sin tono corporativo. Solo cosas útiles.",
@@ -146,7 +151,5 @@
   "home.cta.text": "Añade Wolium, prueba perfiles y gráficos, y dime qué mejorar después.",
   "home.cta.add": "Añadir Wolium",
   "home.cta.support": "Servidor de soporte",
-  "home.cta.docs": "Reglas / documentación",
-  "cookie": "Cookies",
-  "cookie.details": "Acepto el uso de cookies"
+  "home.cta.docs": "Reglas / documentación"
 }

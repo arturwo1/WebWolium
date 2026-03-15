@@ -13,6 +13,43 @@ function setText(el, value) {
   if (el) el.textContent = String(value ?? "");
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function hasSpriteSymbol(id) {
+  if (!id) return false;
+  return !!document.getElementById(String(id));
+}
+
+const CLIENT_ICON_IDS = {
+  desktop: "desktop",
+  mobile: "mobile",
+  web: "web"
+};
+
+const CLIENT_LABEL_KEYS = {
+  desktop: "profile.client.desktop",
+  mobile: "profile.client.mobile",
+  web: "profile.client.web"
+};
+
+function statusLabelKey(status) {
+  return `profile.status.${String(status ?? "").trim()}`;
+}
+
+function setPresenceTooltipOpen(tooltipEl, open) {
+  if (!tooltipEl || tooltipEl.hidden) return;
+
+  tooltipEl.classList.toggle("is-on", open);
+  tooltipEl.setAttribute("aria-hidden", open ? "false" : "true");
+}
+
 function formatMoneyEUR(n) {
   const v = Math.round((Number(n) || 0) * 100) / 100;
   return `€${v}`;
@@ -31,6 +68,113 @@ function chartTitle(type) {
   return t("chart.title");
 }
 
+function renderPresenceBadgeState({ badgeEl, useEl, tooltipEl, status, clientStatus }) {
+  if (!badgeEl || !useEl || !tooltipEl) return;
+
+  const statusId = String(status ?? "").trim();
+
+  if (!statusId || !hasSpriteSymbol(statusId)) {
+    badgeEl.hidden = true;
+    tooltipEl.hidden = true;
+    tooltipEl.innerHTML = "";
+    tooltipEl.classList.remove("is-on");
+    tooltipEl.setAttribute("aria-hidden", "true");
+    return;
+  }
+
+  useEl.setAttribute("href", `#${statusId}`);
+  badgeEl.hidden = false;
+  badgeEl.setAttribute("aria-label", t(statusLabelKey(statusId)));
+
+  const rows = [];
+  const order = ["desktop", "mobile", "web"];
+
+  for (const key of order) {
+    const rawClientStatus = String(clientStatus?.[key] ?? "").trim();
+    if (!rawClientStatus) continue;
+    if (!hasSpriteSymbol(rawClientStatus)) continue;
+
+    const clientIconId = CLIENT_ICON_IDS[key];
+    if (!hasSpriteSymbol(clientIconId)) continue;
+
+    rows.push(`
+      <div class="presence-tooltip__row">
+        <div class="presence-tooltip__left">
+          <svg class="icon presence-tooltip__device" aria-hidden="true" viewBox="0 0 24 24">
+            <use href="#${clientIconId}"></use>
+          </svg>
+
+          <span class="presence-tooltip__label">
+            ${escapeHtml(t(CLIENT_LABEL_KEYS[key]))}
+          </span>
+        </div>
+
+        <svg class="icon presence-tooltip__status" aria-hidden="true" viewBox="0 0 24 24">
+          <use href="#${rawClientStatus}"></use>
+        </svg>
+      </div>
+    `);
+  }
+
+  if (!rows.length) {
+    tooltipEl.hidden = true;
+    tooltipEl.innerHTML = "";
+    tooltipEl.classList.remove("is-on");
+    tooltipEl.setAttribute("aria-hidden", "true");
+    return;
+  }
+
+  tooltipEl.innerHTML = `
+    <div class="presence-tooltip__list">
+      ${rows.join("")}
+    </div>
+  `;
+  tooltipEl.hidden = false;
+  tooltipEl.classList.remove("is-on");
+  tooltipEl.setAttribute("aria-hidden", "true");
+}
+
+function renderBadgeRow(badgeRowEl, badges) {
+  if (!badgeRowEl) return;
+
+  let list = badges;
+
+  if (typeof badges === "string") {
+    try {
+      list = JSON.parse(badges);
+    } catch {
+      list = [];
+    }
+  }
+
+  if (!Array.isArray(list)) list = [];
+
+  const validBadges = list
+    .map((x) => String(x ?? "").trim())
+    .filter(Boolean)
+    .filter((id) => hasSpriteSymbol(id));
+
+  if (!validBadges.length) {
+    badgeRowEl.innerHTML = "";
+    badgeRowEl.hidden = true;
+    return;
+  }
+
+  badgeRowEl.innerHTML = validBadges.map((badgeId) => `
+    <div
+      class="badge"
+      title="${escapeHtml(t(`profile.badges.${badgeId}`))}"
+      aria-label="${escapeHtml(t(`profile.badges.${badgeId}`))}"
+    >
+      <svg class="icon badge-icon" aria-hidden="true" viewBox="0 0 24 24">
+        <use href="#${badgeId}"></use>
+      </svg>
+    </div>
+  `).join("");
+
+  badgeRowEl.hidden = false;
+}
+
 export async function initProfilePage(sb) {
   const statMessages = $("#statMessages");
   const statVoice = $("#statVoice");
@@ -46,6 +190,12 @@ export async function initProfilePage(sb) {
   const profilePfp = $("#profilePfp");
   const profileName = $("#profileName");
   const profileTag = $("#profileTag");
+
+  const profilePresenceBadge = $("#profilePresenceBadge");
+  const profilePresenceUse = $("#profilePresenceUse");
+  const profilePresenceTooltip = $("#profilePresenceTooltip");
+  const profileBadges = $("#profileBadges");
+  const profilePfpWrap = profilePresenceBadge?.closest(".pfp-wrap") || null;
 
   const statsRoot = $("#profileStats");
   const chartModal = $("#chartModal");
@@ -65,6 +215,8 @@ export async function initProfilePage(sb) {
     kinds: new Set(["messages_series", "voice_series"])
   });
 
+  let lastProfileResponse = null;
+
   async function fillIdentity() {
     const cached = readIdentity();
     if (cached?.name) setText(profileTag, cached.name);
@@ -81,10 +233,12 @@ export async function initProfilePage(sb) {
 
       setText(profileTag, name);
       if (profilePfp && avatar) profilePfp.src = avatar;
-    } catch {}
+    } catch { }
   }
 
   function renderStats(res) {
+    lastProfileResponse = res ?? null;
+
     setText(statMessages, res?.messages ?? 0);
     setText(statVoice, res?.voice_time ?? "00:00");
     setText(statActivities, res?.activity_seconds ?? "00:00");
@@ -93,18 +247,38 @@ export async function initProfilePage(sb) {
     setText(statMoneyBank, formatMoneyEUR(res?.bank_balance ?? 0));
     setText(statMoneyCash, formatMoneyEUR(res?.balance ?? 0));
 
-    setText(profileXpLine, t("profile.xp_line", { now: res?.xp_now ?? 0, need: res?.xp_need ?? 0, total: res?.xp ?? 0 }));
+    setText(profileXpLine, t("profile.xp_line", {
+      now: res?.xp_now ?? 0,
+      need: res?.xp_need ?? 0,
+      total: res?.xp ?? 0
+    }));
+
     setText(profileLevel, t("profile.level", { level: res?.lvl ?? 0 }));
 
     if (profileXpBar) {
       const now = Number(res?.xp_now ?? 0);
       const need = Number(res?.xp_need ?? 0);
       const pct = need > 0 ? (now / need) * 100 : 0;
+
       profileXpBar.style.width = `${Math.min(100, Math.max(0, pct))}%`;
       profileXpBarContainer.ariaValueNow = Math.round(Math.min(100, Math.max(0, pct)));
     }
 
     setText(profileName, res?.user_name ?? t("profile.unknown_name"));
+
+    if (profilePfp && res?.user_avatar) {
+      profilePfp.src = res.user_avatar;
+    }
+
+    renderPresenceBadgeState({
+      badgeEl: profilePresenceBadge,
+      useEl: profilePresenceUse,
+      tooltipEl: profilePresenceTooltip,
+      status: res?.status,
+      clientStatus: res?.client_status
+    });
+
+    renderBadgeRow(profileBadges, res?.badges);
   }
 
   async function loadStats() {
@@ -133,6 +307,24 @@ export async function initProfilePage(sb) {
   }
 
   await fillIdentity();
+
+  if (profilePfpWrap && profilePresenceTooltip) {
+    profilePfpWrap.addEventListener("mouseenter", () => {
+      setPresenceTooltipOpen(profilePresenceTooltip, true);
+    });
+
+    profilePfpWrap.addEventListener("mouseleave", () => {
+      setPresenceTooltipOpen(profilePresenceTooltip, false);
+    });
+
+    profilePfpWrap.addEventListener("focusin", () => {
+      setPresenceTooltipOpen(profilePresenceTooltip, true);
+    });
+
+    profilePfpWrap.addEventListener("focusout", () => {
+      setPresenceTooltipOpen(profilePresenceTooltip, false);
+    });
+  }
 
   let chart = null;
   try {
@@ -187,10 +379,23 @@ export async function initProfilePage(sb) {
 
   onLangChange(() => {
     const currentType = chartModal?.dataset?.chartType || "messages";
+
     if (chartModal?.classList.contains("is-open")) {
       setText(chartTitleEl, chartTitle(currentType));
     } else {
       setText(chartTitleEl, t("chart.title"));
+    }
+
+    if (lastProfileResponse) {
+      renderPresenceBadgeState({
+        badgeEl: profilePresenceBadge,
+        useEl: profilePresenceUse,
+        tooltipEl: profilePresenceTooltip,
+        status: lastProfileResponse?.status,
+        clientStatus: lastProfileResponse?.client_status
+      });
+
+      renderBadgeRow(profileBadges, lastProfileResponse?.badges);
     }
   });
 

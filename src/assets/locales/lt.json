@@ -43,7 +43,7 @@
   "login.discord": "Prisijungti per Discord",
   "logout": "Atsijungti",
   "name": "Pavadinimas",
-  "page.title.home": "Wolium",
+  "page.title.home": "{site} | Pagrindinis",
   "page.title.leaderboard": "{site} | Lyderių lentelė",
   "page.title.privacy": "{site} | Privatumo politika",
   "page.title.profile": "{site} | Profilis",
@@ -65,6 +65,9 @@
   "profile.voice": "Balsas",
   "profile.xp_line": "{now}/{need} ({total}) XP",
   "profile.xp_progress": "XP progresas",
+  "profile.client.desktop": "Kompiuteris",
+  "profile.client.mobile": "Telefonas",
+  "profile.client.web": "Naršyklė",
   "rules": "Taisyklės",
   "save": "Išsaugoti",
   "server.choosed": "Pasirinktas serveris",
@@ -80,6 +83,8 @@
   "cookie.text": "Šis puslapis naudoja slapukus.",
   "cookie.accept": "Priimti",
   "cookie.decline": "Atmesti",
+  "cookie": "Slapukai",
+  "cookie.details": "Sutinku su slapukų naudojimu",
   "home.hero.aria": "Įvadas",
   "home.hero.title": "Serverio veikla — pagaliau įskaitoma.",
   "home.hero.subtitle": "Profiliai, grafikai, reitingai, ekonomika ir privatumas — viename bote. Be korporatyvinio tono. Tik naudingi dalykai.",
@@ -146,7 +151,5 @@
   "home.cta.text": "Pridėk Wolium, išbandyk profilius ir grafikus, ir pasakyk man, ką patobulinti toliau.",
   "home.cta.add": "Pridėti Wolium",
   "home.cta.support": "Pagalbos serveris",
-  "home.cta.docs": "Taisyklės / dokumentacija",
-  "cookie": "Slapukai",
-  "cookie.details": "Sutinku su slapukų naudojimu"
+  "home.cta.docs": "Taisyklės / dokumentacija"
 }

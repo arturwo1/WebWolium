@@ -10,7 +10,18 @@ noindex: true
 
 <article class="card profile-card">
   <div class="profile-top">
-    <img class="pfp" id="profilePfp" alt="User avatar" data-i18n-attr="alt: profile.avatar_alt" />
+    <div class="pfp-wrap">
+      <img class="pfp" id="profilePfp" alt="User avatar" data-i18n-attr="alt: profile.avatar_alt"/>
+
+      <div class="presence-badge" id="profilePresenceBadge" tabindex="0" aria-label="" hidden>
+        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24">
+          <use id="profilePresenceUse" href=""></use>
+        </svg>
+      </div>
+
+      <div class="tooltip presence-tooltip" id="profilePresenceTooltip" role="tooltip" aria-hidden="true" hidden></div>
+    </div>
+
 
     <div class="user-lines">
       <div class="name" id="profileName">—</div>
@@ -24,12 +35,10 @@ noindex: true
     <div id="profileXpBar" style="width:0%"></div>
   </div>
 
-  <div class="xp-line" id="profileXpLine">—</div>
+  <div style="display: flex; justify-content: space-between;">
+    <div class="badge-row" id="profileBadges" aria-label="Quick icons" data-i18n-attr="aria-label: profile.quick_icons" hidden></div>
 
-  <div class="badge-row" aria-label="Quick icons" data-i18n-attr="aria-label: profile.quick_icons">
-    <div class="badge" title="Discord">💬</div>
-    <div class="badge" title="Leaderboards">👑</div>
-    <div class="badge" title="Servers">🏛️</div>
+    <div class="xp-line" id="profileXpLine">—</div>
   </div>
 </article>
 

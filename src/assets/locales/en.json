@@ -43,7 +43,7 @@
   "login.discord": "Log In with Discord",
   "logout": "Logout",
   "name": "Name",
-  "page.title.home": "Wolium",
+  "page.title.home": "{site} | Home",
   "page.title.leaderboard": "{site} | Leaderboard",
   "page.title.privacy": "{site} | Privacy Policy",
   "page.title.profile": "{site} | Profile",
@@ -65,6 +65,9 @@
   "profile.voice": "Voice",
   "profile.xp_line": "{now}/{need} ({total}) XP",
   "profile.xp_progress": "XP progress",
+  "profile.client.desktop": "Desktop",
+  "profile.client.mobile": "Mobile",
+  "profile.client.web": "Web",
   "rules": "Rules",
   "save": "Save",
   "server.choosed": "Selected Server",
@@ -80,6 +83,8 @@
   "cookie.text": "This site uses cookies.",
   "cookie.accept": "Accept",
   "cookie.decline": "Decline",
+  "cookie": "Cookies",
+  "cookie.details": "I accept the use of cookies",
   "home.hero.aria": "Intro",
   "home.hero.title": "Server activity — finally readable.",
   "home.hero.subtitle": "Profiles, graphs, leaderboards, economy and privacy — in one bot. No corporate tone. Just useful stuff.",
@@ -146,7 +151,5 @@
   "home.cta.text": "Add Wolium, play with profiles and charts, and tell me what to improve next.",
   "home.cta.add": "Add Wolium",
   "home.cta.support": "Support server",
-  "home.cta.docs": "Rules / docs",
-  "cookie": "Cookies",
-  "cookie.details": "I accept the use of cookies"
+  "home.cta.docs": "Rules / docs"
 }

@@ -132,7 +132,7 @@ function applyDocumentMetaI18n() {
   try {
     const pid = document.body?.dataset?.page || "";
     const map = {
-      "": "page.title.home",
+      "home": "page.title.home",
       "profile": "page.title.profile",
       "leaderboard": "page.title.leaderboard",
       "settings": "page.title.settings",

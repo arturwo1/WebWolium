@@ -43,7 +43,7 @@
   "login.discord": "Увійти через Discord",
   "logout": "Вийти",
   "name": "Ім'я",
-  "page.title.home": "Wolium",
+  "page.title.home": "{site} | Головна",
   "page.title.leaderboard": "{site} | Таблиця лідерів",
   "page.title.privacy": "{site} | Політика конфіденційності",
   "page.title.profile": "{site} | Профіль",
@@ -65,6 +65,9 @@
   "profile.voice": "Голос",
   "profile.xp_line": "{now}/{need} ({total}) XP",
   "profile.xp_progress": "Прогрес XP",
+  "profile.client.desktop": "ПК",
+  "profile.client.mobile": "Телефон",
+  "profile.client.web": "Браузер",
   "rules": "Правила",
   "save": "Зберегти",
   "server.choosed": "Обраний сервер",
@@ -80,6 +83,8 @@
   "cookie.text": "Цей сайт використовує cookies.",
   "cookie.accept": "Прийняти",
   "cookie.decline": "Відхилити",
+  "cookie": "Файли cookie",
+  "cookie.details": "Я приймаю використання файлів cookie",
   "home.hero.aria": "Вступ",
   "home.hero.title": "Активність сервера — нарешті читабельна.",
   "home.hero.subtitle": "Профілі, графіки, рейтинги, економіка та приватність — в одному боті. Без корпоративного духу. Просто корисні речі.",
@@ -146,7 +151,5 @@
   "home.cta.text": "Додайте Wolium, пограйтеся з профілями та графіками і скажіть мені, що покращити далі.",
   "home.cta.add": "Додати Wolium",
   "home.cta.support": "Сервер підтримки",
-  "home.cta.docs": "Правила / документація",
-  "cookie": "Файли cookie",
-  "cookie.details": "Я приймаю використання файлів cookie"
+  "home.cta.docs": "Правила / документація"
 }
