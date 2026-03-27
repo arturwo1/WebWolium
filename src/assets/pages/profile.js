@@ -202,6 +202,13 @@ export async function initProfilePage(sb) {
   const chartClose = $("#chartClose");
   const chartTitleEl = $("#chartTitle");
 
+  const chartGuildId = $("#chartGuildId");
+  const chartChannelId = $("#chartChannelId");
+
+  const Ids = {
+    guilds: {}
+  }
+
   if (!statsRoot || !chartModal || !chartClose || !chartTitleEl) return null;
 
   const wr = createWebRequestService(sb, {
@@ -212,7 +219,7 @@ export async function initProfilePage(sb) {
 
   const queueChart = wr.makeLatestDebouncedQueue({
     debounceMs: 200,
-    kinds: new Set(["messages_series", "voice_series"])
+    kinds: new Set(["messages_series", "voice_series", "activities_series"])
   });
 
   let lastProfileResponse = null;
@@ -295,6 +302,9 @@ export async function initProfilePage(sb) {
 
       lsJSONSet(lastKey, { t: Date.now(), res });
       renderStats(res);
+
+      Ids["guilds"] = res?.guilds;
+
       return res;
     } catch (e) {
       const saved = lsJSONGet(lastKey, null);
@@ -357,6 +367,42 @@ export async function initProfilePage(sb) {
     const c = ensureChart();
     if (existed) c?.setType(type);
     else if (type && type !== "messages") c?.setType(type);
+
+    for (const [gId, gProps] of Object.entries(Ids["guilds"])) {
+      const gOption = document.createElement("option");
+      gOption.value = gId;
+      gOption.textContent = gProps.name;
+      chartGuildId.appendChild(gOption);
+    }
+
+    chartGuildId.addEventListener("change", (e) => {
+      const value = e.target.value;
+
+      chartChannelId.innerHTML = "";
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.selected = true;
+
+      const channels = Ids["guilds"][value]?.channels;
+      if (!channels) {
+        chartChannelId.disabled = true; 
+        opt.disabled = true;
+        opt.textContent = t("chart.preset.channel.locked");
+        chartChannelId.appendChild(opt);
+        return;
+      }
+
+      opt.textContent = t("chart.preset.channel");
+      chartChannelId.appendChild(opt);
+
+      for (const [cId, cProps] of Object.entries(channels)) {
+        const cOption = document.createElement("option");
+        cOption.value = cId;
+        cOption.textContent = cProps.name;
+        chartChannelId.appendChild(cOption);
+      }
+      chartChannelId.disabled = false;
+    });
   }
 
   function closeChart() {

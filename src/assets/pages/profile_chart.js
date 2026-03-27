@@ -59,14 +59,90 @@ function normalizeSeriesPoint(p) {
     bucket,
     sample_content: p.sample_content ?? p.sample ?? null,
     sample_url: p.sample_url ?? p.url ?? null,
-    meta: p.meta ?? null
+    meta: p.meta ?? null,
+    sample_attachments: p.sample_attachments ?? null
   };
+}
+
+function parseAttachments(raw) {
+  if (!raw) return [];
+
+  if (Array.isArray(raw)) {
+    return raw.map(String).filter(Boolean);
+  }
+
+  if (typeof raw !== "string") return [];
+
+  const value = raw.trim();
+  if (!value) return [];
+
+  try {
+    const parsed = JSON.parse(value);
+    if (Array.isArray(parsed)) {
+      return parsed.map(String).filter(Boolean);
+    }
+  } catch {}
+}
+
+function isImageUrl(url) {
+  try {
+    const { pathname } = new URL(url);
+    return /\.(jpg|jpeg|png|gif|webp|bmp|svg|avif)$/i.test(pathname);
+  } catch {
+    return false;
+  }
+}
+
+function replaceImageLinksInHtml(html) {
+  const container = document.createElement("div");
+  container.innerHTML = html;
+
+  const links = container.querySelectorAll("a[href]");
+
+  for (const link of links) {
+    const href = (link.getAttribute("href") || "").trim();
+    const textUrl = (link.textContent || "").trim();
+
+    const candidate = isImageUrl(textUrl) ? textUrl : (isImageUrl(href) ? href : null);
+    if (!candidate) continue;
+
+    const img = document.createElement("img");
+    img.className = "msg-preview__inlineImage";
+    img.src = candidate;
+    img.alt = "Image";
+    img.loading = "lazy";
+
+    link.replaceWith(img);
+  }
+
+  return container.innerHTML;
+}
+
+function renderAttachmentsHtml(attachments) {
+  const imageAttachments = attachments.filter(isImageUrl);
+  if (!imageAttachments.length) return "";
+
+  return `
+    <div class="msg-preview__attachments">
+      ${imageAttachments.map(url => `
+        <img
+          class="msg-preview__attachmentImg"
+          src="${escapeHtml(url)}"
+          alt="Image"
+          loading="lazy"
+        />
+      `).join("")}
+    </div>
+  `;
 }
 
 export function initProfileChart(queueRequest, opts = {}) {
   const canvas = $("#chartCanvas");
   const chartFrom = $("#chartFrom");
   const chartTo = $("#chartTo");
+  const chartGuildId = $("#chartGuildId");
+  const chartChannelId = $("#chartChannelId");
+  const chartContext = $("#chartContext");
   const chartSum = $("#chartSum");
   const chartPreset = $("#chartPreset");
   const chartModal = $("#chartModal");
@@ -187,11 +263,13 @@ export function initProfileChart(queueRequest, opts = {}) {
     const text = String(p?.sample_content ?? "").trim();
     const url = meta.url ?? null;
 
-    const safeText = text || t("chart.preview.no_preview");
+    const attachments = parseAttachments(p?.sample_attachments);
 
-    const bodyHtml = (typeof renderDiscordMarkdownToHtml === "function")
-      ? renderDiscordMarkdownToHtml(safeText)
-      : escapeHtml(safeText).replace(/\n/g, "<br>");
+    const safeText = !text && attachments.length ? "" : text ? text : t("chart.preview.no_preview");
+
+    const rawBodyHtml = renderDiscordMarkdownToHtml(safeText);
+    const bodyHtml = replaceImageLinksInHtml(rawBodyHtml);
+    const attachmentsHtml = renderAttachmentsHtml(attachments);
 
     return `
       <div class="msg-preview__bar">
@@ -217,6 +295,8 @@ export function initProfileChart(queueRequest, opts = {}) {
           <div class="msg-preview__text md">
             ${bodyHtml}
           </div>
+
+          ${attachmentsHtml}
         </div>
       </div>
       
@@ -509,8 +589,12 @@ export function initProfileChart(queueRequest, opts = {}) {
       from: qFrom,
       to: qTo,
       bucket_ms: bucketMs,
-      limit: clamp(Math.floor(widthPx / 3), 160, 500)
+      limit: clamp(Math.floor(widthPx / 3), 160, 500),
+      guild_id: chartGuildId.value,
+      channel_id: chartChannelId.value,
+      context: chartContext.value
     };
+    console.log(payload)
 
     try {
       const rows = await queueRequest(kindForType(), payload, reqOpts);
@@ -575,8 +659,15 @@ export function initProfileChart(queueRequest, opts = {}) {
 
   on(chartFrom, "input", onManualRangeEdit);
   on(chartTo, "input", onManualRangeEdit);
+
   on(chartFrom, "change", onManualRangeEdit);
   on(chartTo, "change", onManualRangeEdit);
+
+  on(chartGuildId, "change", onManualRangeEdit);
+  on(chartChannelId, "change", onManualRangeEdit);
+
+  on(chartContext, "input", () => scheduleRefresh(400));
+  on(chartContext, "change", onManualRangeEdit);
 
   if (hasTip) {
     tip.addEventListener("mouseenter", () => {
@@ -753,7 +844,6 @@ export function initProfileChart(queueRequest, opts = {}) {
 
   document.querySelectorAll("[data-chart-type]").forEach((el) => {
     on(el, "click", (e) => {
-      e.preventDefault();
       e.stopPropagation();
 
       const t = String(el.getAttribute("data-chart-type") || "");
