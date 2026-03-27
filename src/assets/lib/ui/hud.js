@@ -1,4 +1,4 @@
-import { t } from '@/lib/text/i18n.js';
+import { t as tr } from '@/lib/text/i18n.js';
 
 const DOCK_ID = "toast";
 const MAX_ITEMS = 4;
@@ -40,20 +40,21 @@ function textOf(err) {
 
 function prettyErrorMessage(err) {
   const msg = textOf(err);
-  if (!msg) return t("error.unknown");
+  if (!msg) return tr("error.unknown");
 
-  if (msg === "NOT_LOGGED_IN") return t("error.not_logged_in");
-  if (msg === "timeout") return t("error.timeout");
-  if (msg === "RPC_REJECTED_TOO_MANY_TIMES") return t("error.too_many_requests");
+  if (msg === "NOT_LOGGED_IN") return tr("error.not_logged_in");
+  if (msg === "timeout") return tr("error.timeout");
+  if (msg === "RPC_REJECTED_TOO_MANY_TIMES") return tr("error.too_many_requests");
 
   return msg.split("\n")[0].slice(0, 220);
 }
 
 function kindLabel(kind) {
-  if (!kind) return t("loading");
-  if (kind === "messages_series") return t("loading.messages");
-  if (kind === "voice_series") return t("loading.voice");
-  return t("loading");
+  if (!kind) return tr("loading");
+  if (kind === "messages_series") return tr("loading.messages");
+  if (kind === "voice_series") return tr("loading.voice");
+  if (kind === "activities_series") return tr("loading.activity");
+  return tr("loading");
 }
 
 function makeItem({
@@ -82,15 +83,15 @@ function makeItem({
   const body = document.createElement("div");
   body.className = "toast__body";
 
-  const t = document.createElement("div");
-  t.className = "toast__title";
-  t.textContent = title || "";
+  const to = document.createElement("div");
+  to.className = "toast__title";
+  to.textContent = title || "";
 
   const x = document.createElement("div");
   x.className = "toast__text";
   x.textContent = text || "";
 
-  body.appendChild(t);
+  body.appendChild(to);
   if (text) body.appendChild(x);
 
   const meta = document.createElement("div");
@@ -108,7 +109,7 @@ function makeItem({
     close.className = "toast__close";
     close.type = "button";
     close.textContent = "×";
-    close.setAttribute("aria-label", t("common.close"));
+    close.setAttribute("aria-label", tr("common.close"));
     close.addEventListener("click", () => animateOutAndRemove(el));
     meta.appendChild(close);
   }
@@ -117,7 +118,7 @@ function makeItem({
   el.appendChild(body);
   el.appendChild(meta);
 
-  return { el, badge, titleEl: t, textEl: x };
+  return { el, badge, titleEl: to, textEl: x };
 }
 
 function trimDock(dock) {
@@ -199,7 +200,7 @@ export const hud = {
     const dock = ensureDock();
     if (!dock) return;
 
-    const title = ctx.title || t("error");
+    const title = ctx.title || tr("error");
     const text = ctx.text || prettyErrorMessage(err);
     const key = ctx.key || hashKey("error", title, text);
 

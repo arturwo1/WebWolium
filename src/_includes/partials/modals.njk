@@ -19,6 +19,13 @@
 
       <input class="input input--sm" id="chartFrom" type="datetime-local" />
       <input class="input input--sm" id="chartTo" type="datetime-local" />
+      <select class="input input--sm" id="chartGuildId">
+        <option value="" data-i18n="chart.preset.guild" selected></option>
+      </select>
+      <select class="input input--sm" id="chartChannelId" disabled>
+        <option value="" data-i18n="chart.preset.channel.locked" selected disabled></option>
+      </select>
+      <input class="input input--sm" id="chartContext" type="text" data-i18n-attr="placeholder: chart.preset.context" />
 
       <div class="modal__sum" id="chartSum">—</div>
     </div>

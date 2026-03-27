@@ -156,6 +156,12 @@ async function boot() {
       await initCurrentPage(sb, newSession);
     });
   }
+
+  const isFirefox = navigator.userAgent.includes('Firefox');
+
+  if (isFirefox) {
+    document.getElementById('favicon').href = '/favicon-animate.svg';
+  }
 }
 
 if (document.readyState === "loading") {
