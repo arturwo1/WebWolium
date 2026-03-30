@@ -25,6 +25,8 @@ import { initSettingsPage } from "./pages/settings.js";
 import { initPageTransitions } from "@/lib/ui/pageTransitions.js";
 import { initI18n, applyDomI18n, t } from "@/lib/text/i18n.js";
 
+import "highlight.js/styles/github-dark.css";
+
 await initI18n();
 initConsent();
 
