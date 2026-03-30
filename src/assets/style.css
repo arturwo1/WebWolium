@@ -211,8 +211,7 @@ button.input--sm {
 
 .modal__controls input,
 .modal__controls select {
-  flex: 1 1 180px;
-  min-width: 0;
+  flex: 0 0 auto;
 }
 
 input[type="datetime-local"] {
@@ -801,7 +800,7 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   position: fixed;
   inset: 0;
   z-index: 50;
-  padding: 12px;
+  padding: 18px;
   background: rgba(var(--rgb-black), .55);
 
   opacity: 0;
@@ -811,25 +810,21 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   transition:
     opacity .12s ease,
     visibility 0s linear .12s;
-  
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .modal.is-open {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
+
   transition:
     opacity .12s ease,
     visibility 0s linear 0s;
 }
 
 .modal__panel {
-  width: min(980px, 100%);
   max-width: 980px;
-  max-height: calc(100dvh - 24px);
+  max-height: 100%;
   margin: 0 auto;
   border-radius: var(--r-lg);
   border: var(--line);
@@ -841,12 +836,12 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   opacity: 0;
   transform: translateY(6px) scale(.98);
 
+  display: flex;
+  flex-direction: column;
+
   transition:
     opacity .12s ease,
     transform .12s ease;
-
-  display: flex;
-  flex-direction: column;
 }
 
 .modal.is-open .modal__panel {
@@ -861,6 +856,7 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   padding: 12px var(--pad);
   border-bottom: var(--line);
   justify-content: space-between;
+  flex: 0 0 auto;
 }
 
 .modal__title {
@@ -875,8 +871,9 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   border-bottom: var(--line);
   flex-wrap: wrap;
   align-items: center;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
-  -webkit-overflow-scrolling: touch;
 }
 
 .modal__sum {
@@ -886,115 +883,10 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   white-space: nowrap;
 }
 
-@media (max-width: 768px) {
-  .modal {
-    padding: 0;
-    align-items: stretch;
-  }
-
-  .modal__panel {
-    width: 100%;
-    max-width: 100%;
-    max-height: 100dvh;
-    min-height: 100dvh;
-    border-radius: 0;
-    margin: 0;
-  }
-
-  .modal__head {
-    padding: 10px 12px;
-  }
-
-  .modal__title {
-    font-size: 16px;
-    min-width: 0;
-  }
-
-  .modal__controls {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 8px;
-    padding: 10px 12px;
-    align-items: stretch;
-  }
-
-  .modal__controls > * {
-    width: 100%;
-    min-width: 0;
-  }
-
-  .modal__sum {
-    margin-left: 0;
-    order: 99;
-    white-space: normal;
-  }
-
-  .chart {
-    padding: 8px 12px 12px;
-    overflow: hidden;
-  }
-
-  .chart__canvas {
-    height: 280px;
-  }
-
-  .tooltip {
-    left: 8px !important;
-    right: 8px;
-    top: auto !important;
-    bottom: 8px;
-    min-width: 0;
-    max-width: none;
-    width: auto;
-    max-height: 42dvh;
-  }
-
-  .msg-preview__row {
-    gap: 8px;
-  }
-
-  .msg-preview__avatar {
-    width: 32px;
-    height: 32px;
-  }
-
-  .msg-preview__meta {
-    flex-wrap: wrap;
-  }
-
-  .msg-preview__guild,
-  .msg-preview__channel,
-  .msg-preview__author,
-  .msg-preview__time,
-  .prev > header .title,
-  .prev > header .sub,
-  .user-name {
-    min-width: 0;
-    max-width: 100%;
-  }
-
-  input[type="datetime-local"] {
-    min-width: 0;
-    width: 100%;
-  }
-
-  .toast {
-    left: 10px;
-    right: 10px;
-    bottom: 10px;
-    align-items: stretch;
-  }
-
-  .toast__item {
-    width: 100%;
-  }
-}
-
 .chart {
   position: relative;
   padding: 10px var(--pad) 14px;
-  min-height: 0;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
 }
 
 .chart__canvas {
@@ -1004,7 +896,13 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   border-radius: var(--r-md);
   border: var(--line);
   background: rgba(var(--rgb-bg), .65);
+}
+
+#chartCanvas {
   touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .tooltip {

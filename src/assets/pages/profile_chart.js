@@ -82,6 +82,8 @@ function parseAttachments(raw) {
       return parsed.map(String).filter(Boolean);
     }
   } catch {}
+
+  return [];
 }
 
 function isImageUrl(url) {
@@ -136,14 +138,20 @@ function renderAttachmentsHtml(attachments) {
   `;
 }
 
-function isMobileScreen() {
-  return window.matchMedia("(max-width: 768px)").matches;
+function isMousePointerEvent(e) {
+  return !("pointerType" in e) || e.pointerType === "mouse";
 }
 
-function getChartPads() {
-  return window.matchMedia("(max-width: 768px)").matches
-    ? { padL: 44, padR: 10, padT: 10, padB: 28 }
-    : { padL: 70, padR: 18, padT: 16, padB: 42 };
+function getChartLayout(width, height) {
+  const padL = 70, padR = 18, padT = 16, padB = 42;
+  return {
+    padL,
+    padR,
+    padT,
+    padB,
+    plotW: width - padL - padR,
+    plotH: height - padT - padB
+  };
 }
 
 export function initProfileChart(queueRequest, opts = {}) {
@@ -168,6 +176,24 @@ export function initProfileChart(queueRequest, opts = {}) {
 
   const ctx = canvas.getContext("2d");
   let DPR = 1;
+
+  canvas.style.touchAction = "none";
+
+  const hoverMq = window.matchMedia("(hover: hover) and (pointer: fine)");
+
+  const touchState = {
+    mode: null,
+    startX: 0,
+    startY: 0,
+    startMin: 0,
+    startMax: 0,
+    pinchStartDist: 0,
+    pinchStartCenterRatio: 0,
+    pinchAnchorTs: 0,
+    moved: false
+  };
+
+  let lastTouchTs = 0;
 
   const debug = !!opts.debug;
   const defaultDays = Number(opts.defaultDays ?? 30);
@@ -209,6 +235,122 @@ export function initProfileChart(queueRequest, opts = {}) {
   const HIDE_DELAY_FROM_TIP = 20;
 
   let tipHideTimer = null;
+
+  function canHover() {
+    return hoverMq.matches;
+  }
+
+  function xOfTs(ts, layout) {
+    const range = Math.max(1, state.viewMax - state.viewMin);
+    return layout.padL + ((ts - state.viewMin) / range) * layout.plotW;
+  }
+
+  function yOfValue(v, layout) {
+    return layout.padT + (1 - (v / state.yMax)) * layout.plotH;
+  }
+
+  function clampView(newMin, newMax) {
+    const fullMin = state.dataMin;
+    const fullMax = state.dataMax;
+    const fullRange = fullMax - fullMin;
+    const range = newMax - newMin;
+
+    if (range >= fullRange) {
+      return { min: fullMin, max: fullMax };
+    }
+
+    let min = newMin;
+    let max = newMax;
+
+    if (min < fullMin) {
+      min = fullMin;
+      max = min + range;
+    }
+
+    if (max > fullMax) {
+      max = fullMax;
+      min = max - range;
+    }
+
+    return { min, max };
+  }
+
+  function panFromStart(dxPx, widthPx, startMin, startMax) {
+    const dt = -(dxPx / Math.max(1, widthPx)) * (startMax - startMin);
+    const next = clampView(startMin + dt, startMax + dt);
+    state.viewMin = next.min;
+    state.viewMax = next.max;
+  }
+
+  function getTouchDistance(a, b) {
+    return Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+  }
+
+  function getTouchCenter(a, b) {
+    return {
+      x: (a.clientX + b.clientX) / 2,
+      y: (a.clientY + b.clientY) / 2
+    };
+  }
+
+  function getVisibleSeries() {
+    return state.series.filter((p) => p.ts >= state.viewMin && p.ts <= state.viewMax);
+  }
+
+  function getRangeLimits() {
+    const fullRange = Math.max(1, state.dataMax - state.dataMin);
+    return {
+      minRange: Math.min(10_000, fullRange),
+      maxRange: fullRange
+    };
+  }
+
+  function zoomFromValues(startMin, startMax, scale, centerRatio, anchorTs) {
+    const startRange = Math.max(1, startMax - startMin);
+    const { minRange, maxRange } = getRangeLimits();
+
+    let newRange = startRange / Math.max(0.01, scale);
+    newRange = clamp(newRange, minRange, maxRange);
+
+    let newMin = anchorTs - newRange * centerRatio;
+    let newMax = newMin + newRange;
+
+    const next = clampView(newMin, newMax);
+    state.viewMin = next.min;
+    state.viewMax = next.max;
+  }
+
+  function findNearestPoint(mx, my, width, height, radiusPx = 16) {
+    const s = getVisibleSeries();
+    if (!s.length) return null;
+
+    const layout = getChartLayout(width, height);
+
+    let bestIdx = -1;
+    let bestD = Infinity;
+
+    for (let i = 0; i < s.length; i++) {
+      const x = xOfTs(s[i].ts, layout);
+      const y = yOfValue(s[i].y, layout);
+      const d = (x - mx) * (x - mx) + (y - my) * (y - my);
+
+      if (d < bestD) {
+        bestD = d;
+        bestIdx = i;
+      }
+    }
+
+    if (bestIdx < 0 || bestD > radiusPx * radiusPx) return null;
+
+    const point = s[bestIdx];
+
+    return {
+      idx: bestIdx,
+      point,
+      px: xOfTs(point.ts, layout),
+      py: yOfValue(point.y, layout)
+    };
+  }
 
   function scheduleHideTip(ms = 180) {
     if (!hasTip) return;
@@ -271,7 +413,7 @@ export function initProfileChart(queueRequest, opts = {}) {
     const authorAvatar = viewer.avatar ?? null;
 
     const text = String(p?.sample_content ?? "").trim();
-    const url = meta.url ?? null;
+    const url = p?.sample_url ?? meta.url ?? null;
 
     const attachments = parseAttachments(p?.sample_attachments);
 
@@ -359,17 +501,6 @@ export function initProfileChart(queueRequest, opts = {}) {
   function placeTooltipAtPoint(px, py) {
     if (!hasTip) return;
 
-    const isMobile = window.matchMedia("(max-width: 768px)").matches;
-    if (isMobile) {
-      tip.style.left = "8px";
-      tip.style.right = "8px";
-      tip.style.top = "auto";
-      tip.style.bottom = "8px";
-      tip.style.maxHeight = "42dvh";
-      tip.style.overflow = "auto";
-      return;
-    }
-
     const margin = 12;
     const offset = 14;
 
@@ -385,8 +516,6 @@ export function initProfileChart(queueRequest, opts = {}) {
     const maxH = Math.max(140, hostH - margin * 2);
     tip.style.maxHeight = `${Math.floor(maxH)}px`;
     tip.style.overflow = "auto";
-    tip.style.right = "auto";
-    tip.style.bottom = "auto";
 
     const r = tip.getBoundingClientRect();
     const w = r.width || 260;
@@ -474,7 +603,7 @@ export function initProfileChart(queueRequest, opts = {}) {
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     ctx.clearRect(0, 0, W, H);
 
-    const { padL, padR, padT, padB } = getChartPads();
+    const padL = 70, padR = 18, padT = 16, padB = 42;
     const plotW = W - padL - padR;
     const plotH = H - padT - padB;
 
@@ -705,52 +834,29 @@ export function initProfileChart(queueRequest, opts = {}) {
   }
 
   on(canvas, "mouseleave", () => {
+    if (!canHover()) return;
     state.hoverIdx = -1;
     if (hasTip && !tipHover) scheduleHideTip(HIDE_DELAY_FROM_CANVAS);
     drawChart();
   });
 
   on(canvas, "mousemove", (e) => {
-    if (isMobileScreen()) return;
+    if (!canHover() || tipHover || state.dragging) return;
 
     const rect = canvas.getBoundingClientRect();
     if (rect.width < 10 || rect.height < 10) return;
 
-    if (tipHover) return;
+    const hit = findNearestPoint(
+      e.clientX - rect.left,
+      e.clientY - rect.top,
+      rect.width,
+      rect.height,
+      16
+    );
 
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
-
-    const { padL, padR, padT, padB } = getChartPads();
-    const plotW = rect.width - padL - padR;
-    const plotH = rect.height - padT - padB;
-
-    const s = state.series.filter((p) => p.ts >= state.viewMin && p.ts <= state.viewMax);
-    if (!s.length) {
-      state.hoverIdx = -1;
-      if (hasTip && !tipHover) scheduleHideTip(HIDE_DELAY_FROM_CANVAS);
-      drawChart();
-      return;
-    }
-
-    const xOf = (t) => padL + ((t - state.viewMin) / (state.viewMax - state.viewMin)) * plotW;
-    const yOf = (v) => padT + (1 - (v / state.yMax)) * plotH;
-
-    let best = -1;
-    let bestD = 1e18;
-
-    for (let i = 0; i < s.length; i++) {
-      const x = xOf(s[i].ts);
-      const y = yOf(s[i].y);
-      const d = (x - mx) * (x - mx) + (y - my) * (y - my);
-      if (d < bestD) { bestD = d; best = i; }
-    }
-
-    if (best >= 0 && bestD <= 16 * 16) {
-      state.hoverIdx = best;
-      const px = xOf(s[best].ts);
-      const py = yOf(s[best].y);
-      showTooltipForPoint(s[best], px, py);
+    if (hit) {
+      state.hoverIdx = hit.idx;
+      showTooltipForPoint(hit.point, hit.px, hit.py);
     } else {
       state.hoverIdx = -1;
       if (hasTip && !tipHover) scheduleHideTip(HIDE_DELAY_FROM_TIP);
@@ -760,9 +866,11 @@ export function initProfileChart(queueRequest, opts = {}) {
   });
 
   on(canvas, "click", () => {
+    if (!canHover()) return;
+    if (Date.now() - lastTouchTs < 500) return;
     if (state.type !== "messages") return;
 
-    const s = state.series.filter((p) => p.ts >= state.viewMin && p.ts <= state.viewMax);
+    const s = getVisibleSeries();
     if (state.hoverIdx < 0 || state.hoverIdx >= s.length) return;
 
     const point = s[state.hoverIdx];
@@ -794,81 +902,22 @@ export function initProfileChart(queueRequest, opts = {}) {
     const rect = canvas.getBoundingClientRect();
     if (rect.width < 10 || rect.height < 10) return;
 
-    const mx = (e.clientX - rect.left) / rect.width;
-
+    const mx = clamp((e.clientX - rect.left) / rect.width, 0, 1);
     const range = state.viewMax - state.viewMin;
-    const zoom = Math.exp(-e.deltaY * 0.0012);
-    let newRange = range / zoom;
+    const scale = Math.exp(-e.deltaY * 0.0012);
+    const anchorTs = state.viewMin + range * mx;
 
-    const minRange = 10_000;
-    const maxRange = state.dataMax - state.dataMin;
-    newRange = clamp(newRange, minRange, maxRange);
-
-    const center = state.viewMin + range * mx;
-    let newMin = center - newRange * mx;
-    let newMax = newMin + newRange;
-
-    if (newMin < state.dataMin) { newMin = state.dataMin; newMax = newMin + newRange; }
-    if (newMax > state.dataMax) { newMax = state.dataMax; newMin = newMax - newRange; }
-
-    state.viewMin = newMin;
-    state.viewMax = newMax;
+    zoomFromValues(state.viewMin, state.viewMax, scale, mx, anchorTs);
 
     renderWhenVisible();
     scheduleRefetchIfBucketChanged();
   }, { passive: false });
 
   on(canvas, "pointerdown", (e) => {
-    if (!isMobileScreen()) {
-      const full = (state.dataMax - state.dataMin);
-      const cur = (state.viewMax - state.viewMin);
-      if (cur >= full) return;
+    if (!isMousePointerEvent(e)) return;
 
-      state.dragging = true;
-      state.dragStartX = e.clientX;
-      state.dragStartMin = state.viewMin;
-      state.dragStartMax = state.viewMax;
-      canvas.setPointerCapture(e.pointerId);
-      return;
-    }
-
-    const rect = canvas.getBoundingClientRect();
-    if (rect.width < 10 || rect.height < 10) return;
-
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
-
-    const { padL, padR, padT, padB } = getChartPads();
-    const plotW = rect.width - padL - padR;
-    const plotH = rect.height - padT - padB;
-
-    const s = state.series.filter((p) => p.ts >= state.viewMin && p.ts <= state.viewMax);
-    if (!s.length) return;
-
-    const xOf = (t) => padL + ((t - state.viewMin) / (state.viewMax - state.viewMin)) * plotW;
-    const yOf = (v) => padT + (1 - (v / state.yMax)) * plotH;
-
-    let best = -1;
-    let bestD = 1e18;
-
-    for (let i = 0; i < s.length; i++) {
-      const x = xOf(s[i].ts);
-      const y = yOf(s[i].y);
-      const d = (x - mx) * (x - mx) + (y - my) * (y - my);
-      if (d < bestD) {
-        bestD = d;
-        best = i;
-      }
-    }
-
-    if (best >= 0) {
-      state.hoverIdx = best;
-      showTooltipForPoint(s[best], xOf(s[best].ts), yOf(s[best].y));
-      drawChart();
-    }
-
-    const full = (state.dataMax - state.dataMin);
-    const cur = (state.viewMax - state.viewMin);
+    const full = state.dataMax - state.dataMin;
+    const cur = state.viewMax - state.viewMin;
     if (cur >= full) return;
 
     state.dragging = true;
@@ -879,29 +928,187 @@ export function initProfileChart(queueRequest, opts = {}) {
   });
 
   on(canvas, "pointermove", (e) => {
-    if (!state.dragging) return;
+    if (!isMousePointerEvent(e) || !state.dragging) return;
 
     const rect = canvas.getBoundingClientRect();
     if (rect.width < 10 || rect.height < 10) return;
 
     const dx = e.clientX - state.dragStartX;
-    const dt = -(dx / rect.width) * (state.dragStartMax - state.dragStartMin);
-
-    let newMin = state.dragStartMin + dt;
-    let newMax = state.dragStartMax + dt;
-
-    const r = newMax - newMin;
-    if (newMin < state.dataMin) { newMin = state.dataMin; newMax = newMin + r; }
-    if (newMax > state.dataMax) { newMax = state.dataMax; newMin = newMax - r; }
-
-    state.viewMin = newMin;
-    state.viewMax = newMax;
+    panFromStart(dx, rect.width, state.dragStartMin, state.dragStartMax);
 
     renderWhenVisible();
   });
 
-  on(canvas, "pointerup", () => { state.dragging = false; });
-  on(canvas, "pointercancel", () => { state.dragging = false; });
+  on(canvas, "pointerup", (e) => {
+    if (!isMousePointerEvent(e)) return;
+    state.dragging = false;
+    if (canvas.hasPointerCapture?.(e.pointerId)) {
+      canvas.releasePointerCapture(e.pointerId);
+    }
+  });
+
+  on(canvas, "pointercancel", (e) => {
+    if (!isMousePointerEvent(e)) return;
+    state.dragging = false;
+    if (canvas.hasPointerCapture?.(e.pointerId)) {
+      canvas.releasePointerCapture(e.pointerId);
+    }
+  });
+
+  on(canvas, "touchstart", (e) => {
+    lastTouchTs = Date.now();
+    if (!e.touches.length) return;
+
+    e.preventDefault();
+
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      touchState.mode = "pan";
+      touchState.startX = touch.clientX;
+      touchState.startY = touch.clientY;
+      touchState.startMin = state.viewMin;
+      touchState.startMax = state.viewMax;
+      touchState.moved = false;
+      return;
+    }
+
+    const [a, b] = e.touches;
+    const rect = canvas.getBoundingClientRect();
+    const center = getTouchCenter(a, b);
+    const startRange = Math.max(1, state.viewMax - state.viewMin);
+
+    touchState.mode = "pinch";
+    touchState.startMin = state.viewMin;
+    touchState.startMax = state.viewMax;
+    touchState.pinchStartDist = Math.max(1, getTouchDistance(a, b));
+    touchState.pinchStartCenterRatio = clamp((center.x - rect.left) / Math.max(1, rect.width), 0, 1);
+    touchState.pinchAnchorTs = state.viewMin + startRange * touchState.pinchStartCenterRatio;
+    touchState.moved = false;
+
+    if (hasTip) hideTip();
+  }, { passive: false });
+
+  on(canvas, "touchmove", (e) => {
+    lastTouchTs = Date.now();
+    if (!e.touches.length) return;
+
+    e.preventDefault();
+
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width < 10 || rect.height < 10) return;
+
+    if (e.touches.length === 1 && touchState.mode !== "pinch") {
+      const touch = e.touches[0];
+      const dx = touch.clientX - touchState.startX;
+      const dy = touch.clientY - touchState.startY;
+
+      if (!touchState.moved && Math.hypot(dx, dy) >= 10) {
+        touchState.moved = true;
+        if (hasTip) hideTip();
+      }
+
+      if (!touchState.moved) return;
+
+      panFromStart(dx, rect.width, touchState.startMin, touchState.startMax);
+      renderWhenVisible();
+      return;
+    }
+
+    if (e.touches.length >= 2) {
+      const [a, b] = e.touches;
+      const center = getTouchCenter(a, b);
+      const dist = Math.max(1, getTouchDistance(a, b));
+      const centerRatio = clamp((center.x - rect.left) / Math.max(1, rect.width), 0, 1);
+      const scale = dist / Math.max(1, touchState.pinchStartDist);
+
+      touchState.mode = "pinch";
+      touchState.moved = true;
+
+      if (hasTip) hideTip();
+
+      zoomFromValues(
+        touchState.startMin,
+        touchState.startMax,
+        scale,
+        centerRatio,
+        touchState.pinchAnchorTs
+      );
+
+      renderWhenVisible();
+    }
+  }, { passive: false });
+
+  on(canvas, "touchend", (e) => {
+    lastTouchTs = Date.now();
+    e.preventDefault();
+
+    const rect = canvas.getBoundingClientRect();
+
+    if (touchState.mode === "pinch" && e.touches.length < 2) {
+      scheduleRefetchIfBucketChanged(0);
+    }
+
+    if (!e.touches.length) {
+      if (touchState.mode === "pan" && !touchState.moved && e.changedTouches.length) {
+        const touch = e.changedTouches[0];
+
+        const hit = rect.width >= 10
+          ? findNearestPoint(
+              touch.clientX - rect.left,
+              touch.clientY - rect.top,
+              rect.width,
+              rect.height,
+              24
+            )
+          : null;
+
+        if (hit) {
+          state.hoverIdx = hit.idx;
+          showTooltipForPoint(hit.point, hit.px, hit.py);
+        } else {
+          state.hoverIdx = -1;
+          if (hasTip) hideTip();
+        }
+
+        drawChart();
+      }
+
+      touchState.mode = null;
+      touchState.moved = false;
+      return;
+    }
+
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      touchState.mode = "pan";
+      touchState.startX = touch.clientX;
+      touchState.startY = touch.clientY;
+      touchState.startMin = state.viewMin;
+      touchState.startMax = state.viewMax;
+      touchState.moved = true;
+      return;
+    }
+
+    if (e.touches.length >= 2) {
+      const [a, b] = e.touches;
+      const center = getTouchCenter(a, b);
+      const startRange = Math.max(1, state.viewMax - state.viewMin);
+
+      touchState.mode = "pinch";
+      touchState.startMin = state.viewMin;
+      touchState.startMax = state.viewMax;
+      touchState.pinchStartDist = Math.max(1, getTouchDistance(a, b));
+      touchState.pinchStartCenterRatio = clamp((center.x - rect.left) / Math.max(1, rect.width), 0, 1);
+      touchState.pinchAnchorTs = state.viewMin + startRange * touchState.pinchStartCenterRatio;
+      touchState.moved = true;
+    }
+  }, { passive: false });
+
+  on(canvas, "touchcancel", () => {
+    lastTouchTs = Date.now();
+    touchState.mode = null;
+    touchState.moved = false;
+  }, { passive: false });
 
   on(window, "resize", () => {
     if (!chartModal || chartModal.classList.contains("is-open")) renderWhenVisible();
