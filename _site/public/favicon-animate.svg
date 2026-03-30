@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="24" height="24" viewBox="0 0 24 24">
+  <defs>
+    <linearGradient id="grad" x1="0" y1="0" x2="0" y2="24" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="rgb(var(--rgb-white))" stop-opacity="0"/>
+      <stop offset="18%"  stop-color="rgb(var(--rgb-white))" stop-opacity="1"/>
+      <stop offset="78%"  stop-color="rgb(var(--rgb-primary))"   stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="rgb(var(--rgb-primary))"   stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(0,24) scale(1,-1)">
+    <path d="M 3.8 30.7 C 3.9 25.9 4.3 21.1 5.0 17.3 C 5.7 13.9 6.4 10.8 7.3 7.9 C 7.8 6.0 8.3 4.6 8.9 3.6 C 9.2 2.8 9.4 2.0 9.4 -3.8"
+      fill="none" stroke="url(#grad)" stroke-width="0.95" stroke-linecap="round"
+      stroke-dasharray="35.2 105.6" stroke-dashoffset="35.2">
+      <animate id="s1_in" attributeName="stroke-dashoffset" values="35.2;0"   dur="0.45s" begin="0.10s;s1_in.begin+2.5s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1"/>
+      <animate           attributeName="stroke-dashoffset" values="0;-35.2"  dur="0.45s" begin="s1_in.begin+1.4s"         fill="freeze" calcMode="spline" keySplines="0.4 0 0.6 1"/>
+    </path>
+    <path d="M 8.9 -3.8 C 9.1 -0.5 9.6 2.6 10.3 5.5 C 10.9 8.2 11.6 10.5 12.2 12.6 C 12.6 14.0 12.8 15.1 12.9 15.9 C 13.0 17.3 13.0 20.1 12.9 30.7"
+      fill="none" stroke="url(#grad)" stroke-width="0.95" stroke-linecap="round"
+      stroke-dasharray="34.95 104.85" stroke-dashoffset="34.95">
+      <animate id="s2_in" attributeName="stroke-dashoffset" values="34.95;0"  dur="0.45s" begin="0.18s;s2_in.begin+2.5s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1"/>
+      <animate           attributeName="stroke-dashoffset" values="0;-34.95" dur="0.45s" begin="s2_in.begin+1.4s"         fill="freeze" calcMode="spline" keySplines="0.4 0 0.6 1"/>
+    </path>
+    <path d="M 12.9 30.7 C 12.9 26.9 13.1 23.1 13.4 19.7 C 13.8 16.6 14.4 13.8 15.2 11.4 C 15.8 9.0 16.6 7.2 17.4 5.7 C 17.9 4.6 18.2 3.6 18.6 -3.8"
+      fill="none" stroke="url(#grad)" stroke-width="0.95" stroke-linecap="round"
+      stroke-dasharray="35.26 105.78" stroke-dashoffset="35.26">
+      <animate id="s3_in" attributeName="stroke-dashoffset" values="35.26;0"  dur="0.45s" begin="0.14s;s3_in.begin+2.5s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1"/>
+      <animate           attributeName="stroke-dashoffset" values="0;-35.26" dur="0.45s" begin="s3_in.begin+1.4s"         fill="freeze" calcMode="spline" keySplines="0.4 0 0.6 1"/>
+    </path>
+    <path d="M 18.6 -3.8 C 18.8 -0.3 19.2 3.1 19.8 6.5 C 20.4 9.4 20.8 12.6 21.1 15.3 C 21.4 17.4 21.4 19.2 21.5 30.7"
+      fill="none" stroke="url(#grad)" stroke-width="0.95" stroke-linecap="round"
+      stroke-dasharray="34.69 104.07" stroke-dashoffset="34.69">
+      <animate id="s4_in" attributeName="stroke-dashoffset" values="34.69;0"  dur="0.45s" begin="0.22s;s4_in.begin+2.5s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1"/>
+      <animate           attributeName="stroke-dashoffset" values="0;-34.69" dur="0.45s" begin="s4_in.begin+1.4s"         fill="freeze" calcMode="spline" keySplines="0.4 0 0.6 1"/>
+    </path>
+  </g>
+</style></svg>
