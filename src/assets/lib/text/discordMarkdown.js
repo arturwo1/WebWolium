@@ -1,5 +1,6 @@
 import { escapeHtml } from "../security/html.js";
 import { safeLink } from "../security/url.js";
+import hljs from "highlight.js/lib/common";
 
 export function renderDiscordMarkdownToHtml(input) {
   const raw = String(input ?? "").replace(/\r\n?/g, "\n");
@@ -28,12 +29,27 @@ export function renderDiscordMarkdownToHtml(input) {
     return put(escapes, "ESC", ch);
   });
 
-  s = s.replace(/```(?:([a-z0-9_+-]+)\n)?([\s\S]*?)```/gi, (_m, lang, code) => {
+  s = s.replace(/```(?:([a-z0-9_+\-]+)\n)?([\s\S]*?)```/gi, (_m, lang, code) => {
+    const unescaped = code
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'");
+
+    let highlighted;
+    if (lang && hljs.getLanguage(lang)) {
+      highlighted = hljs.highlight(unescaped, { language: lang }).value;
+    } else if (lang) {
+      highlighted = hljs.highlightAuto(unescaped).value;
+    } else {
+      highlighted = escapeHtml(unescaped);
+    }
     const langAttr = lang ? ` data-lang="${lang}"` : "";
     return put(
       blocks,
       "BLOCK",
-      `<pre class="md-pre"${langAttr}><code>${code}</code></pre>`
+      `<pre class="md-pre"${langAttr}><code class="hljs">${highlighted}</code></pre>`
     );
   });
 
@@ -50,6 +66,8 @@ export function renderDiscordMarkdownToHtml(input) {
     const tail = url.slice(cleanUrl.length);
     return `${prefix}${put(links, "LINK", makeLinkHtml(cleanUrl, cleanUrl))}${tail}`;
   });
+
+  s = s.replace(/[*_]{1,3}(\u0000BLOCK\d+\u0000)[*_]{1,3}/g, "$1");
 
   s = s.replace(/\*\*\*([\s\S]+?)\*\*\*/g, `<strong><em>$1</em></strong>`);
   s = s.replace(/___([\s\S]+?)___/g, `<u><em>$1</em></u>`);

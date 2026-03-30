@@ -291,6 +291,14 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   gap: var(--gap);
 }
 
+.sidebar__bottom {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 6px;
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -357,14 +365,6 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 .nav__item.is-active {
   border-color: rgba(var(--rgb-primary), .35);
   box-shadow: 0 0 0 1px rgba(var(--rgb-primary), .10) inset;
-}
-
-.sidebar__bottom {
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding-top: 6px;
 }
 
 .links {
@@ -752,53 +752,10 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   display: none;
 }
 
-@media (max-width: 860px) {
-  .app {
-    grid-template-columns: 1fr;
-  }
-
-  .main {
-    grid-column: 1;
-    padding: 16px;
-  }
-
-  .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: min(86vw, 320px);
-    transform: translateX(-110%);
-    background: var(--c-panel);
-    backdrop-filter: blur(var(--blur));
-    z-index: 30;
-    border-right: var(--line);
-    transition: transform .18s ease;
-  }
-
-  .sidebar.is-open {
-    transform: translateX(0);
-  }
-
-  .overlay.is-on {
-    display: block;
-  }
-
-  .mobile-only {
-    display: inline-flex;
-  }
-}
-
 .stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--gap);
-}
-
-@media (max-width: 860px) {
-  .stats {
-    grid-template-columns: 1fr;
-  }
 }
 
 .stat {
@@ -867,6 +824,7 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 
 .modal__panel {
   max-width: 980px;
+  max-height: 100%;
   margin: 0 auto;
   border-radius: var(--r-lg);
   border: var(--line);
@@ -877,6 +835,9 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 
   opacity: 0;
   transform: translateY(6px) scale(.98);
+
+  display: flex;
+  flex-direction: column;
 
   transition:
     opacity .12s ease,
@@ -895,6 +856,7 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   padding: 12px var(--pad);
   border-bottom: var(--line);
   justify-content: space-between;
+  flex: 0 0 auto;
 }
 
 .modal__title {
@@ -909,6 +871,9 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   border-bottom: var(--line);
   flex-wrap: wrap;
   align-items: center;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
 }
 
 .modal__sum {
@@ -921,6 +886,7 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 .chart {
   position: relative;
   padding: 10px var(--pad) 14px;
+  flex: 0 0 auto;
 }
 
 .chart__canvas {
@@ -932,10 +898,11 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   background: rgba(var(--rgb-bg), .65);
 }
 
-@media (max-width: 860px) {
-  .chart__canvas {
-    height: 360px;
-  }
+#chartCanvas {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .tooltip {
@@ -1104,6 +1071,21 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   font-size: 12px;
   line-height: 1.35;
+}
+
+.md-pre[data-lang]::before {
+  content: attr(data-lang);
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+  color: rgb(var(--rgb-primary));
+  opacity: 0.6;
+  margin-bottom: 6px;
+}
+
+.md-pre .hljs {
+  background: transparent;
+  padding: 0;
 }
 
 .md .prev-link {
@@ -1349,7 +1331,7 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   padding: 10px 12px;
   border-radius: var(--r-md);
   background: var(--c-panel);
-  border: var(--line);
+  border: 1px solid rgba(var(--toast-rgb), .25);
   box-shadow: var(--shadow);
   backdrop-filter: blur(var(--blur));
   display: flex;
@@ -1368,14 +1350,18 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 }
 
 .toast__item--loading {
-  border: var(--ring);
+  --toast-rgb: var(--rgb-primary);
 }
 
 .toast__item--error {
   box-shadow:
     var(--shadow),
     0 0 0 1px rgba(var(--rgb-secondary), .12) inset;
+  --toast-rgb: var(--rgb-dnd);
 }
+
+.toast__item--success { --toast-rgb: var(--rgb-online); }
+.toast__item--info    { --toast-rgb: var(--rgb-secondary); }
 
 .toast__icon {
   width: 18px;
@@ -1393,6 +1379,7 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 }
 
 .toast__title {
+  color: rgb(var(--toast-rgb));
   font-weight: 700;
   font-size: 13px;
   line-height: 1.2;
@@ -1424,16 +1411,18 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 }
 
 .toast__close {
-  width: 26px;
-  height: 26px;
   border-radius: 10px;
   border: var(--line);
   background: var(--c-panel2);
-  color: var(--c-muted);
+  color: rgb(var(--toast-rgb));
   cursor: pointer;
-  display: grid;
   place-items: center;
-  font: 16px/1 system-ui;
+}
+
+.toast__close svg {
+  width: 14px;
+  height: 14px;
+  display: block;
 }
 
 .toast__close:hover {
@@ -1933,6 +1922,51 @@ html.pt-enter-shell.pt-ready .topbar {
   filter: blur(0);
 }
 
+@media (max-width: 860px) {
+  .app {
+    grid-template-columns: 1fr;
+  }
+
+  .main {
+    grid-column: 1;
+    padding: 16px;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: min(86vw, 320px);
+    transform: translateX(-110%);
+    background: var(--c-panel);
+    backdrop-filter: blur(var(--blur));
+    z-index: 30;
+    border-right: var(--line);
+    transition: transform .18s ease;
+  }
+
+  .sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  .overlay.is-on {
+    display: block;
+  }
+
+  .mobile-only {
+    display: inline-flex;
+  }
+
+  .chart__canvas {
+    height: 360px;
+  }
+
+  .stats {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (min-width: 861px) {
   html.pt-enter-shell .sidebar {
     transform: translateX(calc(-1 * var(--pt-sidebar-shift)));
@@ -1955,7 +1989,6 @@ html.pt-enter-shell.pt-ready .topbar {
 }
 
 @media (prefers-reduced-motion: reduce) {
-
   .page-content,
   .topbar,
   .sidebar,

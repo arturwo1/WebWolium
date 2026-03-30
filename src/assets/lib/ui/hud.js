@@ -2,10 +2,8 @@ import { t as tr } from '@/lib/text/i18n.js';
 
 const DOCK_ID = "toast";
 const MAX_ITEMS = 4;
-
-function clamp(n, a, b) {
-  return Math.max(a, Math.min(b, n));
-}
+const ANIM_MS = 220;
+const RECENT_TTL_MS = 10_000;
 
 function ensureDock() {
   if (typeof document === "undefined") return null;
@@ -27,7 +25,7 @@ function animateIn(el) {
 
 function animateOutAndRemove(el) {
   el.classList.remove("is-on");
-  setTimeout(() => el.remove(), 220);
+  setTimeout(() => el.remove(), ANIM_MS);
 }
 
 function textOf(err) {
@@ -41,11 +39,9 @@ function textOf(err) {
 function prettyErrorMessage(err) {
   const msg = textOf(err);
   if (!msg) return tr("error.unknown");
-
   if (msg === "NOT_LOGGED_IN") return tr("error.not_logged_in");
   if (msg === "timeout") return tr("error.timeout");
   if (msg === "RPC_REJECTED_TOO_MANY_TIMES") return tr("error.too_many_requests");
-
   return msg.split("\n")[0].slice(0, 220);
 }
 
@@ -57,58 +53,46 @@ function kindLabel(kind) {
   return tr("loading");
 }
 
-function makeItem({
-  title,
-  text,
-  type = "info",
-  showSpinner = false,
-  count = 1,
-  closable = true
-}) {
+function makeItem({ title, text, type = "info", showSpinner = false, closable = true }) {
   const el = document.createElement("div");
   el.className = `toast__item toast__item--${type}`;
 
   const icon = document.createElement("div");
   icon.className = "toast__icon";
+  icon.setAttribute("aria-hidden", "true");
   if (showSpinner) {
     const sp = document.createElement("span");
     sp.className = "spinner";
-    sp.setAttribute("aria-hidden", "true");
     icon.appendChild(sp);
-  } else {
-    icon.textContent = type === "error" ? "!" : "•";
-    icon.setAttribute("aria-hidden", "true");
   }
 
   const body = document.createElement("div");
   body.className = "toast__body";
 
-  const to = document.createElement("div");
-  to.className = "toast__title";
-  to.textContent = title || "";
+  const titleEl = document.createElement("div");
+  titleEl.className = "toast__title";
+  titleEl.textContent = title || "";
 
-  const x = document.createElement("div");
-  x.className = "toast__text";
-  x.textContent = text || "";
+  const textEl = document.createElement("div");
+  textEl.className = "toast__text";
+  textEl.textContent = text || "";
 
-  body.appendChild(to);
-  if (text) body.appendChild(x);
+  body.appendChild(titleEl);
+  if (text) body.appendChild(textEl);
 
   const meta = document.createElement("div");
   meta.className = "toast__meta";
 
   const badge = document.createElement("div");
   badge.className = "toast__count";
-  badge.textContent = count > 1 ? `×${count}` : "";
-  badge.style.display = count > 1 ? "" : "none";
-
+  badge.style.display = "none";
   meta.appendChild(badge);
 
   if (closable) {
     const close = document.createElement("button");
     close.className = "toast__close";
     close.type = "button";
-    close.textContent = "×";
+    close.innerHTML = '<svg><use href="#close"></use></svg>';
     close.setAttribute("aria-label", tr("common.close"));
     close.addEventListener("click", () => animateOutAndRemove(el));
     meta.appendChild(close);
@@ -118,14 +102,27 @@ function makeItem({
   el.appendChild(body);
   el.appendChild(meta);
 
-  return { el, badge, titleEl: to, textEl: x };
+  return { el, badge, titleEl, textEl };
 }
 
-function trimDock(dock) {
+function trimDock(dock, recent) {
   const items = Array.from(dock.querySelectorAll('.toast__item:not(.toast__item--loading)'));
   while (items.length > MAX_ITEMS) {
     const oldest = items.shift();
-    if (oldest) oldest.remove();
+    if (!oldest) continue;
+    for (const [k, v] of recent) {
+      if (v.el === oldest) { recent.delete(k); break; }
+    }
+    oldest.remove();
+  }
+}
+
+function cleanRecent(recent) {
+  const now = Date.now();
+  for (const [k, v] of recent) {
+    if (now - v.at > RECENT_TTL_MS || !v.el.isConnected) {
+      recent.delete(k);
+    }
   }
 }
 
@@ -133,11 +130,42 @@ function hashKey(type, title, text) {
   return `${type}::${title || ""}::${text || ""}`.toLowerCase();
 }
 
+const loadingStack = [];
+
 const state = {
-  loadingCount: 0,
   loadingEl: null,
   recent: new Map()
 };
+
+function showToast(dock, type, title, text, duration) {
+  const key = hashKey(type, title, text);
+  const now = Date.now();
+
+  cleanRecent(state.recent);
+
+  const prev = state.recent.get(key);
+  if (prev?.el?.isConnected && now - prev.at < 2500) {
+    prev.count += 1;
+    prev.at = now;
+    prev.badge.style.display = "";
+    prev.badge.textContent = `×${prev.count}`;
+    prev.el.classList.remove("is-on");
+    requestAnimationFrame(() => prev.el.classList.add("is-on"));
+    return;
+  }
+
+  const { el, badge } = makeItem({ title, text, type, closable: true });
+  dock.appendChild(el);
+  animateIn(el);
+
+  state.recent.set(key, { el, badge, count: 1, at: now });
+  trimDock(dock, state.recent);
+
+  setTimeout(() => {
+    if (el.isConnected) animateOutAndRemove(el);
+    state.recent.delete(key);
+  }, duration);
+}
 
 export const hud = {
   loading(kindOrLabel = "") {
@@ -148,15 +176,13 @@ export const hud = {
       ? kindOrLabel
       : kindLabel(kindOrLabel);
 
-    state.loadingCount += 1;
+    loadingStack.push(label);
 
     if (!state.loadingEl) {
       const { el, badge, titleEl } = makeItem({
         title: label,
-        text: "",
         type: "loading",
         showSpinner: true,
-        count: state.loadingCount,
         closable: false
       });
       el.classList.add("toast__item--loading");
@@ -167,31 +193,38 @@ export const hud = {
       state.loadingEl.titleEl.textContent = label;
     }
 
-    const updateCount = () => {
-      const c = clamp(state.loadingCount, 0, 99);
+    const updateBadge = () => {
       if (!state.loadingEl) return;
+      const c = loadingStack.length;
       if (c > 1) {
         state.loadingEl.badge.style.display = "";
         state.loadingEl.badge.textContent = `×${c}`;
       } else {
         state.loadingEl.badge.style.display = "none";
-        state.loadingEl.badge.textContent = "";
       }
     };
 
-    updateCount();
+    updateBadge();
 
     let stopped = false;
     return () => {
       if (stopped) return;
       stopped = true;
-      state.loadingCount = Math.max(0, state.loadingCount - 1);
-      if (state.loadingCount === 0 && state.loadingEl) {
-        const el = state.loadingEl.el;
-        state.loadingEl = null;
-        animateOutAndRemove(el);
+
+      const idx = loadingStack.lastIndexOf(label);
+      if (idx !== -1) loadingStack.splice(idx, 1);
+
+      if (loadingStack.length === 0) {
+        if (state.loadingEl) {
+          const el = state.loadingEl.el;
+          state.loadingEl = null;
+          animateOutAndRemove(el);
+        }
       } else {
-        updateCount();
+        if (state.loadingEl) {
+          state.loadingEl.titleEl.textContent = loadingStack[loadingStack.length - 1];
+        }
+        updateBadge();
       }
     };
   },
@@ -199,43 +232,22 @@ export const hud = {
   error(err, ctx = {}) {
     const dock = ensureDock();
     if (!dock) return;
-
     const title = ctx.title || tr("error");
     const text = ctx.text || prettyErrorMessage(err);
-    const key = ctx.key || hashKey("error", title, text);
+    showToast(dock, "error", title, text, 7000);
+  },
 
-    const now = Date.now();
-    const prev = state.recent.get(key);
+  success(text, ctx = {}) {
+    const dock = ensureDock();
+    if (!dock) return;
+    const title = ctx.title || tr("success");
+    showToast(dock, "success", title, text || "", 4000);
+  },
 
-    if (prev && prev.el && now - prev.at < 2500) {
-      prev.count += 1;
-      prev.at = now;
-      if (prev.badge) {
-        prev.badge.style.display = "";
-        prev.badge.textContent = `×${prev.count}`;
-      }
-      prev.el.classList.remove("is-on");
-      requestAnimationFrame(() => prev.el.classList.add("is-on"));
-      return;
-    }
-
-    const { el, badge } = makeItem({
-      title,
-      text,
-      type: "error",
-      showSpinner: false,
-      count: 1,
-      closable: true
-    });
-
-    dock.appendChild(el);
-    animateIn(el);
-
-    state.recent.set(key, { el, badge, count: 1, at: now });
-    trimDock(dock);
-
-    setTimeout(() => {
-      if (el.isConnected) animateOutAndRemove(el);
-    }, 7000);
+  info(text, ctx = {}) {
+    const dock = ensureDock();
+    if (!dock) return;
+    const title = ctx.title || tr("info");
+    showToast(dock, "info", title, text || "", 5000);
   }
 };
