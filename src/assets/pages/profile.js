@@ -214,7 +214,7 @@ export async function initProfilePage(sb) {
   const wr = createWebRequestService(sb, {
     defaultCacheTtlMs: 30_000,
     defaultCooldownMs: 1_500,
-    defaultTimeoutMs: 80_000
+    defaultTimeoutMs: 15_000
   });
 
   const queueChart = wr.makeLatestDebouncedQueue({

@@ -39,7 +39,7 @@ async function rpcCreateWithCooldown(sb, kind, payload, tries = 8) {
   throw new Error("RPC_REJECTED_TOO_MANY_TIMES");
 }
 
-async function waitWebRequestDone(sb, id, timeoutMs = 80_000) {
+async function waitWebRequestDone(sb, id, timeoutMs = 15_000) {
   return await new Promise((resolve, reject) => {
     const channel = sb.channel(`wr:${id}`);
     let finished = false;
@@ -135,7 +135,7 @@ function activeKey(userId, kind, payload) {
 export function createWebRequestService(sb, {
   defaultCacheTtlMs = 30_000,
   defaultCooldownMs = 1_500,
-  defaultTimeoutMs = 80_000,
+  defaultTimeoutMs = 15_000,
   createTries = 8,
   hud = defaultHud
 } = {}) {
