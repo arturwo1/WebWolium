@@ -1,4 +1,4 @@
-const CACHE_NAME = "wolium-v1.231";
+const CACHE_NAME = "wolium-v1.233";
 const CORE_PAGES = [
   "/",
   "/profile/",

@@ -1,5 +1,27 @@
 import { t } from '@/lib/text/i18n.js';
 
+function formatNewsDate(rawDate) {
+  if (!rawDate) return "—";
+
+  const parts = String(rawDate).split("T");
+  const datePart = parts[0];
+  const d = datePart.split("-");
+
+  if (d.length !== 3) return "—";
+
+  const base = `${d[2]}.${d[1]}.${d[0]}`;
+
+  if (parts.length < 2) {
+    return base;
+  }
+
+  const timePart = parts[1]
+    .split("+")[0]
+    .split("Z")[0];
+
+  return `${base} ${timePart}`;
+}
+
 export async function initNewsPage() {
   const pageSize = 7;
   const allowed = {
@@ -30,14 +52,15 @@ export async function initNewsPage() {
     .map((item) => ({
       title: item.title || t("news.card.untitled"),
       url: item.url || "#",
-      date: item.date || "1970-01-01",
-      dateDisplay: item.dateDisplay || "—",
+      date: item.date || "",
+      rawDate: item.rawDate || "",
+      dateDisplay: formatNewsDate(item.rawDate || item.date || ""),
       source: Array.isArray(item.source) ? item.source : [],
       priority: item.priority || "News",
       kind: item.kind || "Other",
       excerpt: item.excerpt || ""
     }))
-    .sort((a, b) => b.date.localeCompare(a.date));
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)));
 
   function toneKey(value) {
     if (value === "WebWolium") return "WebWolium";
@@ -113,7 +136,11 @@ export async function initNewsPage() {
   }
 
   function isInsideTimeRange(itemDate, timeValue) {
-    if (timeValue === "all") return true;
+    if (timeValue === "all" || !itemDate) return true;
+
+    const dateOnly = String(itemDate).split("T")[0];
+    const item = new Date(`${dateOnly}T00:00:00`);
+    if (Number.isNaN(item.getTime())) return false;
 
     const now = new Date();
     now.setHours(23, 59, 59, 999);
@@ -125,7 +152,6 @@ export async function initNewsPage() {
     if (timeValue === "365d") from.setDate(from.getDate() - 365);
     from.setHours(0, 0, 0, 0);
 
-    const item = new Date(`${itemDate}T00:00:00`);
     return item >= from && item <= now;
   }
 
@@ -181,7 +207,7 @@ export async function initNewsPage() {
       listEl.innerHTML = pageItems.map((item) => `
       <article class="card news-card card-hover">
         <div class="news-card__top">
-          <time class="news-card__date" datetime="${escapeHtml(item.date)}">${escapeHtml(item.dateDisplay)}</time>
+          <time class="news-card__date" datetime="${escapeHtml(item.rawDate || item.date)}">${escapeHtml(item.dateDisplay)}</time>
 
           <div class="news-badges" aria-label="${escapeHtml(t("news.meta"))}">
             ${item.source.map(badgeHtml).join("")}
@@ -245,9 +271,9 @@ export async function initNewsPage() {
           count: items.length
         });
 
-        writeStateToUrl(state);
-        syncControls(state);
-      }
+    writeStateToUrl(state);
+    syncControls(state);
+  }
 
   function toggleValue(group, value, state) {
     const current = new Set(state[group]);
