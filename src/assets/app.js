@@ -21,6 +21,7 @@ import {
 import { initProfilePage } from "./pages/profile.js";
 import { initHomePage } from "./pages/index.js";
 import { initSettingsPage } from "./pages/settings.js";
+import { initNewsPage } from "./pages/news.js";
 
 import { initPageTransitions } from "@/lib/ui/pageTransitions.js";
 import { initI18n, applyDomI18n, t } from "@/lib/text/i18n.js";
@@ -98,6 +99,11 @@ async function initCurrentPage(sb, session) {
     if (started.has("settings")) return;
     started.add("settings");
     await initSettingsPage();
+    return;
+  } else if (pid === "news") {
+    if (started.has("news")) return;
+    started.add("news");
+    await initNewsPage();
     return;
   }
 }
