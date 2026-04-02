@@ -136,6 +136,7 @@ function applyDocumentMetaI18n() {
       "profile": "page.title.profile",
       "leaderboard": "page.title.leaderboard",
       "settings": "page.title.settings",
+      "news": "page.title.news",
       "server-edit": "page.title.server_edit",
       "privacy": "page.title.privacy",
       "terms-of-service": "page.title.tos",
@@ -177,7 +178,7 @@ export function onLangChange(fn) {
 
 export function t(key, vars) {
   const raw = dict[key] ?? fallbackDict[key];
-  if (typeof raw === "string") return format(raw, vars);
+  if (typeof raw === "string" && raw !== "") return format(raw, vars);
   return key;
 }
 

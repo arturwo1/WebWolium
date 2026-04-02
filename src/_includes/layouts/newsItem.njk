@@ -1,0 +1,69 @@
+---
+layout: app.njk
+---
+
+{% macro newsLabelKey(value) -%}
+  {%- if value == "WebWolium" -%}WebWolium
+  {%- elif value == "Wolium" -%}Wolium
+  {%- elif value == "Critical" -%}news.priority.critical
+  {%- elif value == "Important" -%}news.priority.important
+  {%- elif value == "News" -%}news.priority.news
+  {%- elif value == "Misc" -%}news.priority.misc
+  {%- elif value == "ChangeLog" -%}news.kind.changelog
+  {%- elif value == "Other" -%}news.kind.other
+  {%- endif -%}
+{%- endmacro %}
+
+<article class="news-entry card section">
+  <header class="news-entry__header">
+    <div class="news-entry__top">
+      <a class="news-link" href="/news/" data-i18n="news.back">← Back to news</a>
+
+      <div class="news-badges news-entry__badges" aria-label="Post meta" data-i18n-attr="aria-label: news.meta">
+        {% set postSource = source or [] %}
+        {% if postSource | length == 0 and source %}
+          {% set postSource = [source] %}
+        {% endif %}
+
+        {% for item in postSource %}
+          {% set itemKey = newsLabelKey(item) %}
+          <span
+            class="news-badge"
+            data-tone="{{ item }}"
+            {% if itemKey %}data-i18n="{{ itemKey }}"{% endif %}
+          >{{ item }}</span>
+        {% endfor %}
+
+        {% set priorityValue = priority or 'News' %}
+        {% set priorityKey = newsLabelKey(priorityValue) %}
+        <span
+          class="news-badge"
+          data-tone="{{ priorityValue }}"
+          {% if priorityKey %}data-i18n="{{ priorityKey }}"{% endif %}
+        >{{ priorityValue }}</span>
+
+        {% set kindValue = kind or 'Other' %}
+        {% set kindKey = newsLabelKey(kindValue) %}
+        <span
+          class="news-badge"
+          data-tone="{{ kindValue }}"
+          {% if kindKey %}data-i18n="{{ kindKey }}"{% endif %}
+        >{{ kindValue }}</span>
+      </div>
+    </div>
+
+    <h1 class="section-title news-entry__title">{{ title }}</h1>
+
+    <time class="news-entry__date" datetime="{{ page.date | date('yyyy-MM-dd') }}">
+      {{ page.date | date('dd.MM.yyyy') }}
+    </time>
+
+    {% if excerpt %}
+      <p class="news-entry__excerpt">{{ excerpt }}</p>
+    {% endif %}
+  </header>
+
+  <section class="news-entry__content md">
+    {{ content | safe }}
+  </section>
+</article>

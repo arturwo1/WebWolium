@@ -1,0 +1,190 @@
+---
+layout: app.njk
+title: Wolium | News
+pageId: news
+permalink: /news/
+---
+
+{% set initialPosts = collections.newsEntry | reverse %}
+
+{% macro newsLabelKey(value) -%}
+  {%- if value == "WebWolium" -%}WebWolium
+  {%- elif value == "Wolium" -%}Wolium
+  {%- elif value == "Critical" -%}news.priority.critical
+  {%- elif value == "Important" -%}news.priority.important
+  {%- elif value == "News" -%}news.priority.news
+  {%- elif value == "Misc" -%}news.priority.misc
+  {%- elif value == "ChangeLog" -%}news.kind.changelog
+  {%- elif value == "Other" -%}news.kind.other
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro newsCard(post) %}
+  {% set postSource = post.data.source or [] %}
+  {% if postSource | length == 0 and post.data.source %}
+    {% set postSource = [post.data.source] %}
+  {% endif %}
+
+  <article class="card news-card card-hover">
+    <header class="news-card__top">
+      <time class="news-card__date" datetime="{{ post.date | date('yyyy-MM-dd') }}">
+        {{ post.date | date('dd.MM.yyyy') }}
+      </time>
+
+      <div class="news-badges" aria-label="Post meta" data-i18n-attr="aria-label: news.meta">
+        {% for item in postSource %}
+          {% set itemKey = newsLabelKey(item) %}
+          <span
+            class="news-badge"
+            data-tone="{{ item }}"
+            {% if itemKey %}data-i18n="{{ itemKey }}"{% endif %}
+          >{{ item }}</span>
+        {% endfor %}
+
+        {% set priorityValue = post.data.priority or 'News' %}
+        {% set priorityKey = newsLabelKey(priorityValue) %}
+        <span
+          class="news-badge"
+          data-tone="{{ priorityValue }}"
+          {% if priorityKey %}data-i18n="{{ priorityKey }}"{% endif %}
+        >{{ priorityValue }}</span>
+
+        {% set kindValue = post.data.kind or 'Other' %}
+        {% set kindKey = newsLabelKey(kindValue) %}
+        <span
+          class="news-badge"
+          data-tone="{{ kindValue }}"
+          {% if kindKey %}data-i18n="{{ kindKey }}"{% endif %}
+        >{{ kindValue }}</span>
+      </div>
+    </header>
+
+    <div class="news-card__body">
+      <h2 class="news-card__title">
+        <a href="{{ post.url }}">{{ post.data.title }}</a>
+      </h2>
+
+      {% if post.data.excerpt %}
+        <p class="news-card__excerpt">{{ post.data.excerpt }}</p>
+      {% endif %}
+    </div>
+
+    <footer class="news-card__actions">
+      <a class="news-link" href="{{ post.url }}" data-i18n="news.card.open">Open</a>
+    </footer>
+  </article>
+{% endmacro %}
+
+<section class="news-page" aria-labelledby="newsPageTitle">
+  <header class="news-page__header">
+    <h1 class="h1" id="newsPageTitle" data-i18n="news">News</h1>
+  </header>
+
+  <form class="card section news-toolbar" aria-label="News filters" data-i18n-attr="aria-label: news.filters.aria" onsubmit="return false;">
+    <div class="news-toolbar__grid">
+      <fieldset class="news-filter-group">
+        <legend class="news-filter-group__title" data-i18n="news.filters.source">Source</legend>
+        <div class="news-chip-row" data-filter-group="source">
+          <button class="news-chip" type="button" data-value="WebWolium">WebWolium</button>
+          <button class="news-chip" type="button" data-value="Wolium">Wolium</button>
+        </div>
+      </fieldset>
+
+      <fieldset class="news-filter-group">
+        <legend class="news-filter-group__title" data-i18n="news.filters.importance">Importance</legend>
+        <div class="news-chip-row" data-filter-group="priority">
+          <button class="news-chip" type="button" data-value="Critical" data-i18n="news.priority.critical">Critical</button>
+          <button class="news-chip" type="button" data-value="Important" data-i18n="news.priority.important">Important</button>
+          <button class="news-chip" type="button" data-value="News" data-i18n="news.priority.news">News</button>
+          <button class="news-chip" type="button" data-value="Misc" data-i18n="news.priority.misc">Misc</button>
+        </div>
+      </fieldset>
+
+      <fieldset class="news-filter-group">
+        <legend class="news-filter-group__title" data-i18n="news.filters.type">Type</legend>
+        <div class="news-chip-row" data-filter-group="kind">
+          <button class="news-chip" type="button" data-value="ChangeLog" data-i18n="news.kind.changelog">ChangeLog</button>
+          <button class="news-chip" type="button" data-value="Other" data-i18n="news.kind.other">Other</button>
+        </div>
+      </fieldset>
+
+      <div class="news-filter-group news-filter-group--time">
+        <label class="news-filter-group__title" for="newsTimeFilter" data-i18n="news.filters.time">Time</label>
+        <select id="newsTimeFilter" class="input input--sm control--full">
+          <option value="all" data-i18n="news.filters.time.all">All time</option>
+          <option value="7d" data-i18n="chart.preset.7d">Last 7 days</option>
+          <option value="30d" data-i18n="chart.preset.30d">Last 30 days</option>
+          <option value="90d" data-i18n="chart.preset.90d">Last 90 days</option>
+          <option value="365d" data-i18n="chart.preset.365d">Last 365 days</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="news-toolbar__bottom">
+      <output class="news-summary" id="newsSummary" data-i18n="news.summary.initial">Showing latest updates.</output>
+      <button class="input--sm" id="newsResetFilters" type="button" data-i18n="news.filters.reset">Reset filters</button>
+    </div>
+  </form>
+
+  <script id="newsDataset" type="application/json">
+    [
+      {% for post in initialPosts %}
+        {% set postSource = post.data.source or [] %}
+        {% if postSource | length == 0 and post.data.source %}
+          {% set postSource = [post.data.source] %}
+        {% endif %}
+        {
+          "title": {{ (post.data.title or "Untitled") | dump | safe }},
+          "url": {{ post.url | dump | safe }},
+          "date": {{ (post.date | date('yyyy-MM-dd')) | dump | safe }},
+          "dateDisplay": {{ (post.date | date('dd.MM.yyyy')) | dump | safe }},
+          "source": {{ postSource | dump | safe }},
+          "priority": {{ (post.data.priority or "News") | dump | safe }},
+          "kind": {{ (post.data.kind or "Other") | dump | safe }},
+          "excerpt": {{ (post.data.excerpt or "") | dump | safe }}
+        }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ]
+  </script>
+
+  <section class="news-list" id="newsList" aria-live="polite">
+    {% for post in initialPosts %}
+      {% if loop.index0 < 7 %}
+        {{ newsCard(post) }}
+      {% endif %}
+    {% endfor %}
+  </section>
+
+  <nav class="section news-pagination" aria-label="News pages" data-i18n-attr="aria-label: news.pagination.aria">
+    <button
+      id="newsPrevPage"
+      type="button"
+      aria-label="Previous page"
+      data-i18n-attr="aria-label: news.pagination.prev"
+    >←</button>
+
+    <div class="news-pagination__center">
+      <span id="newsPageLabel">Page 1 / 1</span>
+
+      <div class="news-page-jump">
+        <label class="news-page-jump__label" for="newsPageInput" data-i18n="news.pagination.goto">Go to</label>
+        <input
+          id="newsPageInput"
+          class="input--sm"
+          type="number"
+          min="1"
+          step="1"
+          inputmode="numeric"
+          value="1"
+        />
+      </div>
+    </div>
+
+    <button
+      id="newsNextPage"
+      type="button"
+      aria-label="Next page"
+      data-i18n-attr="aria-label: news.pagination.next"
+    >→</button>
+  </nav>
+</section>
