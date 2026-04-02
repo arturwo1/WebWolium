@@ -19,17 +19,32 @@ permalink: /news/
   {%- endif -%}
 {%- endmacro %}
 
+{% macro displayRawDate(rawDate) -%}
+  {%- if rawDate -%}
+    {%- set parts = rawDate.split("T") -%}
+    {%- set datePart = parts[0] -%}
+    {%- set d = datePart.split("-") -%}
+    {%- if parts | length > 1 -%}
+      {%- set timePart = parts[1].split("+")[0].split("-")[0].split("Z")[0] -%}
+      {{ d[2] }}.{{ d[1] }}.{{ d[0] }} {{ timePart }}
+    {%- else -%}
+      {{ d[2] }}.{{ d[1] }}.{{ d[0] }}
+    {%- endif -%}
+  {%- else -%}
+    —
+  {%- endif -%}
+{%- endmacro %}
+
 {% macro newsCard(post) %}
   {% set postSource = post.data.source or [] %}
   {% if postSource | length == 0 and post.data.source %}
     {% set postSource = [post.data.source] %}
   {% endif %}
+  {% set rawDate = post.data.date or "" %}
 
   <article class="card news-card card-hover">
     <header class="news-card__top">
-      <time class="news-card__date" datetime="{{ post.date | date('yyyy-MM-dd') }}">
-        {{ post.date | date('dd.MM.yyyy') }}
-      </time>
+      <time class="news-card__date" datetime="{{ rawDate }}">{{ displayRawDate(rawDate) }}</time>
 
       <div class="news-badges" aria-label="Post meta" data-i18n-attr="aria-label: news.meta">
         {% for item in postSource %}
@@ -136,8 +151,8 @@ permalink: /news/
         {
           "title": {{ (post.data.title or "Untitled") | dump | safe }},
           "url": {{ post.url | dump | safe }},
-          "date": {{ (post.date | date('yyyy-MM-dd')) | dump | safe }},
-          "dateDisplay": {{ (post.date | date('dd.MM.yyyy')) | dump | safe }},
+          "date": {{ (post.data.date or "") | dump | safe }},
+          "rawDate": {{ (post.data.date or "") | dump | safe }},
           "source": {{ postSource | dump | safe }},
           "priority": {{ (post.data.priority or "News") | dump | safe }},
           "kind": {{ (post.data.kind or "Other") | dump | safe }},
