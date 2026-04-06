@@ -27,6 +27,12 @@ function hasSpriteSymbol(id) {
   return !!document.getElementById(String(id));
 }
 
+function normalizeChartType(type) {
+  if (type === "voice") return "voice";
+  if (type === "activities") return "activities";
+  return "messages";
+}
+
 const CLIENT_ICON_IDS = {
   desktop: "desktop",
   mobile: "mobile",
@@ -201,15 +207,18 @@ export async function initProfilePage(sb) {
   const chartModal = $("#chartModal");
   const chartClose = $("#chartClose");
   const chartTitleEl = $("#chartTitle");
+  const chartTabs = Array.from(document.querySelectorAll("[data-chart-type]"));
 
   const chartGuildId = $("#chartGuildId");
   const chartChannelId = $("#chartChannelId");
 
   const Ids = {
     guilds: {}
-  }
+  };
 
-  if (!statsRoot || !chartModal || !chartClose || !chartTitleEl) return null;
+  if (!statsRoot || !chartModal || !chartClose || !chartTitleEl || !chartGuildId || !chartChannelId) {
+    return null;
+  }
 
   const wr = createWebRequestService(sb, {
     defaultCacheTtlMs: 30_000,
@@ -223,6 +232,80 @@ export async function initProfilePage(sb) {
   });
 
   let lastProfileResponse = null;
+  let chart = null;
+
+  function syncChartUi(type) {
+    const normalizedType = normalizeChartType(type);
+
+    chartModal.dataset.chartType = normalizedType;
+    setText(chartTitleEl, chartTitle(normalizedType));
+
+    for (const tab of chartTabs) {
+      const isActive = normalizeChartType(tab.dataset.chartType) === normalizedType;
+      tab.classList.toggle("is-active", isActive);
+      tab.setAttribute("aria-selected", isActive ? "true" : "false");
+      tab.setAttribute("tabindex", isActive ? "0" : "-1");
+    }
+  }
+
+  function renderChannelOptions(guildId = "", type = "") {
+    let channels = {};
+    if (type == "voice") {
+      channels = Ids.guilds?.[guildId]?.voice_channels;
+    } else {
+      channels = Ids.guilds?.[guildId]?.text_channels;
+    }
+
+    chartChannelId.innerHTML = "";
+
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.selected = true;
+
+    if (!channels || !Object.keys(channels).length) {
+      defaultOption.disabled = true;
+      defaultOption.textContent = t("chart.preset.channel.locked");
+      chartChannelId.appendChild(defaultOption);
+      chartChannelId.disabled = true;
+      return;
+    }
+
+    defaultOption.textContent = t("chart.preset.channel");
+    chartChannelId.appendChild(defaultOption);
+
+    for (const [channelId, channelProps] of Object.entries(channels)) {
+      const option = document.createElement("option");
+      option.value = channelId;
+      option.textContent = channelProps?.name ?? channelId;
+      chartChannelId.appendChild(option);
+    }
+
+    chartChannelId.disabled = false;
+  }
+
+  function renderGuildOptions(type="") {
+    const currentValue = chartGuildId.value;
+
+    chartGuildId.innerHTML = "";
+
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.textContent = t("chart.preset.guild");
+    chartGuildId.appendChild(defaultOption);
+
+    for (const [guildId, guildProps] of Object.entries(Ids.guilds || {})) {
+      const option = document.createElement("option");
+      option.value = guildId;
+      option.textContent = guildProps?.name ?? guildId;
+      chartGuildId.appendChild(option);
+    }
+
+    if (currentValue && Ids.guilds?.[currentValue]) {
+      chartGuildId.value = currentValue;
+    }
+
+    renderChannelOptions(chartGuildId.value, type);
+  }
 
   async function fillIdentity() {
     const cached = readIdentity();
@@ -240,7 +323,7 @@ export async function initProfilePage(sb) {
 
       setText(profileTag, name);
       if (profilePfp && avatar) profilePfp.src = avatar;
-    } catch { }
+    } catch {}
   }
 
   function renderStats(res) {
@@ -303,17 +386,54 @@ export async function initProfilePage(sb) {
       lsJSONSet(lastKey, { t: Date.now(), res });
       renderStats(res);
 
-      Ids["guilds"] = res?.guilds;
+      Ids.guilds = res?.guilds ?? {};
+      renderGuildOptions(normalizeChartType(chartModal?.dataset?.chartType || "messages"));
 
       return res;
     } catch (e) {
       const saved = lsJSONGet(lastKey, null);
       if (saved?.res) {
         renderStats(saved.res);
+        Ids.guilds = saved.res?.guilds ?? {};
+        renderGuildOptions(normalizeChartType(chartModal?.dataset?.chartType || "messages"));
         return saved.res;
       }
       throw e;
     }
+  }
+
+  function ensureChart() {
+    if (chart) return chart;
+
+    chart = initProfileChart(queueChart, {
+      cacheTtlMs: 30_000,
+      cooldownMs: 1_500,
+      timeoutMs: 80_000,
+      defaultDays: 30,
+      viewer: {
+        name: profileName?.textContent || profileTag?.textContent || t("common.user"),
+        avatar: profilePfp?.src || null
+      },
+      onTypeChange: syncChartUi
+    });
+
+    return chart;
+  }
+
+  function openChart(type) {
+    const normalizedType = normalizeChartType(type);
+
+    syncChartUi(normalizedType);
+    renderGuildOptions(normalizedType);
+    chartChannelId.value = "";
+    setModalOpen(chartModal, true);
+
+    const c = ensureChart();
+    c?.setType(normalizedType);
+  }
+
+  function closeChart() {
+    setModalOpen(chartModal, false);
   }
 
   await fillIdentity();
@@ -336,83 +456,22 @@ export async function initProfilePage(sb) {
     });
   }
 
-  let chart = null;
+  chartGuildId.addEventListener("change", () => {
+    const type = normalizeChartType(chartModal?.dataset?.chartType || "messages");
+    renderChannelOptions(chartGuildId.value, type);
+  });
+
   try {
     await loadStats();
   } catch (e) {
     console.warn("[profile] init failed:", e);
   }
 
-  function ensureChart() {
-    if (chart) return chart;
-    chart = initProfileChart(queueChart, {
-      cacheTtlMs: 30_000,
-      cooldownMs: 1_500,
-      timeoutMs: 80_000,
-      defaultDays: 30,
-      viewer: {
-        name: profileName?.textContent || profileTag?.textContent || t("common.user"),
-        avatar: profilePfp?.src || null
-      }
-    });
-    return chart;
-  }
-
-  function openChart(type) {
-    chartModal.dataset.chartType = type || "messages";
-    setText(chartTitleEl, chartTitle(type));
-    setModalOpen(chartModal, true);
-
-    const existed = !!chart;
-    const c = ensureChart();
-    if (existed) c?.setType(type);
-    else if (type && type !== "messages") c?.setType(type);
-
-    for (const [gId, gProps] of Object.entries(Ids["guilds"])) {
-      const gOption = document.createElement("option");
-      gOption.value = gId;
-      gOption.textContent = gProps.name;
-      chartGuildId.appendChild(gOption);
-    }
-
-    chartGuildId.addEventListener("change", (e) => {
-      const value = e.target.value;
-
-      chartChannelId.innerHTML = "";
-      const opt = document.createElement("option");
-      opt.value = "";
-      opt.selected = true;
-
-      const channels = Ids["guilds"][value]?.channels;
-      if (!channels) {
-        chartChannelId.disabled = true; 
-        opt.disabled = true;
-        opt.textContent = t("chart.preset.channel.locked");
-        chartChannelId.appendChild(opt);
-        return;
-      }
-
-      opt.textContent = t("chart.preset.channel");
-      chartChannelId.appendChild(opt);
-
-      for (const [cId, cProps] of Object.entries(channels)) {
-        const cOption = document.createElement("option");
-        cOption.value = cId;
-        cOption.textContent = cProps.name;
-        chartChannelId.appendChild(cOption);
-      }
-      chartChannelId.disabled = false;
-    });
-  }
-
-  function closeChart() {
-    setModalOpen(chartModal, false);
-  }
-
   statsRoot.addEventListener("click", (e) => {
     const btn = e.target.closest(".stat--link");
     const type = btn?.dataset?.chart;
     if (!type) return;
+
     openChart(type);
   });
 
@@ -421,13 +480,14 @@ export async function initProfilePage(sb) {
     if (e.target === chartModal) closeChart();
   });
 
-  setText(chartTitleEl, t("chart.title"));
+  syncChartUi("messages");
 
   onLangChange(() => {
     const currentType = chartModal?.dataset?.chartType || "messages";
 
     if (chartModal?.classList.contains("is-open")) {
-      setText(chartTitleEl, chartTitle(currentType));
+      syncChartUi(currentType);
+      renderGuildOptions(currentType);
     } else {
       setText(chartTitleEl, t("chart.title"));
     }

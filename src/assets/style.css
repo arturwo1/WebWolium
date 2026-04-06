@@ -873,12 +873,53 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   padding: 12px var(--pad);
   border-bottom: var(--line);
   justify-content: space-between;
+  flex-wrap: wrap;
   flex: 0 0 auto;
 }
 
 .modal__title {
   font-weight: 900;
   font-size: 18px;
+}
+
+.modal__tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border-radius: var(--r-md);
+  border: var(--line);
+  background: var(--c-panel2);
+  margin-left: auto;
+}
+
+.modal__tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--c-muted);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.modal__tab:hover {
+  color: var(--c-text);
+  background: rgba(var(--rgb-primary), .08);
+}
+
+.modal__tab.is-active {
+  color: var(--c-text);
+  background: rgba(var(--rgb-primary), .14);
+}
+
+.modal__context {
+  min-width: min(220px, 100%);
+  flex: 1 1 220px;
 }
 
 .modal__controls {
@@ -888,9 +929,7 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   border-bottom: var(--line);
   flex-wrap: wrap;
   align-items: center;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: auto;
+  flex: 0 0 auto;
 }
 
 .modal__sum {
@@ -908,7 +947,7 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 
 .chart__canvas {
   width: 100%;
-  height: 420px;
+  height: 380px;
   display: block;
   border-radius: var(--r-md);
   border: var(--line);
@@ -1047,6 +1086,40 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   font-weight: 800;
   font-size: 12px;
   color: var(--c-muted);
+}
+
+.prev-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: var(--line);
+  background: var(--c-panel2);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.prev-voice,
+.prev-act {
+  display: grid;
+  gap: 8px;
+}
+
+.prev-act__badges,
+.prev-act__fields,
+.prev-voice__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.prev-act__field {
+  width: 100%;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--c-text);
+  word-break: break-word;
 }
 
 .md strong {
@@ -1328,6 +1401,311 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   text-overflow: ellipsis;
   white-space: nowrap;
   opacity: .95;
+}
+
+.timeline {
+  position: relative;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 0 var(--pad) 14px;
+  max-height: 500px;
+}
+
+#timelineCanvas {
+  display: block;
+  width: 100%;
+  border-radius: var(--r-md);
+  border: var(--line);
+  background: rgba(var(--rgb-bg), .65);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#timelineTip {
+  padding: 0;
+  max-width: 300px;
+  max-height: 460px;
+  overflow-y: auto;
+  pointer-events: none;
+}
+
+#timelineTip.is-on {
+  pointer-events: auto;
+}
+
+.act-tip__card {
+  overflow: hidden;
+}
+
+.act-tip__card+.act-tip__card {
+  border-top: var(--line);
+}
+
+.act-tip__user {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 8px;
+  padding: 12px 12px 0;
+}
+
+.act-tip__pfp-wrap {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.act-tip__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: block;
+  object-fit: cover;
+}
+
+.act-tip__avatar--fallback {
+  background: rgba(var(--rgb-border), 1);
+  border-radius: 50%;
+}
+
+.act-tip__pfp-wrap .presence-badge {
+  width: 16px;
+  height: 16px;
+  right: -1px;
+  bottom: -1px;
+  z-index: 4;
+}
+
+.act-tip__pfp-wrap .presence-badge .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.act-tip__names {
+  min-width: 0;
+}
+
+.act-tip__nick {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--c-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.act-tip__dname {
+  font-size: 11px;
+  color: var(--c-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.act-tip__cs-wrap {
+  grid-column: 1 / -1;
+}
+
+.act-tip__cs {
+  font-size: 11px;
+  color: rgba(var(--rgb-secondary), 0.75);
+  display: block;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.act-tip__cs.is-truncated {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.act-tip__activity {
+  padding: 10px 12px 8px;
+  display: grid;
+  gap: 10px;
+}
+
+.act-tip__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.act-tip__type-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: var(--r-sm);
+  background: var(--c-soft);
+  color: var(--c-text);
+}
+
+.act-tip__media {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  min-width: 0;
+}
+
+.act-tip__media--noimg {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.act-tip__images {
+  margin: 0;
+}
+
+.act-tip__large-wrap {
+  position: relative;
+  width: 76px;
+  height: 76px;
+}
+
+.act-tip__large-img {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--r-sm);
+  display: block;
+  object-fit: cover;
+  background: rgba(var(--rgb-border), 1);
+}
+
+.act-tip__small-wrap {
+  position: absolute;
+  bottom: -5px;
+  right: -5px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--c-bg);
+  background: rgba(var(--rgb-border), 1);
+}
+
+.act-tip__small-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.act-tip__info {
+  min-width: 0;
+  margin: 0;
+}
+
+.act-tip__name {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--c-text);
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.act-tip__field {
+  font-size: 12px;
+  color: var(--c-muted);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.act-tip__field+.act-tip__field {
+  margin-top: 2px;
+}
+
+.act-tip__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.act-tip__btn {
+  display: inline-block;
+  max-width: 100%;
+  padding: 4px 10px;
+  border-radius: var(--r-sm);
+  background: var(--c-soft);
+  color: var(--c-text);
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background .15s;
+}
+
+.act-tip__btn:hover {
+  background: rgba(var(--rgb-primary), .25);
+}
+
+.act-tip__timing {
+  padding: 6px 12px 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(var(--rgb-secondary), .55);
+  border-top: 1px solid rgba(var(--rgb-border), .4);
+}
+
+.act-tip__dur {
+  color: rgba(var(--rgb-secondary), .42);
+  font-weight: 400;
+}
+
+.act-tip__presence-tooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 180px;
+  max-width: 240px;
+  z-index: 120;
+}
+
+.act-tip__pfp-wrap:hover .presence-tooltip:not([hidden]),
+.act-tip__pfp-wrap:focus-within .presence-tooltip:not([hidden]) {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.act-tip__cs:hover,
+.act-tip__cs:focus {
+  display: block;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  overflow: visible;
+}
+
+@media (max-width: 560px) {
+  .act-tip__media {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .act-tip__images {
+    justify-self: start;
+  }
 }
 
 .toast {
@@ -2441,5 +2819,23 @@ html.pt-enter-shell.pt-ready .topbar {
     transform: none !important;
     opacity: 1 !important;
     filter: none !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .modal__tabs {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+    justify-content: stretch;
+  }
+
+  .modal__tab {
+    flex: 1 1 0;
+    justify-content: center;
+  }
+
+  .chart__canvas {
+    height: 320px;
   }
 }

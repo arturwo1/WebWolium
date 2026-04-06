@@ -40,6 +40,22 @@ function niceBucketMs(rangeMs, widthPx) {
   return STEPS[STEPS.length - 1];
 }
 
+function parseJsonObject(value) {
+  if (!value) return null;
+  if (typeof value === "object") return value;
+  if (typeof value !== "string") return null;
+
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  try {
+    const parsed = JSON.parse(trimmed);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 function normalizeSeriesPoint(p) {
   if (!p || typeof p !== "object") return null;
   const ts = Number(p.ts);
@@ -59,7 +75,7 @@ function normalizeSeriesPoint(p) {
     bucket,
     sample_content: p.sample_content ?? p.sample ?? null,
     sample_url: p.sample_url ?? p.url ?? null,
-    meta: p.meta ?? null,
+    meta: parseJsonObject(p.meta) ?? p.meta ?? null,
     sample_attachments: p.sample_attachments ?? null
   };
 }
@@ -165,6 +181,18 @@ export function initProfileChart(queueRequest, opts = {}) {
   const chartPreset = $("#chartPreset");
   const chartModal = $("#chartModal");
 
+  const chartVoiceMinDuration = $("#chartVoiceMinDuration");
+  const chartVoiceMaxDuration = $("#chartVoiceMaxDuration");
+
+  const chartActivityName = $("#chartActivityName");
+  const chartActivityStatus = $("#chartActivityStatus");
+  const chartActivityMinDuration = $("#chartActivityMinDuration");
+  const chartActivityMaxDuration = $("#chartActivityMaxDuration");
+  const chartActivityMore = $("#chartActivityMore");
+  const chartActivityTrack = $("#chartActivityTrack");
+  const chartActivityAlbum = $("#chartActivityAlbum");
+  const chartActivityArtist = $("#chartActivityArtist");
+
   const tip = $("#chartTooltip");
   const tipTime = $("#tipTime");
   const tipVal = $("#tipVal");
@@ -207,6 +235,9 @@ export function initProfileChart(queueRequest, opts = {}) {
     name: opts.viewer?.name ?? t("common.user"),
     avatar: opts.viewer?.avatar ?? null
   };
+  const onTypeChange = typeof opts.onTypeChange === "function"
+    ? opts.onTypeChange
+    : null;
 
   const state = {
     type: "messages",
@@ -235,6 +266,36 @@ export function initProfileChart(queueRequest, opts = {}) {
   const HIDE_DELAY_FROM_TIP = 20;
 
   let tipHideTimer = null;
+
+  let activityMoreOpen = false;
+
+  function toggleHidden(el, hidden) {
+    if (el) el.hidden = !!hidden;
+  }
+
+  function syncFilterUi() {
+    const isMessages = state.type === "messages";
+    const isVoice = state.type === "voice";
+    const isActivities = state.type === "activities";
+
+    toggleHidden(chartGuildId, !(isMessages || isVoice));
+    toggleHidden(chartChannelId, !(isMessages || isVoice));
+    toggleHidden(chartContext, !isMessages);
+
+    toggleHidden(chartVoiceMinDuration, !isVoice);
+    toggleHidden(chartVoiceMaxDuration, !isVoice);
+
+    toggleHidden(chartActivityName, !isActivities);
+    toggleHidden(chartActivityStatus, !isActivities);
+    toggleHidden(chartActivityMinDuration, !isActivities);
+    toggleHidden(chartActivityMaxDuration, !isActivities);
+    toggleHidden(chartActivityMore, !isActivities);
+
+    const showAdvanced = isActivities && activityMoreOpen;
+    toggleHidden(chartActivityTrack, !showAdvanced);
+    toggleHidden(chartActivityAlbum, !showAdvanced);
+    toggleHidden(chartActivityArtist, !showAdvanced);
+  }
 
   function canHover() {
     return hoverMq.matches;
@@ -379,17 +440,196 @@ export function initProfileChart(queueRequest, opts = {}) {
   function line(x1, y1, x2, y2, c) { ctx.strokeStyle = c; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
   function circle(x, y, r, c) { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); }
 
+  function normalizeType(type) {
+    if (type === "voice") return "voice";
+    if (type === "activities") return "activities";
+    return "messages";
+  }
+
+  function applyType(type, { force = false } = {}) {
+    const nextType = normalizeType(type);
+    const changed = nextType !== state.type;
+
+    state.type = nextType;
+    onTypeChange?.(nextType);
+    syncFilterUi();
+
+    if (!changed && !force) return;
+
+    state.viewMin = 0;
+    state.viewMax = 0;
+
+    if (hasTip) hideTip();
+    scheduleRefresh(0);
+  }
+
+  function hasSpriteSymbol(id) {
+    if (!id) return false;
+    return !!document.getElementById(String(id));
+  }
+
+  function statusFromCode(code) {
+    const n = Number(code);
+    if (n === 0) return "online";
+    if (n === 1) return "idle";
+    if (n === 2) return "dnd";
+    if (n === 3) return "offline";
+    return "";
+  }
+
+  function buildPresenceBadgeHtml(status, desktop, mobile, web) {
+    const statusId = String(status || "").trim();
+    if (!statusId || !hasSpriteSymbol(statusId)) return "";
+
+    const rows = [];
+
+    if (desktop && hasSpriteSymbol(desktop) && hasSpriteSymbol("desktop")) {
+      rows.push(`
+        <div class="presence-tooltip__row">
+          <div class="presence-tooltip__left">
+            <svg class="icon presence-tooltip__device" aria-hidden="true" viewBox="0 0 24 24">
+              <use href="#desktop"></use>
+            </svg>
+            <span class="presence-tooltip__label">Desktop</span>
+          </div>
+          <svg class="icon presence-tooltip__status" aria-hidden="true" viewBox="0 0 24 24">
+            <use href="#${desktop}"></use>
+          </svg>
+        </div>
+      `);
+    }
+
+    if (mobile && hasSpriteSymbol(mobile) && hasSpriteSymbol("mobile")) {
+      rows.push(`
+        <div class="presence-tooltip__row">
+          <div class="presence-tooltip__left">
+            <svg class="icon presence-tooltip__device" aria-hidden="true" viewBox="0 0 24 24">
+              <use href="#mobile"></use>
+            </svg>
+            <span class="presence-tooltip__label">Mobile</span>
+          </div>
+          <svg class="icon presence-tooltip__status" aria-hidden="true" viewBox="0 0 24 24">
+            <use href="#${mobile}"></use>
+          </svg>
+        </div>
+      `);
+    }
+
+    if (web && hasSpriteSymbol(web) && hasSpriteSymbol("web")) {
+      rows.push(`
+        <div class="presence-tooltip__row">
+          <div class="presence-tooltip__left">
+            <svg class="icon presence-tooltip__device" aria-hidden="true" viewBox="0 0 24 24">
+              <use href="#web"></use>
+            </svg>
+            <span class="presence-tooltip__label">Web</span>
+          </div>
+          <svg class="icon presence-tooltip__status" aria-hidden="true" viewBox="0 0 24 24">
+            <use href="#${web}"></use>
+          </svg>
+        </div>
+      `);
+    }
+
+    return `
+      <div class="presence-badge" aria-hidden="true">
+        <svg class="icon" viewBox="0 0 24 24">
+          <use href="#${statusId}"></use>
+        </svg>
+      </div>
+
+      ${rows.length ? `
+        <div class="tooltip presence-tooltip act-tip__presence-tooltip" role="tooltip" aria-hidden="true">
+          <div class="presence-tooltip__list">
+            ${rows.join("")}
+          </div>
+        </div>
+      ` : ``}
+    `;
+  }
+
   function kindForType() {
     if (state.type === "voice") return "voice_series";
     if (state.type === "activities") return "activities_series";
     return "messages_series";
   }
 
+  function readPositiveInt(inputEl) {
+    const raw = String(inputEl?.value ?? "").trim();
+    if (!raw) return null;
+
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return null;
+    if (n < 0) return 0;
+
+    return Math.floor(n);
+  }
+
+  function renderActivityStatusOptions() {
+    if (!chartActivityStatus) return;
+
+    const current = chartActivityStatus.value;
+
+    const options = [
+      { value: "", label: t("chart.filter.status.any") },
+      { value: "online", label: t("profile.status.online") },
+      { value: "idle", label: t("profile.status.idle") },
+      { value: "dnd", label: t("profile.status.dnd") },
+      { value: "offline", label: t("profile.status.offline") }
+    ];
+
+    chartActivityStatus.innerHTML = options.map((opt) => `
+      <option value="${escapeHtml(opt.value)}">${escapeHtml(opt.label)}</option>
+    `).join("");
+
+    chartActivityStatus.value = options.some((x) => x.value === current) ? current : "";
+  }
+
+  function buildPayloadForType({ from, to, bucketMs, limit }) {
+    if (state.type === "voice") {
+      return {
+        from,
+        to,
+        bucket_ms: bucketMs,
+        limit,
+        guild_id: chartGuildId?.value || "",
+        channel_id: chartChannelId?.value || "",
+        min_duration_seconds: readPositiveInt(chartVoiceMinDuration),
+        max_duration_seconds: readPositiveInt(chartVoiceMaxDuration)
+      };
+    }
+
+    if (state.type === "activities") {
+      return {
+        from,
+        to,
+        limit,
+        activity_name: chartActivityName?.value || "",
+        status: chartActivityStatus?.value || "",
+        min_duration_seconds: readPositiveInt(chartActivityMinDuration),
+        max_duration_seconds: readPositiveInt(chartActivityMaxDuration),
+        track: chartActivityTrack?.value || "",
+        album: chartActivityAlbum?.value || "",
+        artist: chartActivityArtist?.value || ""
+      };
+    }
+
+    return {
+      from,
+      to,
+      bucket_ms: bucketMs,
+      limit,
+      guild_id: chartGuildId?.value || "",
+      channel_id: chartChannelId?.value || "",
+      context: chartContext?.value || ""
+    };
+  }
+
   function summaryText() {
     if (!state.series.length) {
       return state.type === "messages"
         ? t("chart.summary.messages", { count: 0 })
-        : t("chart.summary.time", { value: "0s" });
+        : t("chart.summary.time", { value: "00:00" });
     }
 
     const sum = state.series.reduce((a, p) => a + (p.y || 0), 0);
@@ -470,8 +710,9 @@ export function initProfileChart(queueRequest, opts = {}) {
 
   function renderVoicePreview(p) {
     const meta = p?.meta ?? {};
-    const guild = meta.guild_id ?? meta.guild ?? t("common.server");
-    const chan = meta.channel_id ?? meta.channel ?? t("chart.type.voice");
+    const guild = meta.guild_name ?? meta.guild_id ?? meta.guild ?? t("common.server");
+    const chan = meta.channel_name ?? meta.channel_id ?? meta.channel ?? t("chart.type.voice");
+
     return `
       <div class="prev-voice">
         <div class="prev-voice__row">
@@ -482,12 +723,269 @@ export function initProfileChart(queueRequest, opts = {}) {
     `;
   }
 
+  function firstNonEmpty(...values) {
+    for (const value of values) {
+      if (value == null) continue;
+      const normalized = String(value).trim();
+      if (normalized) return normalized;
+    }
+    return "";
+  }
+
+  function dedupeStrings(values, { exclude = [] } = {}) {
+    const seen = new Set(
+      exclude
+        .map((x) => String(x ?? "").trim().toLowerCase())
+        .filter(Boolean)
+    );
+
+    const out = [];
+
+    for (const value of values) {
+      const normalized = String(value ?? "").trim();
+      if (!normalized) continue;
+      if (/^https?:\/\//i.test(normalized)) continue;
+
+      const key = normalized.toLowerCase();
+      if (seen.has(key)) continue;
+
+      seen.add(key);
+      out.push(normalized);
+    }
+
+    return out;
+  }
+
+  function activityTypeLabel(value, sourceKind, serviceName) {
+    const raw = String(value ?? "").trim();
+    const service = String(serviceName ?? "").trim().toLowerCase();
+    const source = Number(sourceKind);
+
+    if (!raw) {
+      if (service === "spotify" || source === 1) return "Spotify";
+      return "";
+    }
+
+    const num = Number(raw);
+    if (!Number.isFinite(num)) return raw;
+
+    if (num === 0) return "Playing";
+    if (num === 1) return "Streaming";
+    if (num === 2) return service === "spotify" || source === 1 ? "Spotify" : "Listening";
+    if (num === 3) return "Watching";
+    if (num === 4) return "Custom";
+    if (num === 5) return "Competing";
+
+    return raw;
+  }
+
   function renderActivityPreview(p) {
-    const meta = p?.meta ?? {};
-    const name = meta.name ?? meta.activity ?? t("chart.type.activities");
+    const meta = parseJsonObject(p?.meta) ?? {};
+
+    const activityDef = parseJsonObject(meta?.activity_def) ?? {};
+    const presenceSnapshot = parseJsonObject(meta?.presence_snapshot) ?? {};
+
+    const raw = parseJsonObject(activityDef?.payload) ?? {};
+    const snapshot = parseJsonObject(presenceSnapshot?.payload) ?? {};
+
+    const status = meta.status ?? snapshot.status ?? statusFromCode(presenceSnapshot?.status_code);
+    const desktop = snapshot.desktop_status ?? statusFromCode(presenceSnapshot?.desktop_status_code);
+    const mobile = snapshot.mobile_status ?? statusFromCode(presenceSnapshot?.mobile_status_code);
+    const web = snapshot.web_status ?? statusFromCode(presenceSnapshot?.web_status_code);
+
+    const avatar = snapshot.avatar_url ?? viewer.avatar ?? null;
+
+    const primaryName =
+      snapshot.nickname ??
+      snapshot.display_name ??
+      snapshot.global_name ??
+      snapshot.username ??
+      viewer.name ??
+      "Unknown";
+
+    const secondaryName =
+      snapshot.username ??
+      snapshot.global_name ??
+      viewer.name ??
+      "Unknown";
+
+    const showSecondaryName =
+      secondaryName &&
+      String(secondaryName).trim() &&
+      String(secondaryName).trim() !== String(primaryName).trim();
+
+    const customStatus = snapshot.custom_status?.text ?? null;
+
+    const serviceName = raw.name ?? activityDef.name ?? "Unknown";
+    const sourceKind = raw.source_kind ?? activityDef.source_kind ?? meta.source_kind ?? null;
+    const activityTypeValue = raw.activity_type ?? activityDef.activity_type ?? meta.activity_type ?? null;
+
+    const isSpotify =
+      String(serviceName).toLowerCase() === "spotify" ||
+      Number(sourceKind) === 1 ||
+      raw.spotify_track_id != null ||
+      raw.spotify_track_url != null;
+
+    const badgeLabel = isSpotify
+      ? "Spotify"
+      : activityTypeLabel(activityTypeValue, sourceKind, serviceName);
+
+    const directTrack = firstNonEmpty(meta.track, raw.track, raw.song, raw.spotify_title);
+    const directAlbum = firstNonEmpty(meta.album, raw.album, raw.spotify_album);
+    const directArtist = firstNonEmpty(
+      meta.artist,
+      raw.artist,
+      Array.isArray(raw.spotify_artists)
+        ? raw.spotify_artists.map((x) => String(x ?? "").trim()).filter(Boolean).join(", ")
+        : null
+    );
+
+    const activityName = isSpotify
+      ? firstNonEmpty(directTrack, raw.details, serviceName, "Activity")
+      : firstNonEmpty(meta.name, serviceName, raw.details, "Activity");
+
+    const largeImage =
+      raw.spotify_album_cover_url ??
+      raw.large_image_url ??
+      null;
+
+    const largeText =
+      raw.large_image_text ??
+      raw.spotify_album ??
+      null;
+
+    const smallImage =
+      raw.small_image_url ??
+      null;
+
+    const smallText =
+      raw.small_image_text ??
+      null;
+
+    const artistText = directArtist;
+    const albumText = directAlbum;
+    const stateText = raw.state ?? null;
+    const detailsText = raw.details ?? null;
+
+    const fields = isSpotify
+      ? dedupeStrings(
+          [artistText, albumText],
+          { exclude: [activityName, badgeLabel] }
+        )
+      : dedupeStrings(
+          [detailsText, stateText],
+          { exclude: [activityName, badgeLabel] }
+        );
+
+    const buttons = [];
+
+    if (/^https?:\/\//i.test(String(raw.spotify_track_url ?? "").trim())) {
+      buttons.push({
+        href: String(raw.spotify_track_url).trim(),
+        label: "Spotify"
+      });
+    }
+
+    const startedAt = meta.activity_started_at ?? meta.started_at ?? p?.bucket_start ?? p?.ts;
+    const endedAt = meta.activity_ended_at ?? meta.ended_at ?? p?.bucket_end ?? p?.ts;
+
     return `
-      <div class="prev-act">
-        <div class="prev-body">${escapeHtml(name)}</div>
+      <div class="act-tip__card">
+        <div class="act-tip__user">
+          <div class="act-tip__pfp-wrap">
+            ${avatar
+              ? `<img class="act-tip__avatar" src="${escapeHtml(avatar)}" alt="">`
+              : `<div class="act-tip__avatar act-tip__avatar--fallback"></div>`}
+
+            ${buildPresenceBadgeHtml(status, desktop, mobile, web)}
+          </div>
+
+          <div class="act-tip__names">
+            <div class="act-tip__nick" title="${escapeHtml(primaryName)}">${escapeHtml(primaryName)}</div>
+            ${showSecondaryName
+              ? `<div class="act-tip__dname" title="${escapeHtml(secondaryName)}">${escapeHtml(secondaryName)}</div>`
+              : ``}
+          </div>
+
+          ${customStatus
+            ? `
+              <div class="act-tip__cs-wrap">
+                <div class="act-tip__cs is-truncated" title="${escapeHtml(customStatus)}">${escapeHtml(customStatus)}</div>
+              </div>
+            `
+            : ``}
+        </div>
+
+        <div class="act-tip__activity">
+          ${badgeLabel
+            ? `
+              <div class="act-tip__badges">
+                <div class="act-tip__type-badge">${escapeHtml(badgeLabel)}</div>
+              </div>
+            `
+            : ``}
+
+          <div class="act-tip__media${largeImage ? "" : " act-tip__media--noimg"}">
+            ${largeImage
+              ? `
+                <div class="act-tip__images">
+                  <div class="act-tip__large-wrap">
+                    <img
+                      class="act-tip__large-img"
+                      src="${escapeHtml(largeImage)}"
+                      alt=""
+                      title="${escapeHtml(largeText || activityName)}"
+                      loading="lazy"
+                    />
+
+                    ${smallImage
+                      ? `
+                        <div class="act-tip__small-wrap" title="${escapeHtml(smallText || "")}">
+                          <img
+                            class="act-tip__small-img"
+                            src="${escapeHtml(smallImage)}"
+                            alt=""
+                            loading="lazy"
+                          />
+                        </div>
+                      `
+                      : ``}
+                  </div>
+                </div>
+              `
+              : ``}
+
+            <div class="act-tip__info">
+              <div class="act-tip__name" title="${escapeHtml(activityName)}">${escapeHtml(activityName)}</div>
+
+              ${fields.map((field) => `
+                <div class="act-tip__field" title="${escapeHtml(field)}">${escapeHtml(field)}</div>
+              `).join("")}
+            </div>
+          </div>
+
+          ${buttons.length
+            ? `
+              <div class="act-tip__buttons">
+                ${buttons.map((btn) => `
+                  <a
+                    class="act-tip__btn"
+                    href="${escapeHtml(btn.href)}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >${escapeHtml(btn.label)}</a>
+                `).join("")}
+              </div>
+            `
+            : ``}
+        </div>
+
+        <div class="act-tip__timing">
+          ${escapeHtml(formatTsFull(startedAt))}
+          —
+          ${escapeHtml(formatTsFull(endedAt))}
+          <span class="act-tip__dur">• ${escapeHtml(formatDuration(p?.y || 0))}</span>
+        </div>
       </div>
     `;
   }
@@ -737,15 +1235,12 @@ export function initProfileChart(queueRequest, opts = {}) {
     const bucketMs = niceBucketMs(qTo - qFrom, widthPx);
     state.bucketMs = bucketMs;
 
-    const payload = {
+    const payload = buildPayloadForType({
       from: qFrom,
       to: qTo,
-      bucket_ms: bucketMs,
-      limit: clamp(Math.floor(widthPx / 3), 160, 500),
-      guild_id: chartGuildId.value,
-      channel_id: chartChannelId.value,
-      context: chartContext.value
-    };
+      bucketMs,
+      limit: clamp(Math.floor(widthPx / 3), 160, 500)
+    });
 
     try {
       const rows = await queueRequest(kindForType(), payload, reqOpts);
@@ -819,6 +1314,29 @@ export function initProfileChart(queueRequest, opts = {}) {
 
   on(chartContext, "input", () => scheduleRefresh(400));
   on(chartContext, "change", onManualRangeEdit);
+
+  on(chartVoiceMinDuration, "input", () => scheduleRefresh(300));
+  on(chartVoiceMaxDuration, "input", () => scheduleRefresh(300));
+  on(chartVoiceMinDuration, "change", onManualRangeEdit);
+  on(chartVoiceMaxDuration, "change", onManualRangeEdit);
+
+  on(chartActivityName, "input", () => scheduleRefresh(300));
+  on(chartActivityName, "change", onManualRangeEdit);
+
+  on(chartActivityStatus, "change", onManualRangeEdit);
+
+  on(chartActivityMinDuration, "input", () => scheduleRefresh(300));
+  on(chartActivityMaxDuration, "input", () => scheduleRefresh(300));
+  on(chartActivityMinDuration, "change", onManualRangeEdit);
+  on(chartActivityMaxDuration, "change", onManualRangeEdit);
+
+  on(chartActivityTrack, "input", () => scheduleRefresh(300));
+  on(chartActivityAlbum, "input", () => scheduleRefresh(300));
+  on(chartActivityArtist, "input", () => scheduleRefresh(300));
+
+  on(chartActivityTrack, "change", onManualRangeEdit);
+  on(chartActivityAlbum, "change", onManualRangeEdit);
+  on(chartActivityArtist, "change", onManualRangeEdit);
 
   if (hasTip) {
     tip.addEventListener("mouseenter", () => {
@@ -1114,6 +1632,11 @@ export function initProfileChart(queueRequest, opts = {}) {
     if (!chartModal || chartModal.classList.contains("is-open")) renderWhenVisible();
   });
 
+  on(chartActivityMore, "click", () => {
+    activityMoreOpen = !activityMoreOpen;
+    syncFilterUi();
+  });
+
   if (chartModal) {
     const obs = new MutationObserver(() => {
       if (chartModal.classList.contains("is-open")) renderWhenVisible();
@@ -1125,39 +1648,28 @@ export function initProfileChart(queueRequest, opts = {}) {
     on(el, "click", (e) => {
       e.stopPropagation();
 
-      const t = String(el.getAttribute("data-chart-type") || "");
-      const newType = t === "voice"
-        ? "voice"
-        : t === "activities"
-        ? "activities"
-        : "messages";
-
-      if (newType === state.type) return;
-
-      state.type = newType;
-      state.viewMin = 0;
-      state.viewMax = 0;
-
-      if (hasTip) hideTip();
-      scheduleRefresh(0);
+      const newType = String(el.getAttribute("data-chart-type") || "");
+      applyType(newType);
     });
   });
 
   onLangChange(() => {
+    renderActivityStatusOptions();
+    syncFilterUi();
+
     if (chartSum) chartSum.textContent = summaryText();
     if (state.series.length) renderWhenVisible();
   });
+
+  renderActivityStatusOptions();
+  syncFilterUi();
 
   scheduleRefresh(0);
 
   return {
     refresh: () => scheduleRefresh(0),
-    setType: (t) => {
-      state.type = t === "voice" ? "voice" : t === "activities" ? "activities" : "messages";
-      state.viewMin = 0;
-      state.viewMax = 0;
-      if (hasTip) hideTip();
-      scheduleRefresh(0);
+    setType: (type) => {
+      applyType(type);
     }
   };
 }

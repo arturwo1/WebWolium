@@ -1,7 +1,20 @@
 <div class="modal" id="chartModal" aria-hidden="true">
-  <div class="modal__panel" role="dialog" aria-modal="true">
+  <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="chartTitle">
     <div class="modal__head">
       <div class="modal__title" id="chartTitle" data-i18n="chart.title">Graphic</div>
+
+      <div class="modal__tabs" role="tablist" aria-label="Chart type">
+        <button class="modal__tab is-active" type="button" data-chart-type="messages" role="tab" aria-selected="true" tabindex="0">
+          <span data-i18n="profile.messages">Messages</span>
+        </button>
+        <button class="modal__tab" type="button" data-chart-type="voice" role="tab" aria-selected="false" tabindex="-1">
+          <span data-i18n="profile.voice">Voice</span>
+        </button>
+        <button class="modal__tab" type="button" data-chart-type="activities" role="tab" aria-selected="false" tabindex="-1">
+          <span data-i18n="profile.activities">Activity</span>
+        </button>
+      </div>
+
       <button class="icon-btn" id="chartClose" type="button" aria-label="Close" data-i18n-attr="aria-label: common.close">
         <svg class="icon">
           <use href="#close"></use>
@@ -19,13 +32,30 @@
 
       <input class="input input--sm" id="chartFrom" type="datetime-local" />
       <input class="input input--sm" id="chartTo" type="datetime-local" />
+
       <select class="input input--sm" id="chartGuildId">
-        <option value="" data-i18n="chart.preset.guild" selected></option>
+        <option value="" selected data-i18n="chart.preset.guild">Choose guild</option>
       </select>
+
       <select class="input input--sm" id="chartChannelId" disabled>
-        <option value="" data-i18n="chart.preset.channel.locked" selected disabled></option>
+        <option value="" selected disabled data-i18n="chart.preset.channel.locked">Choose guild firstly</option>
       </select>
-      <input class="input input--sm" id="chartContext" type="text" data-i18n-attr="placeholder: chart.preset.context" />
+
+      <input class="input input--sm modal__context" id="chartContext" type="text"  data-i18n-attr="placeholder: chart.preset.context"/>
+
+      <input class="input input--sm" id="chartVoiceMinDuration" type="number" min="0" step="1" hidden data-i18n-attr="placeholder: chart.filter.min_sec" />
+      <input class="input input--sm" id="chartVoiceMaxDuration" type="number" min="0" step="1" hidden data-i18n-attr="placeholder: chart.filter.max_sec" />
+
+      <input class="input input--sm" id="chartActivityName" type="text" hidden data-i18n-attr="placeholder: chart.filter.activity" />
+      <select class="input input--sm" id="chartActivityStatus" hidden></select>
+      <input class="input input--sm" id="chartActivityMinDuration" type="number" min="0" step="1" hidden data-i18n-attr="placeholder: chart.filter.min_sec" />
+      <input class="input input--sm" id="chartActivityMaxDuration" type="number" min="0" step="1" hidden data-i18n-attr="placeholder: chart.filter.max_sec" />
+
+      <button class="input input--sm" id="chartActivityMore" type="button" hidden data-i18n="chart.filter.media_toggle">Music / media</button>
+
+      <input class="input input--sm" id="chartActivityTrack" type="text" hidden data-i18n-attr="placeholder: chart.filter.track" />
+      <input class="input input--sm" id="chartActivityAlbum" type="text" hidden data-i18n-attr="placeholder: chart.filter.album" />
+      <input class="input input--sm" id="chartActivityArtist" type="text" hidden data-i18n-attr="placeholder: chart.filter.artist" />
 
       <div class="modal__sum" id="chartSum">—</div>
     </div>
