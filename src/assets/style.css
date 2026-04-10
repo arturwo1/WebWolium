@@ -905,6 +905,10 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   color: var(--c-muted);
   font-weight: 800;
   cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .modal__tab:hover {
@@ -929,7 +933,9 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   border-bottom: var(--line);
   flex-wrap: wrap;
   align-items: center;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
 }
 
 .modal__sum {
