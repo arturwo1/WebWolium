@@ -7,7 +7,7 @@ eleventyExcludeFromCollections: true
 {%- set allow = ["/", "/privacy-policy/", "/terms-of-service/", "/rules/"] -%}
 
 {%- for page in collections.all | rejectattr("data.eleventyExcludeFromCollections") -%}
-  {%- if page.url and (page.url in allow) -%}
+  {%- if page.url and (page.data.noindex != true or page.url in allow) -%}
   <url>
     <loc>{{ site.url ~ page.url }}</loc>
     {%- if page.date %}
