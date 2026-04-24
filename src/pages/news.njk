@@ -171,12 +171,11 @@ permalink: /news/
   </section>
 
   <nav class="section news-pagination" aria-label="News pages" data-i18n-attr="aria-label: news.pagination.aria">
-    <button
-      id="newsPrevPage"
-      type="button"
-      aria-label="Previous page"
-      data-i18n-attr="aria-label: news.pagination.prev"
-    >←</button>
+    <button id="newsPrevPage" type="button" aria-label="Previous page" data-i18n-attr="aria-label: news.pagination.prev">
+      <svg class="icon">
+        <use href="#left"></use>
+      </svg>
+    </button>
 
     <div class="news-pagination__center">
       <span id="newsPageLabel">Page 1 / 1</span>
@@ -195,11 +194,10 @@ permalink: /news/
       </div>
     </div>
 
-    <button
-      id="newsNextPage"
-      type="button"
-      aria-label="Next page"
-      data-i18n-attr="aria-label: news.pagination.next"
-    >→</button>
+    <button id="newsNextPage" type="button" aria-label="Next page" data-i18n-attr="aria-label: news.pagination.next">
+      <svg class="icon">
+      <use href="#right"></use>
+    </svg>
+    </button>
   </nav>
 </section>

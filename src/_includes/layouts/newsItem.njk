@@ -33,7 +33,12 @@ layout: app.njk
 <article class="news-entry card section">
   <header class="news-entry__header">
     <div class="news-entry__top">
-      <a class="news-link" href="/news/" data-i18n="news.back">← Back to news</a>
+      <a class="news-link" href="/news/">
+        <svg class="icon">
+          <use href="#left"></use>
+        </svg>
+        <span data-i18n="news.back">Back to news</span>
+      </a>
 
       <div class="news-badges news-entry__badges" aria-label="Post meta" data-i18n-attr="aria-label: news.meta">
         {% set postSource = source or [] %}

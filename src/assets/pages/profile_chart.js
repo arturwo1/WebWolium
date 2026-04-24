@@ -849,17 +849,8 @@ export function initProfileChart(queueRequest, opts = {}) {
       raw.large_image_url ??
       null;
 
-    const largeText =
-      raw.large_image_text ??
-      raw.spotify_album ??
-      null;
-
     const smallImage =
       raw.small_image_url ??
-      null;
-
-    const smallText =
-      raw.small_image_text ??
       null;
 
     const artistText = directArtist;
@@ -886,8 +877,8 @@ export function initProfileChart(queueRequest, opts = {}) {
       });
     }
 
-    const startedAt = meta.activity_started_at ?? meta.started_at ?? p?.bucket_start ?? p?.ts;
-    const endedAt = meta.activity_ended_at ?? meta.ended_at ?? p?.bucket_end ?? p?.ts;
+    const startedAt = meta.started_at ?? p?.bucket_start ?? p?.ts;
+    const endedAt = meta.ended_at ?? p?.bucket_end ?? p?.ts;
 
     return `
       <div class="act-tip__card">
@@ -934,13 +925,12 @@ export function initProfileChart(queueRequest, opts = {}) {
                       class="act-tip__large-img"
                       src="${escapeHtml(largeImage)}"
                       alt=""
-                      title="${escapeHtml(largeText || activityName)}"
                       loading="lazy"
                     />
 
                     ${smallImage
                       ? `
-                        <div class="act-tip__small-wrap" title="${escapeHtml(smallText || "")}">
+                        <div class="act-tip__small-wrap">
                           <img
                             class="act-tip__small-img"
                             src="${escapeHtml(smallImage)}"

@@ -479,6 +479,7 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   gap: 16px;
   margin-top: 10px;
   padding: 6px 0 2px;
+  flex-wrap: wrap;
 }
 
 .badge-row[hidden] {
