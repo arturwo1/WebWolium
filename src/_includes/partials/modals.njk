@@ -1,4 +1,4 @@
-<div class="modal" id="chartModal" aria-hidden="true">
+<div class="modal loading" id="chartModal" aria-hidden="true">
   <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="chartTitle">
     <div class="modal__head">
       <div class="modal__title" id="chartTitle" data-i18n="chart.title">Graphic</div>
@@ -12,6 +12,9 @@
         </button>
         <button class="modal__tab" type="button" data-chart-type="activities" role="tab" aria-selected="false" tabindex="-1">
           <span data-i18n="profile.activities">Activity</span>
+        </button>
+        <button class="modal__tab" type="button" data-chart-type="commands" role="tab" aria-selected="false" tabindex="-1">
+          <span data-i18n="profile.commands">Commands</span>
         </button>
       </div>
 
@@ -42,6 +45,7 @@
       </select>
 
       <input class="input input--sm modal__context" id="chartContext" type="text"  data-i18n-attr="placeholder: chart.preset.context"/>
+      <input class="input input--sm modal__context" id="chartCommandName" type="text"  data-i18n-attr="placeholder: chart.preset.command_name"/>
 
       <input class="input input--sm" id="chartVoiceMinDuration" type="number" min="0" step="1" hidden data-i18n-attr="placeholder: chart.filter.min_sec" />
       <input class="input input--sm" id="chartVoiceMaxDuration" type="number" min="0" step="1" hidden data-i18n-attr="placeholder: chart.filter.max_sec" />
@@ -57,11 +61,11 @@
       <input class="input input--sm" id="chartActivityAlbum" type="text" hidden data-i18n-attr="placeholder: chart.filter.album" />
       <input class="input input--sm" id="chartActivityArtist" type="text" hidden data-i18n-attr="placeholder: chart.filter.artist" />
 
-      <div class="modal__sum" id="chartSum">—</div>
+      <div class="modal__sum skeleton" id="chartSum">—</div>
     </div>
 
     <div class="chart">
-      <canvas class="chart__canvas" id="chartCanvas"></canvas>
+      <canvas class="chart__canvas skeleton" id="chartCanvas"></canvas>
 
       <div class="tooltip" id="chartTooltip">
         <div class="tooltip__time" id="tipTime">—</div>

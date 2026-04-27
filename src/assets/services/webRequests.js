@@ -226,7 +226,7 @@ export function createWebRequestService(sb, {
 
   function makeLatestDebouncedQueue({
     debounceMs = 200,
-    kinds = new Set(["messages_series", "voice_series", "activities_series"])
+    kinds = new Set(["messages_series", "voice_series", "activities_series", "commands_series"])
   } = {}) {
     const timers = new Map();
     const latest = new Map();

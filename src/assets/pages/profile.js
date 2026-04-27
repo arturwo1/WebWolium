@@ -8,6 +8,7 @@ import {
 import { createWebRequestService } from "@/services/index.js";
 import { initProfileChart } from "./profile_chart.js";
 import { t, onLangChange } from "@/lib/text/i18n.js";
+import { hud } from "@/lib/index.js";
 
 function setText(el, value) {
   if (el) el.textContent = String(value ?? "");
@@ -30,6 +31,7 @@ function hasSpriteSymbol(id) {
 function normalizeChartType(type) {
   if (type === "voice") return "voice";
   if (type === "activities") return "activities";
+  if (type === "commands") return "commands";
   return "messages";
 }
 
@@ -68,9 +70,9 @@ function setModalOpen(modal, open) {
 }
 
 function chartTitle(type) {
-  if (type === "messages") return t("chart.type.messages");
-  if (type === "voice") return t("chart.type.voice");
-  if (type === "activities") return t("chart.type.activities");
+  if (type === "messages") return t("profile.messages");
+  if (type === "voice") return t("profile.voice");
+  if (type === "activities") return t("profile.activities");
   return t("chart.title");
 }
 
@@ -181,6 +183,11 @@ function renderBadgeRow(badgeRowEl, badges) {
   badgeRowEl.hidden = false;
 }
 
+function getParam(key) {
+  const params = new URLSearchParams(window.location.search);
+  return (params.get(key) || "").trim();
+}
+
 export async function initProfilePage(sb) {
   const statMessages = $("#statMessages");
   const statVoice = $("#statVoice");
@@ -188,6 +195,7 @@ export async function initProfilePage(sb) {
   const statMoneyTotal = $("#statMoneyTotal");
   const statMoneyBank = $("#statMoneyBank");
   const statMoneyCash = $("#statMoneyCash");
+  const statCommands = $("#statCommands");
   const profileXpLine = $("#profileXpLine");
   const profileXpBar = $("#profileXpBar");
   const profileXpBarContainer = $("#profileXpBarContainer");
@@ -203,6 +211,7 @@ export async function initProfilePage(sb) {
   const profileBadges = $("#profileBadges");
   const profilePfpWrap = profilePresenceBadge?.closest(".pfp-wrap") || null;
 
+  const profileRoot = $("#profileCard");
   const statsRoot = $("#profileStats");
   const chartModal = $("#chartModal");
   const chartClose = $("#chartClose");
@@ -211,6 +220,8 @@ export async function initProfilePage(sb) {
 
   const chartGuildId = $("#chartGuildId");
   const chartChannelId = $("#chartChannelId");
+
+  const userDiscordId = getParam("user_id") || "";
 
   const Ids = {
     guilds: {}
@@ -228,7 +239,7 @@ export async function initProfilePage(sb) {
 
   const queueChart = wr.makeLatestDebouncedQueue({
     debounceMs: 200,
-    kinds: new Set(["messages_series", "voice_series", "activities_series"])
+    kinds: new Set(["messages_series", "voice_series", "activities_series", "commands_series"]),
   });
 
   let lastProfileResponse = null;
@@ -308,6 +319,7 @@ export async function initProfilePage(sb) {
   }
 
   async function fillIdentity() {
+    if (userDiscordId) return;
     const cached = readIdentity();
     if (cached?.name) setText(profileTag, cached.name);
     if (profilePfp && cached?.avatar) profilePfp.src = cached.avatar;
@@ -336,6 +348,8 @@ export async function initProfilePage(sb) {
     setText(statMoneyTotal, formatMoneyEUR(res?.total_balance ?? 0));
     setText(statMoneyBank, formatMoneyEUR(res?.bank_balance ?? 0));
     setText(statMoneyCash, formatMoneyEUR(res?.balance ?? 0));
+
+    setText(statCommands, res?.user_commands ?? 0);
 
     setText(profileXpLine, t("profile.xp_line", {
       now: res?.xp_now ?? 0,
@@ -369,15 +383,28 @@ export async function initProfilePage(sb) {
     });
 
     renderBadgeRow(profileBadges, res?.badges);
+
+    profileRoot.classList.remove("loading");
+    statsRoot.classList.remove("loading");
+
+    if (userDiscordId) {
+      document.querySelectorAll('.stat.stat--link').forEach(btn => {
+        const div = document.createElement('div');
+        div.className = btn.className.replace('stat--link', '');
+        div.innerHTML = btn.innerHTML;
+        btn.replaceWith(div);
+      });
+      setText(profileTag, res?.display_name ?? t("profile.unknown_name"));
+    }
   }
 
   async function loadStats() {
     const { data } = await sb.auth.getSession();
-    const userId = data?.session?.user?.id || "anon";
+    const userId = data?.session?.user?.id || userDiscordId || "anon";
     const lastKey = `wolium:last_profile_stats:${userId}`;
 
     try {
-      const res = await wr.queue("profile_stats", {}, {
+      const res = await wr.queue("profile_stats", {"user_id": userDiscordId}, {
         cacheTtlMs: 30_000,
         cooldownMs: 1_500,
         timeoutMs: 80_000
@@ -386,6 +413,12 @@ export async function initProfilePage(sb) {
       lsJSONSet(lastKey, { t: Date.now(), res });
       renderStats(res);
 
+      if (res?.error) {
+        console.error("[profile] stats load error:", res?.error);
+        hud.error(res?.error, {title: t("profile.stats_load_error")});
+      }
+
+      if (userDiscordId) return res;
       Ids.guilds = res?.guilds ?? {};
       renderGuildOptions(normalizeChartType(chartModal?.dataset?.chartType || "messages"));
 
@@ -394,6 +427,7 @@ export async function initProfilePage(sb) {
       const saved = lsJSONGet(lastKey, null);
       if (saved?.res) {
         renderStats(saved.res);
+        if (userDiscordId) return saved.res;
         Ids.guilds = saved.res?.guilds ?? {};
         renderGuildOptions(normalizeChartType(chartModal?.dataset?.chartType || "messages"));
         return saved.res;

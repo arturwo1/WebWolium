@@ -1,0 +1,70 @@
+---
+title: Wolium | Offline
+pageId: offline
+permalink: /offline/
+noindex: true
+---
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  {# ---- defaults ---- #}
+  {% set siteName = "Wolium" %}
+  {% set siteUrl = "https://Wolium.netlify.app" %}
+  {% set siteDesc = "A website where you can easily edit and track everything in this discord bot!" %}
+  {% set siteKeywords = "Wolium, arturwol, bot, discord" %}
+  {% set siteAuthor = "arturwol" %}
+  {% set siteLocale = "en_US" %}
+  {% set siteTheme = "#23272a" %}
+  {% set siteIcon = "/images/Wolium.webp" %}
+  {% set siteTwitter = "@artnrwol" %}
+
+  {% set pageTitle = siteName %}
+  {% if title %}
+    {% set pageTitle = title %}
+  {% else %}
+    {% set pageTitle = Wolium %}
+  {% endif %}
+
+  {% set pageDesc = description or siteDesc %}
+
+  {% set pagePath = "/" %}
+  {% if page and page.url %}
+    {% set pagePath = page.url %}
+  {% endif %}
+
+  {% set pageUrl = canonical or (siteUrl ~ pagePath) %}
+
+  {{ icons | safe }}
+
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<div class="gate" id="offlineGate" hidden>
+  <div class="gate__stack">
+    <div class="gate__card">
+      <svg class="gate__logo">
+        <use href="#wolium-animate"></use>
+      </svg>
+      <div class="gate__title" data-i18n="gate.offline">You're offline</div>
+      <div class="gate__text" data-i18n="gate.offline.reason">No connection and no cached version for this page.</div>
+      <button class="btn btn--primary" onclick="location.href = new URLSearchParams(location.search).get('from') || '/'" data-i18n="gate.offline.reload">Reload</button>
+      <button class="btn btn--primary" onclick="location.href = new URLSearchParams(location.search).get('to') || '/'" data-i18n="gate.offline.return">Return</button>
+    </div>
+  </div>
+</div>
+<script>
+  function nextFrame(fn) {
+    requestAnimationFrame(() => requestAnimationFrame(fn));
+  }
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const gate = $("#offlineGate");
+  gate.removeAttribute("hidden");
+  gate.classList.add("is-mounted");
+  gate.classList.remove("is-leaving");
+  nextFrame(() => {
+    gate.classList.add("is-visible");
+  });
+</script>
+</html>

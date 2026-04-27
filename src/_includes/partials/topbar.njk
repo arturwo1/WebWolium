@@ -21,10 +21,12 @@
 
   <div class="spacer"></div>
 
+  <input type="text" class="input input--sm" id="userSearch" placeholder="Enter nickname or user ID" data-i18n-attr="placeholder: search.user"/>
+
   <button class="pill" id="btnLogin" type="button" data-i18n="login.discord">Log In with Discord</button>
 
-  <div class="user" id="userBox" hidden>
-    <button class="avatar" id="btnAvatar" type="button" aria-haspopup="menu" aria-expanded="false">
+  <div class="user loading" id="userBox" hidden>
+    <button class="avatar skeleton" id="btnAvatar" type="button" aria-haspopup="menu" aria-expanded="false">
       <img alt="User avatar" id="userAvatarImg" src="https://cdn.discordapp.com/embed/avatars/0.png" data-i18n-attr="alt: user.avatar_alt" />
     </button>
 

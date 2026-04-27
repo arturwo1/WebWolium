@@ -76,7 +76,9 @@ function normalizeSeriesPoint(p) {
     sample_content: p.sample_content ?? p.sample ?? null,
     sample_url: p.sample_url ?? p.url ?? null,
     meta: parseJsonObject(p.meta) ?? p.meta ?? null,
-    sample_attachments: p.sample_attachments ?? null
+    sample_attachments: p.sample_attachments ?? null,
+    sample_command_name: p.sample_command_name ?? null,
+    sample_args: p.sample_args ?? null
   };
 }
 
@@ -170,6 +172,19 @@ function getChartLayout(width, height) {
   };
 }
 
+function formatArgsInline(obj) {
+  return Object.entries(obj)
+    .map(([key, value]) => {
+      return `
+        <span class="arg-pair">
+          <strong class="arg-key">${escapeHtml(key)}</strong>
+          <code class="arg-value">${escapeHtml(String(value))}</code>
+        </span>
+      `;
+    })
+    .join(" ");
+}
+
 export function initProfileChart(queueRequest, opts = {}) {
   const canvas = $("#chartCanvas");
   const chartFrom = $("#chartFrom");
@@ -180,6 +195,7 @@ export function initProfileChart(queueRequest, opts = {}) {
   const chartSum = $("#chartSum");
   const chartPreset = $("#chartPreset");
   const chartModal = $("#chartModal");
+  const chartCommandName = $("#chartCommandName");
 
   const chartVoiceMinDuration = $("#chartVoiceMinDuration");
   const chartVoiceMaxDuration = $("#chartVoiceMaxDuration");
@@ -277,9 +293,10 @@ export function initProfileChart(queueRequest, opts = {}) {
     const isMessages = state.type === "messages";
     const isVoice = state.type === "voice";
     const isActivities = state.type === "activities";
+    const isCommands = state.type === "commands";
 
-    toggleHidden(chartGuildId, !(isMessages || isVoice));
-    toggleHidden(chartChannelId, !(isMessages || isVoice));
+    toggleHidden(chartGuildId, !(isMessages || isVoice || isCommands));
+    toggleHidden(chartChannelId, !(isMessages || isVoice || isCommands));
     toggleHidden(chartContext, !isMessages);
 
     toggleHidden(chartVoiceMinDuration, !isVoice);
@@ -295,6 +312,8 @@ export function initProfileChart(queueRequest, opts = {}) {
     toggleHidden(chartActivityTrack, !showAdvanced);
     toggleHidden(chartActivityAlbum, !showAdvanced);
     toggleHidden(chartActivityArtist, !showAdvanced);
+
+    toggleHidden(chartCommandName, !isCommands);
   }
 
   function canHover() {
@@ -443,6 +462,7 @@ export function initProfileChart(queueRequest, opts = {}) {
   function normalizeType(type) {
     if (type === "voice") return "voice";
     if (type === "activities") return "activities";
+    if (type === "commands") return "commands";
     return "messages";
   }
 
@@ -551,6 +571,7 @@ export function initProfileChart(queueRequest, opts = {}) {
   function kindForType() {
     if (state.type === "voice") return "voice_series";
     if (state.type === "activities") return "activities_series";
+    if (state.type === "commands") return "commands_series";
     return "messages_series";
   }
 
@@ -614,6 +635,18 @@ export function initProfileChart(queueRequest, opts = {}) {
       };
     }
 
+    if (state.type === "commands") {
+      return {
+        from,
+        to,
+        bucket_ms: bucketMs,
+        limit,
+        guild_id: chartGuildId?.value || "",
+        channel_id: chartChannelId?.value || "",
+        command_name: chartCommandName?.value || ""
+      };
+    }
+
     return {
       from,
       to,
@@ -629,13 +662,18 @@ export function initProfileChart(queueRequest, opts = {}) {
     if (!state.series.length) {
       return state.type === "messages"
         ? t("chart.summary.messages", { count: 0 })
-        : t("chart.summary.time", { value: "00:00" });
+        : state.type === "voice" || state.type === "activities" ? t("chart.summary.time", { value: "00:00" })
+        : t("chart.summary.commands", { count: 0 });
     }
 
     const sum = state.series.reduce((a, p) => a + (p.y || 0), 0);
 
     if (state.type === "messages") {
       return t("chart.summary.messages", { count: Math.round(sum) });
+    }
+
+    if (state.type === "commands") {
+      return t("chart.summary.commands", { count: Math.round(sum) });
     }
 
     return t("chart.summary.time", { value: formatDuration(sum) });
@@ -711,7 +749,7 @@ export function initProfileChart(queueRequest, opts = {}) {
   function renderVoicePreview(p) {
     const meta = p?.meta ?? {};
     const guild = meta.guild_name ?? meta.guild_id ?? meta.guild ?? t("common.server");
-    const chan = meta.channel_name ?? meta.channel_id ?? meta.channel ?? t("chart.type.voice");
+    const chan = meta.channel_name ?? meta.channel_id ?? meta.channel ?? t("profile.voice");
 
     return `
       <div class="prev-voice">
@@ -980,6 +1018,64 @@ export function initProfileChart(queueRequest, opts = {}) {
     `;
   }
 
+  function renderCommandsPreview(p) {
+    const meta = p?.meta ?? {};
+
+    const guildName = meta.guild_name ?? t("common.server");
+    const channelName = meta.channel_name ?? t("common.channel");
+
+    const ts = meta.created_at ?? meta.timestamp ?? null;
+
+    const authorName = viewer.name ?? t("common.user");
+    const authorAvatar = viewer.avatar ?? null;
+
+    const command_name = "/" + (p?.sample_command_name ?? "unknown");
+
+    let raw = p?.sample_args;
+
+    if (typeof raw === "string") {
+      try {
+        raw = JSON.parse(raw);
+      } catch {
+        raw = null;
+      }
+    }
+
+    const args = (raw && typeof raw === "object" && Object.keys(raw).length > 0) ? formatArgsInline(raw) : `<span class="muted">${escapeHtml(t("common.args"))}</span>`;
+
+    return `
+      <div class="msg-preview__bar">
+        <span class="msg-preview__dot" aria-hidden="true"></span>
+        <div class="msg-preview__guild" title="${escapeHtml(guildName)}">${escapeHtml(guildName)}</div>
+        <div class="msg-preview__channel" title="#${escapeHtml(channelName)}">${escapeHtml(channelName)}</div>
+      </div>
+
+      <div class="msg-preview__row">
+        <div class="msg-preview__avatar" aria-hidden="true">
+          ${authorAvatar
+            ? `<img class="msg-preview__avatarImg" src="${escapeHtml(authorAvatar)}" alt="" loading="lazy" />`
+            : `<span class="msg-preview__avatarFallback">${escapeHtml((authorName[0] || "U").toUpperCase())}</span>`
+          }
+        </div>
+
+        <div class="msg-preview__content">
+          <div class="msg-preview__meta">
+            <span class="msg-preview__author">${escapeHtml(authorName)}</span>
+            ${ts ? `<span class="msg-preview__time">${escapeHtml(formatDiscordTime(ts))}</span>` : ``}
+          </div>
+
+          <div class="msg-preview__text md">
+            ${(raw && typeof raw === "object" && Object.keys(raw).length > 0) ? `<span class="msg-preview__kbd js-preview-click">${command_name}</span>` : ``}
+            <span>${args}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="msg-preview__hint">
+        <span class="msg-preview__kbd js-preview-click">${command_name}</span>
+      </div>`;
+  }
+
   function hideTip() {
     if (!hasTip) return;
     tip.classList.remove("is-on");
@@ -1037,14 +1133,17 @@ export function initProfileChart(queueRequest, opts = {}) {
       : formatTsFull(p.ts);
 
     if (state.type === "messages") {
-      tipVal.textContent = `${t("chart.tooltip.messages")}: ${Math.round(p.y)}`;
+      tipVal.textContent = `${t("profile.messages")}: ${Math.round(p.y)}`;
       tipPreview.innerHTML = renderMessagePreview(p);
     } else if (state.type === "voice") {
-      tipVal.textContent = `${t("chart.tooltip.voice")}: ${formatDuration(p.y || 0)}`;
+      tipVal.textContent = `${t("profile.voice")}: ${formatDuration(p.y || 0)}`;
       tipPreview.innerHTML = renderVoicePreview(p);
-    } else {
-      tipVal.textContent = `${t("chart.tooltip.time")}: ${formatDuration(p.y || 0)}`;
+    } else if (state.type === "activities") {
+      tipVal.textContent = `${t("profile.time")}: ${formatDuration(p.y || 0)}`;
       tipPreview.innerHTML = renderActivityPreview(p);
+    } else if (state.type === "commands") {
+      tipVal.textContent = `${t("profile.commands")}: ${Math.round(p.y)}`;
+      tipPreview.innerHTML = renderCommandsPreview(p);
     }
 
     tipPoint = p;
@@ -1199,6 +1298,7 @@ export function initProfileChart(queueRequest, opts = {}) {
   }
 
   async function refreshChartDataAndRender() {
+    chartModal.classList.add("loading");
     const mySeq = ++reqSeq;
 
     const vFrom = parseLocalInput(chartFrom.value);
@@ -1237,6 +1337,7 @@ export function initProfileChart(queueRequest, opts = {}) {
       if (mySeq !== reqSeq) return;
 
       const arr = Array.isArray(rows) ? rows : [];
+      
       state.series = arr.map(normalizeSeriesPoint).filter(Boolean);
 
       renderWhenVisible();
@@ -1246,6 +1347,7 @@ export function initProfileChart(queueRequest, opts = {}) {
       state.series = [];
       renderWhenVisible();
     }
+    chartModal.classList.remove("loading");
   }
 
   function setRangeMs(fromMs, toMs) {
@@ -1327,6 +1429,9 @@ export function initProfileChart(queueRequest, opts = {}) {
   on(chartActivityTrack, "change", onManualRangeEdit);
   on(chartActivityAlbum, "change", onManualRangeEdit);
   on(chartActivityArtist, "change", onManualRangeEdit);
+
+  on(chartCommandName, "input", () => scheduleRefresh(400));
+  on(chartCommandName, "change", onManualRangeEdit);
 
   if (hasTip) {
     tip.addEventListener("mouseenter", () => {

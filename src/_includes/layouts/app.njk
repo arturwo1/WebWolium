@@ -119,14 +119,15 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-NL5JFYRXCQ"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('consent', 'default', {
+    function gtag(){window.dataLayer.push(arguments);}
+    window.gtag = gtag;
+    window.gtag('consent', 'default', {
       ad_storage: 'denied',
       analytics_storage: 'denied',
       ad_user_data: 'denied',
       ad_personalization: 'denied'
     });
-    gtag('js', new Date());
+    window.gtag('js', new Date());
   </script>
 
   <!-- Google AdSense -->

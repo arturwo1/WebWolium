@@ -892,6 +892,7 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   border: var(--line);
   background: var(--c-panel2);
   margin-left: auto;
+  overflow: auto;
 }
 
 .modal__tab {
@@ -2748,6 +2749,41 @@ html.pt-enter-shell.pt-ready .topbar {
   filter: blur(0);
 }
 
+.loading .skeleton {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  
+  background: linear-gradient(
+    110deg,
+    rgba(var(--rgb-border), 0.4) 25%,
+    rgba(var(--rgb-border), 0.1) 50%,
+    rgba(var(--rgb-border), 0.4) 75%
+  );
+  background-size: 200% 100%;
+
+  animation: skeleton-shimmer 4s linear infinite;
+
+  color: transparent;
+  pointer-events: none;
+  user-select: none;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton {
+  animation: none;
+  background: transparent;
+}
+
 @media (max-width: 860px) {
   .app {
     grid-template-columns: 1fr;
@@ -2839,7 +2875,7 @@ html.pt-enter-shell.pt-ready .topbar {
 
   .modal__tab {
     flex: 1 1 0;
-    justify-content: center;
+    min-width: max-content;
   }
 
   .chart__canvas {

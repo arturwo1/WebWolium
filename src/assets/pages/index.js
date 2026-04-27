@@ -1,3 +1,5 @@
+import { $ } from "@/lib/index.js";
+
 export async function initHomePage(sb) {
   const table = "public_stats";
 
@@ -25,4 +27,6 @@ export async function initHomePage(sb) {
 
     el.textContent = result[key] ?? "0";
   });
+
+  $("#cardSection").classList.remove("loading");
 }
