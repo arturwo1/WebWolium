@@ -1,4 +1,4 @@
-This repository contains the source code for the official **Wolium website**.
+This repository contains the source code for the official **Wolium™ website**.
 
 The website serves as the central hub for the Wolium ecosystem and provides
 information about the Wolium Discord bot, legal documents, and user dashboard
@@ -9,7 +9,7 @@ https://wolium.netlify.app
 
 ---
 
-## About Wolium
+## About Wolium™
 
 **Wolium** is a Discord bot focused on:
 
@@ -115,4 +115,4 @@ https://discord.gg/MXupeAApza
 
 ---
 
-**Wolium — One ecosystem. Multiple systems.**
+**Wolium™ — One ecosystem. Multiple systems.**

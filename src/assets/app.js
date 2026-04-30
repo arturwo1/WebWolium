@@ -98,7 +98,7 @@ async function initCurrentPage(sb, session) {
     if (!session) return;
     if (started.has("settings")) return;
     started.add("settings");
-    await initSettingsPage();
+    await initSettingsPage(sb);
     return;
   } else if (pid === "news") {
     if (started.has("news")) return;

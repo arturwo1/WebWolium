@@ -407,7 +407,7 @@ export async function initProfilePage(sb) {
       const res = await wr.queue("profile_stats", {"user_id": userDiscordId}, {
         cacheTtlMs: 30_000,
         cooldownMs: 1_500,
-        timeoutMs: 80_000
+        timeoutMs: 5_000
       });
 
       lsJSONSet(lastKey, { t: Date.now(), res });

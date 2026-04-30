@@ -624,6 +624,7 @@ export function initProfileChart(queueRequest, opts = {}) {
       return {
         from,
         to,
+        bucket_ms: bucketMs,
         limit,
         activity_name: chartActivityName?.value || "",
         status: chartActivityStatus?.value || "",
@@ -915,8 +916,15 @@ export function initProfileChart(queueRequest, opts = {}) {
       });
     }
 
-    const startedAt = meta.started_at ?? p?.bucket_start ?? p?.ts;
-    const endedAt = meta.ended_at ?? p?.bucket_end ?? p?.ts;
+    const bucketCount = p?.count ?? meta?.total_bucket_count ?? 1;
+    const bucketDuration = p?.y ?? meta?.total_bucket_duration ?? 0;
+
+    const startedAt = bucketCount > 1 && p?.bucket_start ? p.bucket_start : (meta.started_at ?? p?.bucket_start ?? p?.ts);
+    const endedAt = bucketCount > 1 && p?.bucket_end ? p.bucket_end : (meta.ended_at ?? p?.bucket_end ?? p?.ts);
+
+    const countBadge = bucketCount > 1 
+      ? `<span class="act-tip__count" style="font-weight: 600; color: var(--text-muted);">${t("chart.preview.activity_count", { count: bucketCount })} &nbsp;•&nbsp; </span>` 
+      : ``;
 
     return `
       <div class="act-tip__card">
@@ -1012,7 +1020,9 @@ export function initProfileChart(queueRequest, opts = {}) {
           ${escapeHtml(formatTsFull(startedAt))}
           —
           ${escapeHtml(formatTsFull(endedAt))}
-          <span class="act-tip__dur">• ${escapeHtml(formatDuration(p?.y || 0))}</span>
+          <span class="act-tip__dur">
+            • ${countBadge}${escapeHtml(formatDuration(bucketDuration))}
+          </span>
         </div>
       </div>
     `;
