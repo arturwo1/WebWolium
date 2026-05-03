@@ -1,4 +1,4 @@
-const CACHE_NAME = "wolium-v1.239";
+const CACHE_NAME = "wolium-v1.240";
 const fallbackPage = "/offline/";
 
 function isSameOrigin(url) {
@@ -115,6 +115,13 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return;
 
   const url = new URL(req.url);
+
+  if (
+    url.hostname.includes("supabase.co") ||
+    url.pathname.startsWith("/api/")
+  ) {
+    return; 
+  }
 
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);

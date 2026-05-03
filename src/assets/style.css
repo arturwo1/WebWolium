@@ -2070,7 +2070,6 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   border: var(--line);
   background: var(--c-soft);
   overflow: hidden;
-  min-height: 240px;
 }
 
 .home-shot img {

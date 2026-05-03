@@ -2,6 +2,7 @@ import {
   $,
   lsJSONGet,
   lsJSONSet,
+  lsCleanExpired,
   readIdentity
 } from "@/lib/index.js";
 
@@ -410,6 +411,7 @@ export async function initProfilePage(sb) {
         timeoutMs: 5_000
       });
 
+      lsCleanExpired("wolium:last_profile_stats:", 1000*60*60*24*7);
       lsJSONSet(lastKey, { t: Date.now(), res });
       renderStats(res);
 

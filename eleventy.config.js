@@ -27,6 +27,7 @@ export default function (eleventyConfig) {
       clearScreen: false,
       appType: "mpa",
       server: {
+        host: "0.0.0.0",
         middlewareMode: true,
         fs: { allow: [path.resolve(".")] }
       },
@@ -49,6 +50,11 @@ export default function (eleventyConfig) {
         }
       }
     }
+  });
+
+  eleventyConfig.setServerOptions({
+    host: "0.0.0.0",
+    port: 8080,
   });
 }
 

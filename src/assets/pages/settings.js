@@ -116,8 +116,7 @@ export async function initSettingsPage(sb) {
   });
 
   const { data: sessionData } = await sb.auth.getSession();
-  const userId = sessionData?.session?.user?.id || "anon";
-  const CACHE_KEY = `wolium:last_privacy_settings:${userId}`;
+  const CACHE_KEY = `wolium:last_privacy_settings`;
   const CACHE_TTL_MS = 5 * 60 * 1000;
 
   let currentPrivacy = {};

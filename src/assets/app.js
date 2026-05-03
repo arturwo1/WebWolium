@@ -15,6 +15,7 @@ import {
   startOAuthLogin,
   highlightNav,
   initConsent,
+  lsDel,
   $
 } from "@/lib/index.js";
 
@@ -122,6 +123,7 @@ async function boot() {
 
   initUserDropdown({
     onLogout: async () => {
+      lsDel("wolium:last_identity");
       await sb?.auth?.signOut();
       started.clear();
       await syncAuthUI(sb);
@@ -152,6 +154,8 @@ async function boot() {
     sb.auth.onAuthStateChange(async (_e, newSession) => {
       setLoggedInUI(newSession, readIdentity());
       if (newSession) saveIdentity(newSession);
+
+      if (_e === 'INITIAL_SESSION') return;
 
       if (!newSession) {
         started.clear();

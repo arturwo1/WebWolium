@@ -21,7 +21,10 @@
 
   <div class="spacer"></div>
 
-  <input type="text" class="input input--sm" id="userSearch" placeholder="Enter nickname or user ID" data-i18n-attr="placeholder: search.user"/>
+  <form id="userSearch">
+    <input type="search" class="input input--sm" id="searchUser" placeholder="Enter nickname or user ID" data-i18n-attr="placeholder: search.user"/>
+    <button type="submit" style="display: none;" data-i18n="enter">Enter</button>
+  </form>
 
   <button class="pill" id="btnLogin" type="button" data-i18n="login.discord">Log In with Discord</button>
 
