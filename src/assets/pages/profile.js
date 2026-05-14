@@ -9,7 +9,7 @@ import {
 import { createWebRequestService } from "@/services/index.js";
 import { initProfileChart } from "./profile_chart.js";
 import { t, onLangChange } from "@/lib/text/i18n.js";
-import { hud } from "@/lib/index.js";
+import { hud, formatNumber } from "@/lib/index.js";
 
 function setText(el, value) {
   if (el) el.textContent = String(value ?? "");
@@ -59,9 +59,8 @@ function setPresenceTooltipOpen(tooltipEl, open) {
   tooltipEl.setAttribute("aria-hidden", open ? "false" : "true");
 }
 
-function formatMoneyEUR(n) {
-  const v = Math.round((Number(n) || 0) * 100) / 100;
-  return `€${v}`;
+function formatMoney(n) {
+  return `${formatNumber(n)}₩`;
 }
 
 function setModalOpen(modal, open) {
@@ -231,7 +230,7 @@ export async function initProfilePage(sb) {
   if (!statsRoot || !chartModal || !chartClose || !chartTitleEl || !chartGuildId || !chartChannelId) {
     return null;
   }
-
+  
   const wr = createWebRequestService(sb, {
     defaultCacheTtlMs: 30_000,
     defaultCooldownMs: 1_500,
@@ -342,23 +341,23 @@ export async function initProfilePage(sb) {
   function renderStats(res) {
     lastProfileResponse = res ?? null;
 
-    setText(statMessages, res?.messages ?? 0);
+    setText(statMessages, formatNumber(res?.messages));
     setText(statVoice, res?.voice_time ?? "00:00");
     setText(statActivities, res?.activity_seconds ?? "00:00");
 
-    setText(statMoneyTotal, formatMoneyEUR(res?.total_balance ?? 0));
-    setText(statMoneyBank, formatMoneyEUR(res?.bank_balance ?? 0));
-    setText(statMoneyCash, formatMoneyEUR(res?.balance ?? 0));
+    setText(statMoneyTotal, formatMoney(res?.total_balance));
+    setText(statMoneyBank, formatMoney(res?.bank_balance));
+    setText(statMoneyCash, formatMoney(res?.balance));
 
-    setText(statCommands, res?.user_commands ?? 0);
+    setText(statCommands, formatNumber(res?.user_commands));
 
     setText(profileXpLine, t("profile.xp_line", {
-      now: res?.xp_now ?? 0,
-      need: res?.xp_need ?? 0,
-      total: res?.xp ?? 0
+      now: formatNumber(res?.xp_now),
+      need: formatNumber(res?.xp_need),
+      total: formatNumber(res?.xp)
     }));
 
-    setText(profileLevel, t("profile.level", { level: res?.lvl ?? 0 }));
+    setText(profileLevel, t("profile.level", { level: formatNumber(res?.lvl)}));
 
     if (profileXpBar) {
       const now = Number(res?.xp_now ?? 0);

@@ -9,12 +9,78 @@ noindex: true
 <h1 class="h1" data-i18n="leaderboard">Leaderboard</h1>
 
 <article class="card section">
-  <div class="kv">
-    <div class="k">1</div>
-    <div class="v">User_One <span class="v muted" style="margin-left:10px">9999</span></div>
-    <div class="k">2</div>
-    <div class="v">User_Two <span class="v muted" style="margin-left:10px">8420</span></div>
-    <div class="k">3</div>
-    <div class="v">User_Three <span class="v muted" style="margin-left:10px">7900</span></div>
+  <div class="lb-filters">
+
+    <div class="lb-filter-section">
+      <div class="lb-filter-label" data-i18n="leaderboard.metric">Metric</div>
+      <div class="lb-chips" id="lbMetricChips" role="group"></div>
+    </div>
+
+    <div class="lb-filter-section">
+      <div class="lb-filter-label" data-i18n="leaderboard.scope">Scope</div>
+      <div class="lb-scope-row">
+        <button class="btn-preset lb-scope-btn is-active" data-scope="world"
+          type="button" data-i18n="leaderboard.scope_world">World</button>
+
+        <select class="input lb-server-select" id="lbServerSelect">
+          <option value="" data-i18n="leaderboard.select_server">Select server…</option>
+        </select>
+
+        <button class="btn-preset lb-scope-btn" data-scope="top_servers"
+          type="button" data-i18n="leaderboard.scope_top_servers">Top Servers</button>
+      </div>
+    </div>
+
   </div>
+</article>
+
+<article class="card section loading" id="lbCard">
+
+  <div class="lb-head">
+    <span class="lb-total skeleton" id="lbTotal">&nbsp;</span>
+    <span class="lb-subtitle skeleton" id="lbSubtitle">&nbsp;</span>
+  </div>
+
+  <div class="lb-list" id="lbList">
+    {% for i in range(0, 10) %}
+    <div class="lb-row skeleton"></div>
+    {% endfor %}
+  </div>
+
+  <div id="lbOwn" hidden>
+    <div class="lb-own-sep">
+      <div class="lb-own-sep__line"></div>
+      <span class="lb-own-sep__text" data-i18n="leaderboard.your_rank">Your rank</span>
+      <div class="lb-own-sep__line"></div>
+    </div>
+  </div>
+
+  <nav class="lb-pagination" id="lbPagination" hidden
+    aria-label="Leaderboard pages"
+    data-i18n-attr="aria-label: leaderboard.pagination_aria">
+
+    <button id="lbPrevPage" type="button"
+      aria-label="Previous page"
+      data-i18n-attr="aria-label: news.pagination.prev">
+      <svg class="icon"><use href="#left"></use></svg>
+    </button>
+
+    <div class="news-pagination__center">
+      <span id="lbPageLabel">Page 1 / 1</span>
+      <div class="news-page-jump">
+        <label class="news-page-jump__label" for="lbPageInput"
+          data-i18n="news.pagination.goto">Go to</label>
+        <input id="lbPageInput" class="input--sm"
+          type="number" min="1" step="1" inputmode="numeric" value="1" />
+      </div>
+    </div>
+
+    <button id="lbNextPage" type="button"
+      aria-label="Next page"
+      data-i18n-attr="aria-label: news.pagination.next">
+      <svg class="icon"><use href="#right"></use></svg>
+    </button>
+
+  </nav>
+
 </article>

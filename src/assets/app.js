@@ -23,6 +23,7 @@ import { initProfilePage } from "./pages/profile.js";
 import { initHomePage } from "./pages/index.js";
 import { initSettingsPage } from "./pages/settings.js";
 import { initNewsPage } from "./pages/news.js";
+import { initLeaderboardPage } from "./pages/leaderboard.js";
 
 import { initPageTransitions } from "@/lib/ui/pageTransitions.js";
 import { initI18n, applyDomI18n, t } from "@/lib/text/i18n.js";
@@ -105,6 +106,12 @@ async function initCurrentPage(sb, session) {
     if (started.has("news")) return;
     started.add("news");
     await initNewsPage();
+    return;
+  } else if (pid === "leaderboard") {
+    if (!session) return;
+    if (started.has("leaderboard")) return;
+    started.add("leaderboard");
+    await initLeaderboardPage(sb);
     return;
   }
 }

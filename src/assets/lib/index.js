@@ -10,7 +10,7 @@ export * from "./security/html.js";
 export * from "./security/url.js";
 export * from "./text/discordMarkdown.js";
 
-export * from "./format/duration.js";
+export * from "./format/formatters.js";
 export * from "./format/datetime.js";
 export * from "./format/axisTime.js";
 

@@ -97,11 +97,11 @@ async function syncLangSelect() {
 }
 
 function getVariation() {
-  return localStorage.getItem("number-variation") || "normal";
+  return localStorage.getItem("variation") || "normal";
 }
 
 function setVariation(variation) {
-  localStorage.setItem("number-variation", variation);
+  localStorage.setItem("variation", variation);
 }
 
 function syncVariationSelect() {

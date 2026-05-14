@@ -123,6 +123,21 @@ self.addEventListener("fetch", (event) => {
     return; 
   }
 
+  if (event.request.url.includes('cdn.discordapp.com/app-assets')) {
+    return event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response.ok) {
+            return response;
+          }
+          return offlineSvgResponse();
+        })
+        .catch(() => {
+          return offlineSvgResponse();
+        })
+    );
+  }
+
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
 

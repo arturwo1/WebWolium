@@ -5,6 +5,7 @@ import {
   formatAxisTime,
   formatDiscordTime,
   formatDuration,
+  formatNumber,
   formatTsFull,
   on,
   parseLocalInput,
@@ -670,11 +671,11 @@ export function initProfileChart(queueRequest, opts = {}) {
     const sum = state.series.reduce((a, p) => a + (p.y || 0), 0);
 
     if (state.type === "messages") {
-      return t("chart.summary.messages", { count: Math.round(sum) });
+      return t("chart.summary.messages", { count: formatNumber(sum) });
     }
 
     if (state.type === "commands") {
-      return t("chart.summary.commands", { count: Math.round(sum) });
+      return t("chart.summary.commands", { count: formatNumber(sum) });
     }
 
     return t("chart.summary.time", { value: formatDuration(sum) });
@@ -706,7 +707,7 @@ export function initProfileChart(queueRequest, opts = {}) {
       <div class="msg-preview__bar">
         <span class="msg-preview__dot" aria-hidden="true"></span>
         <div class="msg-preview__guild" title="${escapeHtml(guildName)}">${escapeHtml(guildName)}</div>
-        <div class="msg-preview__channel" title="#${escapeHtml(channelName)}">${escapeHtml(channelName)}</div>
+        <div class="msg-preview__channel text-muted-sm" title="#${escapeHtml(channelName)}">${escapeHtml(channelName)}</div>
       </div>
 
       <div class="msg-preview__row">
@@ -719,8 +720,8 @@ export function initProfileChart(queueRequest, opts = {}) {
 
         <div class="msg-preview__content">
           <div class="msg-preview__meta">
-            <span class="msg-preview__author">${escapeHtml(authorName)}</span>
-            ${ts ? `<span class="msg-preview__time">${escapeHtml(formatDiscordTime(ts))}</span>` : ``}
+            <span class="msg-preview__author text-truncate">${escapeHtml(authorName)}</span>
+            ${ts ? `<span class="msg-preview__time text-muted-sm">${escapeHtml(formatDiscordTime(ts))}</span>` : ``}
           </div>
 
           <div class="msg-preview__text md">
@@ -733,12 +734,12 @@ export function initProfileChart(queueRequest, opts = {}) {
       
       ${url && Math.round(p.y)==1 ? `
         <div class="msg-preview__hint">
-          <span class="msg-preview__kbd js-preview-click">${t("chart.preview.click")}</span>
+          <span class="kbd js-preview-click">${t("chart.preview.click")}</span>
           <span class="msg-preview__hintText" >${t("chart.preview.discord")}</span>
         </div>
       ` : url ? `
         <div class="msg-preview__hint">
-          <span class="msg-preview__kbd">${t("chart.preview.scroll")}</span>
+          <span class="kbd">${t("chart.preview.scroll")}</span>
           <span class="msg-preview__hintText">${t("chart.preview.scroll_down")}</span>
         </div>
       ` : `
@@ -938,9 +939,9 @@ export function initProfileChart(queueRequest, opts = {}) {
           </div>
 
           <div class="act-tip__names">
-            <div class="act-tip__nick" title="${escapeHtml(primaryName)}">${escapeHtml(primaryName)}</div>
+            <div class="act-tip__nick text-truncate" title="${escapeHtml(primaryName)}">${escapeHtml(primaryName)}</div>
             ${showSecondaryName
-              ? `<div class="act-tip__dname" title="${escapeHtml(secondaryName)}">${escapeHtml(secondaryName)}</div>`
+              ? `<div class="act-tip__dname text-truncate" title="${escapeHtml(secondaryName)}">${escapeHtml(secondaryName)}</div>`
               : ``}
           </div>
 
@@ -992,7 +993,7 @@ export function initProfileChart(queueRequest, opts = {}) {
               : ``}
 
             <div class="act-tip__info">
-              <div class="act-tip__name" title="${escapeHtml(activityName)}">${escapeHtml(activityName)}</div>
+              <div class="act-tip__name text-truncate" title="${escapeHtml(activityName)}">${escapeHtml(activityName)}</div>
 
               ${fields.map((field) => `
                 <div class="act-tip__field" title="${escapeHtml(field)}">${escapeHtml(field)}</div>
@@ -1057,7 +1058,7 @@ export function initProfileChart(queueRequest, opts = {}) {
       <div class="msg-preview__bar">
         <span class="msg-preview__dot" aria-hidden="true"></span>
         <div class="msg-preview__guild" title="${escapeHtml(guildName)}">${escapeHtml(guildName)}</div>
-        <div class="msg-preview__channel" title="#${escapeHtml(channelName)}">${escapeHtml(channelName)}</div>
+        <div class="msg-preview__channel text-muted-sm" title="#${escapeHtml(channelName)}">${escapeHtml(channelName)}</div>
       </div>
 
       <div class="msg-preview__row">
@@ -1070,19 +1071,19 @@ export function initProfileChart(queueRequest, opts = {}) {
 
         <div class="msg-preview__content">
           <div class="msg-preview__meta">
-            <span class="msg-preview__author">${escapeHtml(authorName)}</span>
-            ${ts ? `<span class="msg-preview__time">${escapeHtml(formatDiscordTime(ts))}</span>` : ``}
+            <span class=" text-truncate">${escapeHtml(authorName)}</span>
+            ${ts ? `<span class="msg-preview__time text-muted-sm">${escapeHtml(formatDiscordTime(ts))}</span>` : ``}
           </div>
 
           <div class="msg-preview__text md">
-            ${(raw && typeof raw === "object" && Object.keys(raw).length > 0) ? `<span class="msg-preview__kbd js-preview-click">${command_name}</span>` : ``}
+            ${(raw && typeof raw === "object" && Object.keys(raw).length > 0) ? `<span class="kbd js-preview-click">${command_name}</span>` : ``}
             <span>${args}</span>
           </div>
         </div>
       </div>
       
       <div class="msg-preview__hint">
-        <span class="msg-preview__kbd js-preview-click">${command_name}</span>
+        <span class="kbd js-preview-click">${command_name}</span>
       </div>`;
   }
 
@@ -1143,7 +1144,7 @@ export function initProfileChart(queueRequest, opts = {}) {
       : formatTsFull(p.ts);
 
     if (state.type === "messages") {
-      tipVal.textContent = `${t("profile.messages")}: ${Math.round(p.y)}`;
+      tipVal.textContent = `${t("profile.messages")}: ${formatNumber(p.y)}`;
       tipPreview.innerHTML = renderMessagePreview(p);
     } else if (state.type === "voice") {
       tipVal.textContent = `${t("profile.voice")}: ${formatDuration(p.y || 0)}`;
@@ -1152,7 +1153,7 @@ export function initProfileChart(queueRequest, opts = {}) {
       tipVal.textContent = `${t("profile.time")}: ${formatDuration(p.y || 0)}`;
       tipPreview.innerHTML = renderActivityPreview(p);
     } else if (state.type === "commands") {
-      tipVal.textContent = `${t("profile.commands")}: ${Math.round(p.y)}`;
+      tipVal.textContent = `${t("profile.commands")}: ${formatNumber(p.y)}`;
       tipPreview.innerHTML = renderCommandsPreview(p);
     }
 
@@ -1228,7 +1229,7 @@ export function initProfileChart(queueRequest, opts = {}) {
 
       const val = state.yMax * (1 - i / grid);
       const label = state.type === "messages"
-        ? String(Math.round(val))
+        ? String(formatNumber(val))
         : formatDuration(val);
       ctx.fillText(label, padL - 10, y);
     }
