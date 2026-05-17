@@ -7,7 +7,7 @@
   {# ---- defaults ---- #}
   {% set siteName = "Wolium" %}
   {% set siteUrl = "https://Wolium.netlify.app" %}
-  {% set siteDesc = "A website where you can easily edit and track everything in this discord bot!" %}
+  {% set siteDesc = "Track your Discord server activity with charts, profiles, leaderboards and economy. Free bot, no corporate tone." %}
   {% set siteKeywords = "Wolium, arturwol, bot, discord" %}
   {% set siteAuthor = "arturwol" %}
   {% set siteLocale = "en_US" %}
@@ -17,12 +17,12 @@
 
   {% set pageTitle = siteName %}
   {% if title %}
-    {% set pageTitle = title %}
+    {% set pageTitle = "Wolium | " ~ title %}
   {% else %}
     {% set pageTitle = Wolium %}
   {% endif %}
 
-  {% set pageDesc = description or siteDesc %}
+  {% set pageDesc = description or excerpt or siteDesc %}
 
   {% set pagePath = "/" %}
   {% if page and page.url %}

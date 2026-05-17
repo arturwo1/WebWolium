@@ -57,7 +57,7 @@ export function formatNumber(value) {
   return value.toLocaleString();
 }
 
-export function formatDuration(sec, { maxUnits = 4, decimals = 2 } = {}) {
+export function formatDuration(sec, { maxUnits = 3, decimals = 2 } = {}) {
   sec = Math.max(0, Number(sec) || 0);
 
   const LARGE_UNIT_THRESHOLD = 1e6

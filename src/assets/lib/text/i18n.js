@@ -93,7 +93,7 @@ function detectBrowserLang() {
     }
     const single = normalizeLangCode(navigator?.language || "");
     if (isSupportedLang(single)) return single;
-  } catch {}
+  } catch { }
   return FALLBACK;
 }
 
@@ -120,14 +120,14 @@ function notifyLangChanged(nextLang) {
     document.dispatchEvent(
       new CustomEvent("i18n:change", { detail: { lang: nextLang } })
     );
-  } catch {}
+  } catch { }
 }
 
 function applyDocumentMetaI18n() {
   try {
     document.documentElement.lang = lang;
     document.documentElement.dataset.lang = lang;
-  } catch {}
+  } catch { }
 
   try {
     const pid = document.body?.dataset?.page || "";
@@ -137,15 +137,15 @@ function applyDocumentMetaI18n() {
       "leaderboard": "page.title.leaderboard",
       "settings": "page.title.settings",
       "news": "page.title.news",
-      "server-edit": "page.title.server_edit",
+      "servers": "page.title.servers",
       "privacy": "page.title.privacy",
       "terms-of-service": "page.title.tos",
       "rules": "page.title.rules"
     };
     const key = map[pid];
     if (!key) return;
-    document.title = t(key, { site: "Wolium" });
-  } catch {}
+    document.title = "Wolium | " + t(key);
+  } catch { }
 }
 
 export function getLang() {
@@ -200,7 +200,7 @@ export async function setLang(nextLang, { save = true } = {}) {
     if (save) {
       try {
         localStorage.setItem(STORAGE_KEY, resolved);
-      } catch {}
+      } catch { }
     }
     applyDocumentMetaI18n();
     applyDomI18n(document);
@@ -214,7 +214,7 @@ export async function setLang(nextLang, { save = true } = {}) {
   if (save) {
     try {
       localStorage.setItem(STORAGE_KEY, resolved);
-    } catch {}
+    } catch { }
   }
 
   applyDocumentMetaI18n();

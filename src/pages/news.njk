@@ -1,6 +1,7 @@
 ---
 layout: app.njk
-title: Wolium | News
+title: News
+description: Latest updates, changelogs and announcements for Wolium Discord bot.
 pageId: news
 permalink: /news/
 ---
@@ -92,7 +93,7 @@ permalink: /news/
 
 <section class="news-page" aria-labelledby="newsPageTitle">
   <header class="news-page__header">
-    <h1 class="h1" id="newsPageTitle" data-i18n="news">News</h1>
+    <h1 class="h1" id="newsPageTitle" data-i18n="page.title.news">News</h1>
   </header>
 
   <form class="card section news-toolbar" aria-label="News filters" data-i18n-attr="aria-label: news.filters.aria" onsubmit="return false;">
@@ -123,8 +124,8 @@ permalink: /news/
         </div>
       </fieldset>
 
-      <div class="news-filter-group news-filter-group--time">
-        <label class="news-filter-group__title" for="newsTimeFilter" data-i18n="news.filters.time">Time</label>
+      <fieldset class="news-filter-group news-filter-group--time">
+        <legend class="news-filter-group__title" for="newsTimeFilter" data-i18n="news.filters.time">Time</legend>
         <select id="newsTimeFilter" class="input input--sm control--full">
           <option value="all" data-i18n="news.filters.time.all">All time</option>
           <option value="7d" data-i18n="chart.preset.7d">Last 7 days</option>
@@ -132,7 +133,7 @@ permalink: /news/
           <option value="90d" data-i18n="chart.preset.90d">Last 90 days</option>
           <option value="365d" data-i18n="chart.preset.365d">Last 365 days</option>
         </select>
-      </div>
+      </fieldset>
     </div>
 
     <div class="news-toolbar__bottom">

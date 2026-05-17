@@ -1201,7 +1201,7 @@ export function initProfileChart(queueRequest, opts = {}) {
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     ctx.clearRect(0, 0, W, H);
 
-    const padL = 70, padR = 18, padT = 16, padB = 42;
+    let padL = 70, padR = 18, padT = 16, padB = 42;
     const plotW = W - padL - padR;
     const plotH = H - padT - padB;
 
@@ -1222,16 +1222,40 @@ export function initProfileChart(queueRequest, opts = {}) {
     ctx.textBaseline = "middle";
     ctx.fillStyle = `rgba(${rgbSecondary}, 1)`;
 
+    const s = state.series.filter((p) => p.ts >= state.viewMin && p.ts <= state.viewMax);
+
+    if (!s.length) {
+      ctx.font = "14px system-ui";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = `rgba(${rgbSecondary}, 1)`;
+      ctx.fillText(t("chart.no_data"), W / 2, H / 2);
+      return;
+    }
+
+    const timeTypes = new Set(["voice", "activities"]);
+
+    const labels = Array.from({ length: grid + 1 }, (_, i) => {
+      const val = state.yMax * (1 - i / grid)
+      return timeTypes.has(state.type)
+        ? formatDuration(Math.round(val))
+        : String(formatNumber(Math.round(val)))
+    })
+
+    const maxLabelWidth = Math.max(...labels.map(l => ctx.measureText(l).width))
+    padL = maxLabelWidth + 12
+
     for (let i = 0; i <= grid; i++) {
       const y = padT + (plotH * i) / grid;
       const a = i === grid ? 0.7 : 0.35;
       line(padL, y, W - padR, y, `rgba(${rgbBorder}, ${a})`);
 
       const val = state.yMax * (1 - i / grid);
-      const label = state.type === "messages"
-        ? String(formatNumber(val))
-        : formatDuration(val);
-      ctx.fillText(label, padL - 10, y);
+      const label = !timeTypes.has(state.type)
+        ? String(formatNumber(Math.round(val)))
+        : formatDuration(Math.round(val));
+      
+      ctx.fillText(label, padL - 4, y);
     }
 
     const rangeMs = state.viewMax - state.viewMin;
@@ -1257,32 +1281,31 @@ export function initProfileChart(queueRequest, opts = {}) {
       ctx.fillText(label, x, padT + plotH + 10);
     }
 
-    const s = state.series.filter((p) => p.ts >= state.viewMin && p.ts <= state.viewMax);
-
-    if (!s.length) {
-      ctx.font = "14px system-ui";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillStyle = `rgba(${rgbSecondary}, 1)`;
-      ctx.fillText(t("chart.no_data"), W / 2, H / 2);
-      return;
-    }
-
     ctx.lineWidth = 2;
     ctx.strokeStyle = `rgba(${rgbPrimary}, .9)`;
     ctx.beginPath();
     s.forEach((p, i) => {
       const x = xOf(p.ts);
       const y = yOf(p.y);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
+      if (i === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        const prev = s[i - 1];
+        const px = xOf(prev.ts);
+        const py = yOf(prev.y);
+        const cp1x = px + (x - px) / 2;
+        const cp1y = py;
+        const cp2x = x - (x - px) / 2;
+        const cp2y = y;
+        ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
+      }
     });
     ctx.stroke();
 
     s.forEach((p, i) => {
       const x = xOf(p.ts);
       const y = yOf(p.y);
-      const r = (i === state.hoverIdx) ? 6 : 4;
+      const r = (i === state.hoverIdx) ? 4 : 2.5;
       circle(x, y, r, `rgba(${rgbPrimary}, 1)`);
     });
   }
@@ -1475,7 +1498,7 @@ export function initProfileChart(queueRequest, opts = {}) {
       e.clientY - rect.top,
       rect.width,
       rect.height,
-      16
+      8
     );
 
     if (hit) {

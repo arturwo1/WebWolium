@@ -63,7 +63,7 @@
     <path style="fill:rgb(var(--rgb-bg));stroke:rgb(var(--rgb-primary));stroke-width:2" d="m 1.0058796,22.70292 c 0.1876659,-4.734424 4.8445344,-8.54458 10.6310584,-8.69811 0.20046,-0.0053 0.525679,-0.0053 0.726159,10e-7 5.817905,0.154377 10.49386,4.005149 10.633683,8.775255 C 23.000339,22.901493 22.901503,23 22.78,23 H 12.22 1.2971573 C 1.1330419,23 0.99937987,22.866896 1.0058796,22.70292 Z"/>
   </symbol>
 
-  <symbol id="servers-editor" viewBox="0 0 24 24">
+  <symbol id="servers" viewBox="0 0 24 24">
     <rect style="fill:rgb(var(--rgb-primary))" width="24" rx="2" ry="2" height="24"/>
     <rect style="fill:rgb(var(--rgb-bg))" width="20" height="20" x="2" y="2" rx="2" ry="2"/>
     <rect style="fill:rgb(var(--rgb-primary))" width="22" height="2" x="1" y="7"/>
