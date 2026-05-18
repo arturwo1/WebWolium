@@ -161,8 +161,8 @@ function isMousePointerEvent(e) {
   return !("pointerType" in e) || e.pointerType === "mouse";
 }
 
-function getChartLayout(width, height) {
-  const padL = 70, padR = 18, padT = 16, padB = 42;
+function getChartLayout(state, width, height) {
+  const padL = state.padL ?? 70, padR = 18, padT = 16, padB = 42;
   return {
     padL,
     padR,
@@ -269,7 +269,8 @@ export function initProfileChart(queueRequest, opts = {}) {
     dragging: false,
     dragStartX: 0,
     dragStartMin: 0,
-    dragStartMax: 0
+    dragStartMax: 0,
+    padL: 70
   };
 
   let reqSeq = 0;
@@ -405,7 +406,7 @@ export function initProfileChart(queueRequest, opts = {}) {
     const s = getVisibleSeries();
     if (!s.length) return null;
 
-    const layout = getChartLayout(width, height);
+    const layout = getChartLayout(state, width, height);
 
     let bestIdx = -1;
     let bestD = Infinity;
@@ -1201,8 +1202,8 @@ export function initProfileChart(queueRequest, opts = {}) {
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     ctx.clearRect(0, 0, W, H);
 
-    let padL = 70, padR = 18, padT = 16, padB = 42;
-    const plotW = W - padL - padR;
+    let padR = 18, padT = 16, padB = 42;
+    const plotW = W - state.padL - padR;
     const plotH = H - padT - padB;
 
     const rgbBg = cssVar("--rgb-bg") || "35,39,42";
@@ -1213,7 +1214,7 @@ export function initProfileChart(queueRequest, opts = {}) {
     fillRect(0, 0, W, H, `rgba(${rgbBg}, 1)`);
     strokeRect(0.5, 0.5, W - 1, H - 1, `rgba(${rgbBorder}, 1)`);
 
-    const xOf = (t) => padL + ((t - state.viewMin) / (state.viewMax - state.viewMin)) * plotW;
+    const xOf = (t) => state.padL + ((t - state.viewMin) / (state.viewMax - state.viewMin)) * plotW;
     const yOf = (v) => padT + (1 - (v / state.yMax)) * plotH;
 
     const grid = 4;
@@ -1243,19 +1244,19 @@ export function initProfileChart(queueRequest, opts = {}) {
     })
 
     const maxLabelWidth = Math.max(...labels.map(l => ctx.measureText(l).width))
-    padL = maxLabelWidth + 12
+    state.padL = maxLabelWidth + 12
 
     for (let i = 0; i <= grid; i++) {
       const y = padT + (plotH * i) / grid;
       const a = i === grid ? 0.7 : 0.35;
-      line(padL, y, W - padR, y, `rgba(${rgbBorder}, ${a})`);
+      line(state.padL, y, W - padR, y, `rgba(${rgbBorder}, ${a})`);
 
       const val = state.yMax * (1 - i / grid);
       const label = !timeTypes.has(state.type)
         ? String(formatNumber(Math.round(val)))
         : formatDuration(Math.round(val));
       
-      ctx.fillText(label, padL - 4, y);
+      ctx.fillText(label, state.padL - 4, y);
     }
 
     const rangeMs = state.viewMax - state.viewMin;
@@ -1266,7 +1267,7 @@ export function initProfileChart(queueRequest, opts = {}) {
 
     for (let i = 0; i <= xTicks; i++) {
       const t = state.viewMin + (rangeMs * i) / xTicks;
-      const rawX = padL + (plotW * i) / xTicks;
+      const rawX = state.padL + (plotW * i) / xTicks;
       const label = formatAxisTime(t, rangeMs, state.viewMin, state.viewMax);
 
       if (i === 0) ctx.textAlign = "left";
