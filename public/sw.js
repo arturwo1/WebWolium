@@ -30,7 +30,7 @@ async function cachePutSafe(cache, request, response) {
     if (response.ok || response.type === "opaque") {
       await cache.put(request, response);
     }
-  } catch {}
+  } catch { }
 }
 
 async function purgePageVariants(cache, pathname) {
@@ -48,7 +48,7 @@ async function purgePageVariants(cache, pathname) {
         if (rp === p || rp === a || rp === b) {
           return cache.delete(request);
         }
-      } catch {}
+      } catch { }
     })
   );
 }
@@ -120,7 +120,7 @@ self.addEventListener("fetch", (event) => {
     url.hostname.includes("supabase.co") ||
     url.pathname.startsWith("/api/")
   ) {
-    return; 
+    return;
   }
 
   if (event.request.url.includes('cdn.discordapp.com/app-assets')) {

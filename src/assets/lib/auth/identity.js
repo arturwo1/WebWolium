@@ -13,7 +13,7 @@ export function saveIdentity(session) {
       avatar: m.avatar_url || m.picture || null,
       ts: Date.now()
     }));
-  } catch {}
+  } catch { }
 }
 
 export function readIdentity() {

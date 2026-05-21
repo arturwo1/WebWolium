@@ -42,7 +42,7 @@ function setTransitionState(mode, href = "") {
         ts: Date.now()
       })
     );
-  } catch {}
+  } catch { }
 }
 
 export function initPageTransitions() {

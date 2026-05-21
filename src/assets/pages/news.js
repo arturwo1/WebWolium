@@ -1,4 +1,4 @@
-import { t } from '@/lib/text/i18n.js';
+import { escapeHtml, t, lsSet } from "@/lib/index.js";
 
 function formatNewsDate(rawDate) {
   if (!rawDate) return "—";
@@ -170,15 +170,6 @@ export async function initNewsPage() {
     });
   }
 
-  function escapeHtml(value) {
-    return String(value)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#39;");
-  }
-
   function badgeHtml(label) {
     return `
     <span class="news-badge" data-tone="${escapeHtml(label)}">
@@ -264,12 +255,12 @@ export async function initNewsPage() {
 
     summaryEl.textContent = activeFilters.length
       ? t("news.summary.filtered", {
-          count: items.length,
-          filters: activeFilters.join(" • ")
-        })
+        count: items.length,
+        filters: activeFilters.join(" • ")
+      })
       : t("news.summary.latest", {
-          count: items.length
-        });
+        count: items.length
+      });
 
     writeStateToUrl(state);
     syncControls(state);
@@ -285,6 +276,9 @@ export async function initNewsPage() {
 
   const state = getStateFromUrl();
   renderList(filterItems(state), state);
+
+  lsSet("newsLast", allItems.length);
+  document.querySelector(".nav__badge")?.remove();
 
   chipRows.forEach((row) => {
     row.addEventListener("click", (event) => {

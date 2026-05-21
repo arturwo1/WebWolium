@@ -3,7 +3,7 @@ import CFG from "./config.js";
 import {
   bindHeadImages,
   createSupabaseClient,
-  initMobileDrawer,
+  initDrawer,
   initUserDropdown,
   isPublicPage,
   readIdentity,
@@ -123,7 +123,7 @@ async function boot() {
   // bindHeadImages();
 
   highlightNav();
-  initMobileDrawer();
+  initDrawer();
 
   const sb = createSupabaseClient(CFG);
   if (!sb) console.error("[app] Supabase client not configured.");

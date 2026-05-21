@@ -1,19 +1,4 @@
-import {
-  $,
-  clamp,
-  escapeHtml,
-  formatAxisTime,
-  formatDiscordTime,
-  formatDuration,
-  formatNumber,
-  formatTsFull,
-  on,
-  parseLocalInput,
-  renderDiscordMarkdownToHtml,
-  toLocalDatetimeValue
-} from "@/lib/index.js";
-
-import { t, onLangChange } from '@/lib/text/i18n.js';
+import { $, clamp, escapeHtml, formatAxisTime, formatDiscordTime, formatDuration, formatNumber, formatTsFull, on, parseLocalInput, renderDiscordMarkdownToHtml, toLocalDatetimeValue, t, onLangChange } from "@/lib/index.js";
 
 function niceBucketMs(rangeMs, widthPx) {
   const targetPoints = clamp(Math.floor(widthPx / 4), 120, 260);
@@ -100,7 +85,7 @@ function parseAttachments(raw) {
     if (Array.isArray(parsed)) {
       return parsed.map(String).filter(Boolean);
     }
-  } catch {}
+  } catch { }
 
   return [];
 }
@@ -666,7 +651,7 @@ export function initProfileChart(queueRequest, opts = {}) {
       return state.type === "messages"
         ? t("chart.summary.messages", { count: 0 })
         : state.type === "voice" || state.type === "activities" ? t("chart.summary.time", { value: "00:00" })
-        : t("chart.summary.commands", { count: 0 });
+          : t("chart.summary.commands", { count: 0 });
     }
 
     const sum = state.series.reduce((a, p) => a + (p.y || 0), 0);
@@ -714,9 +699,9 @@ export function initProfileChart(queueRequest, opts = {}) {
       <div class="msg-preview__row">
         <div class="msg-preview__avatar" aria-hidden="true">
           ${authorAvatar
-            ? `<img class="msg-preview__avatarImg" src="${escapeHtml(authorAvatar)}" alt="" loading="lazy" />`
-            : `<span class="msg-preview__avatarFallback">${escapeHtml((authorName[0] || "U").toUpperCase())}</span>`
-          }
+        ? `<img class="msg-preview__avatarImg" src="${escapeHtml(authorAvatar)}" alt="" loading="lazy" />`
+        : `<span class="msg-preview__avatarFallback">${escapeHtml((authorName[0] || "U").toUpperCase())}</span>`
+      }
         </div>
 
         <div class="msg-preview__content">
@@ -733,7 +718,7 @@ export function initProfileChart(queueRequest, opts = {}) {
         </div>
       </div>
       
-      ${url && Math.round(p.y)==1 ? `
+      ${url && Math.round(p.y) == 1 ? `
         <div class="msg-preview__hint">
           <span class="kbd js-preview-click">${t("chart.preview.click")}</span>
           <span class="msg-preview__hintText" >${t("chart.preview.discord")}</span>
@@ -747,7 +732,7 @@ export function initProfileChart(queueRequest, opts = {}) {
         <div class="msg-preview__hint">
           <span class="msg-preview__hintText">${t("chart.preview.unavailable")}</span>
         </div>`}`;
-    }
+  }
 
   function renderVoicePreview(p) {
     const meta = p?.meta ?? {};
@@ -901,13 +886,13 @@ export function initProfileChart(queueRequest, opts = {}) {
 
     const fields = isSpotify
       ? dedupeStrings(
-          [artistText, albumText],
-          { exclude: [activityName, badgeLabel] }
-        )
+        [artistText, albumText],
+        { exclude: [activityName, badgeLabel] }
+      )
       : dedupeStrings(
-          [detailsText, stateText],
-          { exclude: [activityName, badgeLabel] }
-        );
+        [detailsText, stateText],
+        { exclude: [activityName, badgeLabel] }
+      );
 
     const buttons = [];
 
@@ -924,8 +909,8 @@ export function initProfileChart(queueRequest, opts = {}) {
     const startedAt = bucketCount > 1 && p?.bucket_start ? p.bucket_start : (meta.started_at ?? p?.bucket_start ?? p?.ts);
     const endedAt = bucketCount > 1 && p?.bucket_end ? p.bucket_end : (meta.ended_at ?? p?.bucket_end ?? p?.ts);
 
-    const countBadge = bucketCount > 1 
-      ? `<span class="act-tip__count" style="font-weight: 600; color: var(--text-muted);">${t("chart.preview.activity_count", { count: bucketCount })} &nbsp;•&nbsp; </span>` 
+    const countBadge = bucketCount > 1
+      ? `<span class="act-tip__count" style="font-weight: 600; color: var(--text-muted);">${t("chart.preview.activity_count", { count: bucketCount })} &nbsp;•&nbsp; </span>`
       : ``;
 
     return `
@@ -933,8 +918,8 @@ export function initProfileChart(queueRequest, opts = {}) {
         <div class="act-tip__user">
           <div class="act-tip__pfp-wrap">
             ${avatar
-              ? `<img class="act-tip__avatar" src="${escapeHtml(avatar)}" alt="">`
-              : `<div class="act-tip__avatar act-tip__avatar--fallback"></div>`}
+        ? `<img class="act-tip__avatar" src="${escapeHtml(avatar)}" alt="">`
+        : `<div class="act-tip__avatar act-tip__avatar--fallback"></div>`}
 
             ${buildPresenceBadgeHtml(status, desktop, mobile, web)}
           </div>
@@ -942,31 +927,31 @@ export function initProfileChart(queueRequest, opts = {}) {
           <div class="act-tip__names">
             <div class="act-tip__nick text-truncate" title="${escapeHtml(primaryName)}">${escapeHtml(primaryName)}</div>
             ${showSecondaryName
-              ? `<div class="act-tip__dname text-truncate" title="${escapeHtml(secondaryName)}">${escapeHtml(secondaryName)}</div>`
-              : ``}
+        ? `<div class="act-tip__dname text-truncate" title="${escapeHtml(secondaryName)}">${escapeHtml(secondaryName)}</div>`
+        : ``}
           </div>
 
           ${customStatus
-            ? `
+        ? `
               <div class="act-tip__cs-wrap">
                 <div class="act-tip__cs is-truncated" title="${escapeHtml(customStatus)}">${escapeHtml(customStatus)}</div>
               </div>
             `
-            : ``}
+        : ``}
         </div>
 
         <div class="act-tip__activity">
           ${badgeLabel
-            ? `
+        ? `
               <div class="act-tip__badges">
                 <div class="act-tip__type-badge">${escapeHtml(badgeLabel)}</div>
               </div>
             `
-            : ``}
+        : ``}
 
           <div class="act-tip__media${largeImage ? "" : " act-tip__media--noimg"}">
             ${largeImage
-              ? `
+        ? `
                 <div class="act-tip__images">
                   <div class="act-tip__large-wrap">
                     <img
@@ -977,7 +962,7 @@ export function initProfileChart(queueRequest, opts = {}) {
                     />
 
                     ${smallImage
-                      ? `
+          ? `
                         <div class="act-tip__small-wrap">
                           <img
                             class="act-tip__small-img"
@@ -987,11 +972,11 @@ export function initProfileChart(queueRequest, opts = {}) {
                           />
                         </div>
                       `
-                      : ``}
+          : ``}
                   </div>
                 </div>
               `
-              : ``}
+        : ``}
 
             <div class="act-tip__info">
               <div class="act-tip__name text-truncate" title="${escapeHtml(activityName)}">${escapeHtml(activityName)}</div>
@@ -1003,7 +988,7 @@ export function initProfileChart(queueRequest, opts = {}) {
           </div>
 
           ${buttons.length
-            ? `
+        ? `
               <div class="act-tip__buttons">
                 ${buttons.map((btn) => `
                   <a
@@ -1015,7 +1000,7 @@ export function initProfileChart(queueRequest, opts = {}) {
                 `).join("")}
               </div>
             `
-            : ``}
+        : ``}
         </div>
 
         <div class="act-tip__timing">
@@ -1065,9 +1050,9 @@ export function initProfileChart(queueRequest, opts = {}) {
       <div class="msg-preview__row">
         <div class="msg-preview__avatar" aria-hidden="true">
           ${authorAvatar
-            ? `<img class="msg-preview__avatarImg" src="${escapeHtml(authorAvatar)}" alt="" loading="lazy" />`
-            : `<span class="msg-preview__avatarFallback">${escapeHtml((authorName[0] || "U").toUpperCase())}</span>`
-          }
+        ? `<img class="msg-preview__avatarImg" src="${escapeHtml(authorAvatar)}" alt="" loading="lazy" />`
+        : `<span class="msg-preview__avatarFallback">${escapeHtml((authorName[0] || "U").toUpperCase())}</span>`
+      }
         </div>
 
         <div class="msg-preview__content">
@@ -1255,7 +1240,7 @@ export function initProfileChart(queueRequest, opts = {}) {
       const label = !timeTypes.has(state.type)
         ? String(formatNumber(Math.round(val)))
         : formatDuration(Math.round(val));
-      
+
       ctx.fillText(label, state.padL - 4, y);
     }
 
@@ -1372,7 +1357,7 @@ export function initProfileChart(queueRequest, opts = {}) {
       if (mySeq !== reqSeq) return;
 
       const arr = Array.isArray(rows) ? rows : [];
-      
+
       state.series = arr.map(normalizeSeriesPoint).filter(Boolean);
 
       renderWhenVisible();
@@ -1702,12 +1687,12 @@ export function initProfileChart(queueRequest, opts = {}) {
 
         const hit = rect.width >= 10
           ? findNearestPoint(
-              touch.clientX - rect.left,
-              touch.clientY - rect.top,
-              rect.width,
-              rect.height,
-              24
-            )
+            touch.clientX - rect.left,
+            touch.clientY - rect.top,
+            rect.width,
+            rect.height,
+            24
+          )
           : null;
 
         if (hit) {

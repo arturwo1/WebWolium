@@ -9,7 +9,7 @@ export function registerServiceWorker({ swUrl = "/sw.js", scope = "/" } = {}) {
     .then(async (reg) => {
       try {
         await reg.update();
-      } catch {}
+      } catch { }
 
       reg.addEventListener("updatefound", () => {
         const nw = reg.installing;

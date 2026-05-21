@@ -24,7 +24,7 @@ export function lsCleanExpired(prefix, maxAgeMs) {
         localStorage.removeItem(key);
       }
     });
-    
+
     return true;
   } catch (e) {
     console.error("[lsClean] Error while cleaning:", e);

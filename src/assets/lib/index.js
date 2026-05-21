@@ -9,6 +9,7 @@ export * from "./cache/inflight.js";
 export * from "./security/html.js";
 export * from "./security/url.js";
 export * from "./text/discordMarkdown.js";
+export * from "./text/i18n.js";
 
 export * from "./format/formatters.js";
 export * from "./format/datetime.js";

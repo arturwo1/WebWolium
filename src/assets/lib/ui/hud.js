@@ -170,7 +170,7 @@ function showToast(dock, type, title, text, duration) {
 export const hud = {
   loading(kindOrLabel = "") {
     const dock = ensureDock();
-    if (!dock) return () => {};
+    if (!dock) return () => { };
 
     const label = kindOrLabel.includes("…") || kindOrLabel.includes("...")
       ? kindOrLabel

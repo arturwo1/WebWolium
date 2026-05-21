@@ -1,9 +1,4 @@
-import { t } from "@/lib/text/i18n.js";
-import { stableStringify } from "@/lib/index.js";
-import { nowMs, sleep } from "@/lib/index.js";
-import { ttlGet, ttlSet } from "@/lib/index.js";
-import { lsGet, lsSet, lsDel } from "@/lib/index.js";
-import { hud as defaultHud } from "@/lib/index.js";
+import { hud as defaultHud, t, lsGet, lsSet, lsDel, ttlGet, ttlSet, nowMs, sleep, stableStringify } from "@/lib/index.js";
 
 function parseReject(err) {
   const msg = String(err?.message || "");
@@ -167,7 +162,7 @@ export function createWebRequestService(sb, {
 
     const stopHud = typeof hud?.loading === "function"
       ? hud.loading(kind)
-      : () => {};
+      : () => { };
 
     const p = (async () => {
       try {

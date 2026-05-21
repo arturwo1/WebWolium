@@ -1,10 +1,14 @@
 import { $ } from "../dom.js";
+import { lsGet } from "../storage.js";
 
-export function initMobileDrawer() {
+export function initDrawer() {
   const sidebar = $("#sidebar");
   const overlay = $("#overlay");
   const btnMenu = $("#btnMenu");
   const btnClose = $("#btnClose");
+
+  const btnNews = $("#btnNews");
+  const newsLast = lsGet("newsLast");
 
   if (!sidebar) return;
 
@@ -112,4 +116,17 @@ export function initMobileDrawer() {
     currentX = 0;
     baseX = 0;
   });
+
+  if (btnNews) {
+    const total = parseInt(btnNews.dataset.newsCount ?? "0", 10);
+    const seen = parseInt(newsLast ?? 0, 10) || 0;
+    const missed = Math.max(0, total - seen);
+
+    if (missed > 0) {
+      const badge = document.createElement("span");
+      badge.className = "nav__badge";
+      badge.textContent = `+${missed}`;
+      btnNews.appendChild(badge);
+    }
+  }
 }

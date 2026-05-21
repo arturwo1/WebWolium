@@ -26,5 +26,5 @@ export function ttlDrop(key) {
   MEM.delete(key);
   try {
     localStorage.removeItem(key);
-  } catch {}
+  } catch { }
 }

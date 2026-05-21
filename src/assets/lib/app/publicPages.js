@@ -5,5 +5,5 @@ export function isPublicPage() {
   if (PUBLIC_PAGES.has(pid)) return true;
 
   const p = location.pathname;
-  return p.startsWith("/rules/") || p.startsWith("/terms-of-service/") || p.startsWith("/privacy-policy/") || p.startsWith("/news/") || p==="/";
+  return p.startsWith("/rules/") || p.startsWith("/terms-of-service/") || p.startsWith("/privacy-policy/") || p.startsWith("/news/") || p === "/";
 }

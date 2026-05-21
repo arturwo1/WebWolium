@@ -1,27 +1,10 @@
-import {
-  $,
-  lsJSONGet,
-  lsJSONSet,
-  lsCleanExpired,
-  readIdentity
-} from "@/lib/index.js";
+import { $, lsJSONGet, lsJSONSet, lsCleanExpired, readIdentity, escapeHtml, t, onLangChange, hud, formatNumber } from "@/lib/index.js";
 
 import { createWebRequestService } from "@/services/index.js";
 import { initProfileChart } from "./profile_chart.js";
-import { t, onLangChange } from "@/lib/text/i18n.js";
-import { hud, formatNumber } from "@/lib/index.js";
 
 function setText(el, value) {
   if (el) el.textContent = String(value ?? "");
-}
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
 }
 
 function hasSpriteSymbol(id) {
@@ -230,7 +213,7 @@ export async function initProfilePage(sb) {
   if (!statsRoot || !chartModal || !chartClose || !chartTitleEl || !chartGuildId || !chartChannelId) {
     return null;
   }
-  
+
   const wr = createWebRequestService(sb, {
     defaultCacheTtlMs: 30_000,
     defaultCooldownMs: 1_500,
@@ -294,7 +277,7 @@ export async function initProfilePage(sb) {
     chartChannelId.disabled = false;
   }
 
-  function renderGuildOptions(type="") {
+  function renderGuildOptions(type = "") {
     const currentValue = chartGuildId.value;
 
     chartGuildId.innerHTML = "";
@@ -335,7 +318,7 @@ export async function initProfilePage(sb) {
 
       setText(profileTag, name);
       if (profilePfp && avatar) profilePfp.src = avatar;
-    } catch {}
+    } catch { }
   }
 
   function renderStats(res) {
@@ -357,7 +340,7 @@ export async function initProfilePage(sb) {
       total: formatNumber(res?.xp)
     }));
 
-    setText(profileLevel, t("profile.level", { level: formatNumber(res?.lvl)}));
+    setText(profileLevel, t("profile.level", { level: formatNumber(res?.lvl) }));
 
     if (profileXpBar) {
       const now = Number(res?.xp_now ?? 0);
@@ -404,19 +387,19 @@ export async function initProfilePage(sb) {
     const lastKey = `wolium:last_profile_stats:${userId}`;
 
     try {
-      const res = await wr.queue("profile_stats", {"user_id": userDiscordId}, {
+      const res = await wr.queue("profile_stats", { "user_id": userDiscordId }, {
         cacheTtlMs: 30_000,
         cooldownMs: 1_500,
         timeoutMs: 5_000
       });
 
-      lsCleanExpired("wolium:last_profile_stats:", 1000*60*60*24*7);
+      lsCleanExpired("wolium:last_profile_stats:", 1000 * 60 * 60 * 24 * 7);
       lsJSONSet(lastKey, { t: Date.now(), res });
       renderStats(res);
 
       if (res?.error) {
         console.error("[profile] stats load error:", res?.error);
-        hud.error(res?.error, {title: t("profile.stats_load_error")});
+        hud.error(res?.error, { title: t("profile.stats_load_error") });
       }
 
       if (userDiscordId) return res;

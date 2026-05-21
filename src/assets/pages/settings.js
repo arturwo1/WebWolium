@@ -1,7 +1,6 @@
-import { getLang, setLang, onLangChange, getSupportedLangs, getLanguageNativeName, warmLanguageNativeNames, t } from "@/lib/text/i18n.js";
 import { grantConsent, denyConsent } from '@/lib/consent/google.js';
 import { createWebRequestService } from "@/services/index.js";
-import { $, $$, hud, lsJSONGet, lsJSONSet } from "@/lib/index.js";
+import { $, $$, hud, lsJSONGet, lsJSONSet, getLang, setLang, onLangChange, getSupportedLangs, getLanguageNativeName, warmLanguageNativeNames, t } from "@/lib/index.js";
 
 const lang = $("[data-lang-select]");
 const variation = $("[data-variation-select]");
@@ -196,10 +195,10 @@ export async function initSettingsPage(sb) {
       const flagKey = input.dataset.flag;
       input.checked = currentPrivacy[flagKey] === true;
 
-      const parentFlag = Object.keys(FLAG_DEPENDENCIES).find(key => key === flagKey) 
-        ? FLAG_DEPENDENCIES[flagKey] 
+      const parentFlag = Object.keys(FLAG_DEPENDENCIES).find(key => key === flagKey)
+        ? FLAG_DEPENDENCIES[flagKey]
         : null;
-        
+
       if (parentFlag) {
         input.disabled = currentPrivacy[parentFlag] === false;
       }
@@ -243,7 +242,7 @@ export async function initSettingsPage(sb) {
 
   async function savePrivacyState(payload) {
     const backupState = { ...currentPrivacy };
-    
+
     try {
       const res = await wr.queue("set_privacy", payload, {
         cacheTtlMs: 0,

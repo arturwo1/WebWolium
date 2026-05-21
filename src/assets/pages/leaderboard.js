@@ -1,6 +1,5 @@
-import { t, onLangChange } from "@/lib/text/i18n.js";
 import { createWebRequestService } from "@/services/index.js";
-import { $, $$, hud, formatDuration, formatNumber } from "@/lib/index.js";
+import { $, $$, hud, formatDuration, formatNumber, t, onLangChange } from "@/lib/index.js";
 
 const METRICS = [
   { key: "total_balance", i18n: "leaderboard.metric_total_balance", format: "sparks" },
@@ -275,13 +274,13 @@ export async function initLeaderboardPage(sb) {
       const isServerScope = state.scope === "top_servers";
       const entries = res.entries ?? [];
 
-      const totalStr = (res.total ?? 0).toLocaleString();
+      const totalStr = (res.total_users ?? 0).toLocaleString();
       const countUnit = isServerScope
         ? t("leaderboard.unit_servers")
         : t("leaderboard.unit_users");
       lbTotal.textContent = `${totalStr} ${countUnit}`;
       lbTotal.className = "lb-total";
-      lbSubtitle.textContent = `${scopeLabel()} · ${t(METRICS.find(m => m.key === state.metric)?.i18n ?? state.metric)}`;
+      lbSubtitle.textContent = `${scopeLabel()} · ${t(METRICS.find(m => m.key === state.metric)?.i18n ?? state.metric)} · ${fmtValue(res.total_value ?? 0, state.metric)}`;
       lbSubtitle.className = "lb-subtitle";
 
       lbList.innerHTML = "";
