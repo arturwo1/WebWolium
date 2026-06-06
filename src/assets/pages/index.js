@@ -1,21 +1,16 @@
 import { $ } from "@/lib/index.js";
+import { apiPublic } from "@/services/index.js";
 
-export async function initHomePage(sb) {
-  const table = "public_stats";
+export async function initHomePage() {
+  const result = await apiPublic("public_stats", {}, {
+    cacheTtlMs: 30_000,
+    requestTimeoutMs: 8_000
+  }).catch((e) => {
+    console.error("[home] Failed to fetch stats:", e);
+    return null;
+  });
 
-  const { data, error } = await sb
-    .from(table)
-    .select("key, value");
-
-  if (error) {
-    console.error("[home] Failed to fetch stats:", error);
-    return;
-  }
-
-  const result = {};
-  for (const row of data) {
-    result[row.key] = row.value;
-  }
+  if (!result) return;
 
   document.querySelectorAll("[data-stat]").forEach((el) => {
     const key = el.dataset.stat;

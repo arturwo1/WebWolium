@@ -16,7 +16,10 @@ import {
   highlightNav,
   initConsent,
   lsDel,
-  $
+  $,
+  initI18n,
+  applyDomI18n,
+  t
 } from "@/lib/index.js";
 
 import { initProfilePage } from "./pages/profile.js";
@@ -26,7 +29,6 @@ import { initNewsPage } from "./pages/news.js";
 import { initLeaderboardPage } from "./pages/leaderboard.js";
 
 import { initPageTransitions } from "@/lib/ui/pageTransitions.js";
-import { initI18n, applyDomI18n, t } from "@/lib/text/i18n.js";
 
 import "highlight.js/styles/github-dark.css";
 
@@ -65,6 +67,11 @@ async function syncAuthUI(sb) {
   try {
     const { data } = await sb.auth.getSession();
     session = data?.session || null;
+
+    if (session && session.expires_at * 1000 < Date.now()) {
+      const { data: refreshed } = await sb.auth.refreshSession();
+      session = refreshed?.session || null;
+    }
   } catch {
     session = null;
   }
@@ -94,7 +101,7 @@ async function initCurrentPage(sb, session) {
   } else if (pid === "home") {
     if (started.has("home")) return;
     started.add("home");
-    await initHomePage(sb);
+    await initHomePage();
     return;
   } else if (pid === "settings") {
     if (!session) return;

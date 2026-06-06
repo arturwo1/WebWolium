@@ -9,3 +9,5 @@
   package = "@netlify/plugin-sitemap"
   [plugins.inputs]
     buildDir = "_site"
+[functions]
+  directory = "netlify/functions"

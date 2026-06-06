@@ -1,7 +1,7 @@
 import { $, lsJSONGet, lsJSONSet, lsCleanExpired, readIdentity, escapeHtml, t, onLangChange, hud, formatNumber } from "@/lib/index.js";
 
 import { createWebRequestService } from "@/services/index.js";
-import { initProfileChart } from "./profile_chart.js";
+import { initChart } from "@/lib/chart/chart.js";
 
 function setText(el, value) {
   if (el) el.textContent = String(value ?? "");
@@ -423,7 +423,7 @@ export async function initProfilePage(sb) {
   function ensureChart() {
     if (chart) return chart;
 
-    chart = initProfileChart(queueChart, {
+    chart = initChart(queueChart, {
       cacheTtlMs: 30_000,
       cooldownMs: 1_500,
       timeoutMs: 80_000,

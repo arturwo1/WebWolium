@@ -6,6 +6,9 @@ export async function startOAuthLogin(sb, {
 
   await sb.auth.signInWithOAuth({
     provider,
-    options: { redirectTo: `${location.origin}${redirectPath}` }
+    options: {
+      redirectTo: `${location.origin}${redirectPath}`,
+      scopes: "guilds"
+    }
   });
 }
