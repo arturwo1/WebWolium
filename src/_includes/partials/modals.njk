@@ -13,8 +13,12 @@
         <button class="modal__tab" type="button" data-chart-type="activities" role="tab" aria-selected="false" tabindex="-1">
           <span data-i18n="profile.activities">Activity</span>
         </button>
-        <button class="modal__tab" type="button" data-chart-type="commands" role="tab" aria-selected="false" tabindex="-1">
+        <button id="commandsTab" class="modal__tab" type="button" data-chart-type="commands" role="tab" aria-selected="false" tabindex="-1" hidden>
           <span data-i18n="profile.commands">Commands</span>
+        </button>
+
+        <button id="membersTab" class="modal__tab" type="button" data-chart-type="members" role="tab" aria-selected="false" tabindex="-1" hidden>
+          <span data-i18n="server.analytics.members">Members</span>
         </button>
       </div>
 
@@ -42,6 +46,10 @@
 
       <select class="input input--sm" id="chartChannelId" disabled>
         <option value="" selected disabled data-i18n="chart.preset.channel.locked">Choose guild firstly</option>
+      </select>
+
+      <select class="input input--sm" id="chartRoleId">
+        <option value="" selected disabled data-i18n="chart.preset.role">Choose role</option>
       </select>
 
       <input class="input input--sm modal__context" id="chartContext" type="text"  data-i18n-attr="placeholder: chart.preset.context"/>

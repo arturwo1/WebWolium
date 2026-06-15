@@ -188,136 +188,6 @@ export async function handleDeleteAllUserData(client, auth) {
   return { ok: true };
 }
 
-export async function handleMessagesSeries(client, auth, payload) {
-  const p = seriesParams(payload);
-  const res = await client.query(`
-    with base as (
-      select
-        (extract(epoch from date_time) * 1000)::bigint as ts_ms,
-        content,
-        guild_id,
-        channel_id,
-        message_url,
-        attachments
-      from messages
-      where user_id=$1::bigint
-        and date_time >= to_timestamp($2::bigint / 1000.0)
-        and date_time <= to_timestamp($3::bigint / 1000.0)
-        and ($6::bigint is null or guild_id=$6::bigint)
-        and ($7::bigint is null or channel_id=$7::bigint)
-        and ($8::text is null or content ilike ('%' || $8::text || '%'))
-    ),
-    buck as (
-      select
-        ((ts_ms / $4::bigint) * $4::bigint) as bucket_start,
-        count(*)::bigint as y,
-        min(ts_ms) as min_ts
-      from base
-      group by 1
-    ),
-    sample as (
-      select distinct on (((ts_ms / $4::bigint) * $4::bigint))
-        ((ts_ms / $4::bigint) * $4::bigint) as bucket_start,
-        ts_ms as sample_ts,
-        content as sample_content,
-        guild_id as sample_guild_id,
-        channel_id as sample_channel_id,
-        message_url as sample_url,
-        attachments as sample_attachments
-      from base
-      order by ((ts_ms / $4::bigint) * $4::bigint), ts_ms asc
-    )
-    select
-      (case when b.y=1 then b.min_ts else (b.bucket_start + ($4::bigint / 2)) end)::bigint as ts,
-      b.y::bigint as y,
-      b.bucket_start::bigint as bucket_start,
-      (b.bucket_start + $4::bigint)::bigint as bucket_end,
-      s.sample_ts::bigint as sample_ts,
-      s.sample_content,
-      s.sample_url,
-      s.sample_guild_id,
-      s.sample_channel_id,
-      s.sample_attachments
-    from buck b
-    left join sample s using (bucket_start)
-    order by b.bucket_start asc
-    limit $5
-  `, [auth.discordId, p.fromMs, p.toMs, p.bucketMs, p.limit, p.guildId, p.channelId, p.context]);
-
-  return res.rows.map(row => {
-    const d = rowJson(row);
-    const meta = guildChannelMeta(d.sample_guild_id, d.sample_channel_id);
-    d.meta = {
-      url: d.sample_url || null,
-      guild_name: meta.guild_name,
-      channel_name: meta.channel_name
-    };
-    return d;
-  });
-}
-
-export async function handleVoiceSeries(client, auth, payload) {
-  const p = seriesParams(payload);
-  const dur = durationRangeSeconds(payload);
-  const guildName = cleanText(payload.guild_name);
-  const channelName = cleanText(payload.channel_name);
-
-  const res = await client.query(`
-    select
-      (extract(epoch from enter_time) * 1000)::bigint as ts_ms,
-      greatest(0, extract(epoch from (leave_time - enter_time)))::bigint as seconds,
-      guild_id,
-      after_channel_id as channel_id
-    from voice
-    where user_id=$1::bigint
-      and enter_time >= to_timestamp($2::bigint / 1000.0)
-      and enter_time <= to_timestamp($3::bigint / 1000.0)
-      and ($4::bigint is null or guild_id=$4::bigint)
-      and ($5::bigint is null or after_channel_id=$5::bigint)
-      and ($6::bigint is null or greatest(0, extract(epoch from (leave_time - enter_time)))::bigint >= $6::bigint)
-      and ($7::bigint is null or greatest(0, extract(epoch from (leave_time - enter_time)))::bigint <= $7::bigint)
-    order by enter_time asc
-  `, [auth.discordId, p.fromMs, p.toMs, p.guildId, p.channelId, dur.minSec, dur.maxSec]);
-
-  const buckets = new Map();
-
-  for (const row of res.rows) {
-    const d = rowJson(row);
-    const meta = guildChannelMeta(d.guild_id, d.channel_id);
-
-    if (guildName && !meta.guild_name.toLowerCase().includes(guildName.toLowerCase())) continue;
-    if (channelName && !meta.channel_name.toLowerCase().includes(channelName.toLowerCase())) continue;
-
-    const tsMs = Number(d.ts_ms || 0);
-    const seconds = Number(d.seconds || 0);
-    const bucketStart = Math.floor(tsMs / p.bucketMs) * p.bucketMs;
-
-    const item = buckets.get(bucketStart);
-
-    if (!item) {
-      buckets.set(bucketStart, {
-        ts: bucketStart + Math.floor(p.bucketMs / 2),
-        y: seconds,
-        bucket_start: bucketStart,
-        bucket_end: bucketStart + p.bucketMs,
-        meta: {
-          guild_id: d.guild_id,
-          channel_id: d.channel_id,
-          guild_name: meta.guild_name,
-          channel_name: meta.channel_name
-        }
-      });
-    } else {
-      item.y += seconds;
-    }
-  }
-
-  return [...buckets.entries()]
-    .sort((a, b) => a[0] - b[0])
-    .slice(0, p.limit)
-    .map(([, value]) => value);
-}
-
 function presenceStatus(statusCode, payloadRaw) {
   const payload = parseJson(payloadRaw);
 
@@ -331,7 +201,7 @@ function presenceStatus(statusCode, payloadRaw) {
   return null;
 }
 
-export async function handleActivitiesSeries(client, auth, payload) {
+export async function handleUserActivitiesSeries(client, auth, payload) {
   const p = seriesParams(payload);
   const dur = durationRangeSeconds(payload);
   const activityName = cleanText(payload.activity_name || p.context);
@@ -491,72 +361,171 @@ export async function handleActivitiesSeries(client, auth, payload) {
   });
 }
 
-export async function handleCommandsSeries(client, auth, payload) {
+export async function handleGuildActivitiesSeries(client, auth, payload) {
   const p = seriesParams(payload);
+  const dur = durationRangeSeconds(payload);
+
+  const guildId = String(p.guildId || payload.guild_id || "").trim();
+  if (!/^\d+$/.test(guildId)) return [];
+
+  const activityName = cleanText(payload.activity_name || p.context);
+  const status = cleanText(payload.status, 32);
 
   const res = await client.query(`
-    with base as (
+    with params as (
       select
-        (extract(epoch from uc.timestamp) * 1000)::bigint as ts_ms,
-        uc.guild_id,
-        uc.channel_id,
-        c.name as command_name,
-        uc.args
-      from user_commands uc
-      left join commands c on c.id=uc.command_id
-      where uc.user_id=$1::bigint
-        and uc.timestamp >= to_timestamp($2::bigint / 1000.0)
-        and uc.timestamp <= to_timestamp($3::bigint / 1000.0)
-        and ($6::bigint is null or uc.guild_id=$6::bigint)
-        and ($7::bigint is null or uc.channel_id=$7::bigint)
-        and ($8::text is null or (
-          c.name ilike ($8::text || '%')
-          or c.name ilike ('%' || $8::text || '%')
-          or (length($8::text) >= 3 and similarity(c.name, $8::text) > 0.3)
-        ))
+        to_timestamp($2::bigint / 1000.0) as from_ts,
+        to_timestamp($3::bigint / 1000.0) as to_ts,
+        $8::bigint as bucket_ms
+    ),
+    filtered as (
+      select
+        s.id::bigint as id,
+        d.name as activity_name,
+        case
+          when d.source_kind = 0 then d.payload->>'large_image_url'
+          else null
+        end as activity_icon,
+        (extract(epoch from greatest(s.started_at, p.from_ts)) * 1000)::bigint as start_ms,
+        (extract(epoch from least(coalesce(s.ended_at, current_timestamp), p.to_ts)) * 1000)::bigint as end_ms
+      from params p
+      join presence_snapshots ps
+        on ps.guild_id = $1::bigint
+      join activity_segments s
+        on s.snapshot_id = ps.id
+      join activity_defs d
+        on d.id = s.def_id
+      where s.started_at <= p.to_ts
+        and coalesce(s.ended_at, s.started_at) >= p.from_ts
+        and least(coalesce(s.ended_at, current_timestamp), p.to_ts) > greatest(s.started_at, p.from_ts)
+        and ($4::text is null or $4::text = '' or d.name ilike ('%' || $4::text || '%'))
+        and ($5::bigint is null or extract(epoch from least(coalesce(s.ended_at, current_timestamp), p.to_ts) - greatest(s.started_at, p.from_ts)) >= $5::bigint)
+        and ($6::bigint is null or extract(epoch from least(coalesce(s.ended_at, current_timestamp), p.to_ts) - greatest(s.started_at, p.from_ts)) <= $6::bigint)
+        and (
+          $7::text is null
+          or $7::text = ''
+          or ps.status_code = case lower($7::text)
+            when 'offline' then 0
+            when 'online' then 1
+            when 'idle' then 2
+            when 'dnd' then 3
+            when 'invisible' then 4
+          end::smallint
+        )
+    ),
+    expanded as (
+      select
+        gs.bucket_start::bigint as bucket_start,
+        f.id,
+        f.activity_name,
+        f.activity_icon,
+        f.start_ms,
+        f.end_ms,
+        greatest(
+          least(f.end_ms, gs.bucket_start + p.bucket_ms) - greatest(f.start_ms, gs.bucket_start),
+          0
+        )::bigint as overlap_ms
+      from filtered f
+      cross join params p
+      cross join lateral generate_series(
+        (f.start_ms / p.bucket_ms) * p.bucket_ms,
+        ((f.end_ms - 1) / p.bucket_ms) * p.bucket_ms,
+        p.bucket_ms
+      ) as gs(bucket_start)
     ),
     buck as (
       select
-        ((ts_ms / $4::bigint) * $4::bigint) as bucket_start,
-        count(*)::bigint as y,
-        min(ts_ms) as min_ts
-      from base
-      group by 1
+        bucket_start,
+        bucket_start + $8::bigint as bucket_end,
+        count(distinct id)::bigint as total_count,
+        (sum(overlap_ms) / 1000)::bigint as total_duration,
+        min(greatest(start_ms, bucket_start))::bigint as min_ts
+      from expanded
+      where overlap_ms > 0
+      group by bucket_start
     ),
     sample as (
-      select distinct on (((ts_ms / $4::bigint) * $4::bigint))
-        ((ts_ms / $4::bigint) * $4::bigint) as bucket_start,
-        ts_ms as sample_ts,
-        command_name as sample_command_name,
-        args as sample_args,
-        guild_id as sample_guild_id,
-        channel_id as sample_channel_id
-      from base
-      order by ((ts_ms / $4::bigint) * $4::bigint), ts_ms asc
+      select distinct on (bucket_start)
+        bucket_start,
+        activity_name,
+        activity_icon
+      from expanded
+      where overlap_ms > 0
+      order by bucket_start, overlap_ms desc, activity_name asc
     )
     select
-      (case when b.y=1 then b.min_ts else (b.bucket_start + ($4::bigint / 2)) end)::bigint as ts,
-      b.y::bigint as y,
+      (case when b.total_count = 1 then b.min_ts else (b.bucket_start + ($8::bigint / 2)) end)::bigint as ts,
+      b.total_count::bigint as y_count,
+      b.total_duration::bigint as y_duration,
       b.bucket_start::bigint as bucket_start,
-      (b.bucket_start + $4::bigint)::bigint as bucket_end,
-      s.sample_ts::bigint as sample_ts,
-      s.sample_command_name,
-      s.sample_args,
-      s.sample_guild_id,
-      s.sample_channel_id
+      b.bucket_end::bigint as bucket_end,
+      s.activity_name,
+      s.activity_icon
     from buck b
     left join sample s using (bucket_start)
     order by b.bucket_start asc
-    limit $5
-  `, [auth.discordId, p.fromMs, p.toMs, p.bucketMs, p.limit, p.guildId, p.channelId, p.context]);
+    limit $9
+  `, [
+    guildId,
+    p.fromMs,
+    p.toMs,
+    activityName,
+    dur.minSec,
+    dur.maxSec,
+    status,
+    p.bucketMs,
+    p.limit
+  ]);
 
   return res.rows.map(row => {
     const d = rowJson(row);
-    const meta = guildChannelMeta(d.sample_guild_id, d.sample_channel_id);
-    d.meta = {
-      guild_name: meta.guild_name,
-      channel_name: meta.channel_name
+
+    return {
+      ts: Number(d.ts),
+      y: Number(d.y_duration),
+      count: Number(d.y_count),
+      bucket_start: Number(d.bucket_start),
+      bucket_end: Number(d.bucket_end),
+      meta: {
+        activity_name: d.activity_name,
+        activity_icon: d.activity_icon || null
+      }
     };
+  });
+}
+
+export async function handleGuildMemberSeries(client, auth, payload) {
+  const p = seriesParams(payload);
+  const res = await client.query(`
+    with base as (
+      select
+        (extract(epoch from date_time) * 1000)::bigint as ts_ms,
+        total::bigint as total
+      from guild_member_stats
+      where guild_id = $1::bigint
+        and date_time >= to_timestamp($2::bigint / 1000.0)
+        and date_time <= to_timestamp($3::bigint / 1000.0)
+    ),
+    buck as (
+      select distinct on (((ts_ms / $4::bigint) * $4::bigint))
+        ((ts_ms / $4::bigint) * $4::bigint) as bucket_start,
+        ts_ms,
+        total
+      from base
+      order by ((ts_ms / $4::bigint) * $4::bigint), ts_ms desc
+    )
+    select
+      b.ts_ms::bigint as ts,
+      b.total::bigint as y,
+      b.bucket_start::bigint as bucket_start,
+      (b.bucket_start + $4::bigint)::bigint as bucket_end
+    from buck b
+    order by b.bucket_start asc
+    limit $5
+  `, [p.guildId, p.fromMs, p.toMs, p.bucketMs, p.limit]);
+
+  return res.rows.map(row => {
+    const d = rowJson(row);
     return d;
   });
 }
@@ -567,10 +536,9 @@ export async function handleDirectKind(client, auth, kind, payload) {
   if (kind === "set_privacy") return await handleSetPrivacy(client, auth, payload);
   if (kind === "delete_user_data") return await handleDeleteUserData(client, auth, payload);
   if (kind === "delete_all_user_data") return await handleDeleteAllUserData(client, auth);
-  if (kind === "messages_series") return await handleMessagesSeries(client, auth, payload);
-  if (kind === "voice_series") return await handleVoiceSeries(client, auth, payload);
-  if (kind === "activities_series") return await handleActivitiesSeries(client, auth, payload);
-  if (kind === "commands_series") return await handleCommandsSeries(client, auth, payload);
+  if (kind === "user_activities_series") return await handleUserActivitiesSeries(client, auth, payload);
+  if (kind === "guild_activities_series") return await handleGuildActivitiesSeries(client, auth, payload);
+  if (kind === "guild_members_series") return await handleGuildMemberSeries(client, auth, payload);
 
   const err = new Error("NOT_DIRECT_KIND");
   err.status = 400;

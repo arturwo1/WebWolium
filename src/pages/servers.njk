@@ -1,7 +1,7 @@
 ---
 layout: app.njk
 title: Servers
-description: Discover and manage all your servers with ease on Wolium. Connect to your virtual machines, monitor performance, and control settings from a single dashboard.
+description: Manage your Discord servers with powerful moderation, automations, logging, welcome messages, and advanced bot settings in one dashboard.
 pageId: servers
 permalink: /servers/
 noindex: true
@@ -9,21 +9,83 @@ noindex: true
 
 <h1 class="h1" data-i18n="page.title.servers">Servers</h1>
 
-<article class="card section">
-  <h2 class="section-title" style="font-size:22px;margin:0 0 12px" data-i18n="server.choosed">Choosed Server</h2>
-  <div class="kv">
-    <div class="k" data-i18n="server.label">Server:</div>
-    <div class="v" id="chosenServerText" data-i18n="server.choosed.none">didnt choosed</div>
+<article class="card section srv-head">
+  <div class="srv-head__main">
+    <div class="section-title" data-i18n="servers.title">Your Discord servers</div>
+    <div class="srv-head__text" data-i18n="servers.subtitle">Select a server to open analytics, settings and Wolium configuration.</div>
+  </div>
+
+  <div class="stats srv-head__stats">
+    <div class="stat">
+      <div class="stat__label" data-i18n="servers.stat_all">Servers</div>
+      <div class="stat__value" id="srvStatAll">—</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat__label" data-i18n="servers.stat_full">Full access</div>
+      <div class="stat__value" id="srvStatFull">—</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat__label" data-i18n="servers.stat_manage">Manageable</div>
+      <div class="stat__value" id="srvStatManage">—</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat__label" data-i18n="servers.stat_mod">Moderation</div>
+      <div class="stat__value" id="srvStatMod">—</div>
+    </div>
   </div>
 </article>
 
-<article class="card section">
-  <h2 class="section-title" style="font-size:22px;margin:0 0 12px" data-i18n="page.title.settings">Settings</h2>
+<div class="card section srv-toolbar">
+  <input class="input--sm srv-search" id="srvSearch" type="search" autocomplete="off" placeholder="Search servers..." data-i18n-attr="placeholder: servers.search_placeholder">
 
-  <div class="kv" style="gap:10px">
-    <label class="k" for="srvTitle" data-i18n="name">Name</label>
-    <input class="input" id="srvTitle" placeholder="Example: AstroCommunity" data-i18n-attr="placeholder: server.placeholder" />
+  <div class="srv-tabs" id="srvFilters">
+    <button class="srv-tab is-active" type="button" data-srv-filter="all" aria-pressed="true" data-i18n="servers.filter_all">All</button>
 
-    <button class="nav__item" id="btnSaveServer" type="button" style="text-align:center" data-i18n="save">Save</button>
+    <button class="srv-tab" type="button" data-srv-filter="full" aria-pressed="false" data-i18n="servers.filter_full">Full access</button>
+
+    <button class="srv-tab" type="button" data-srv-filter="manage" aria-pressed="false" data-i18n="servers.filter_manage">Management</button>
+
+    <button class="srv-tab" type="button" data-srv-filter="mod" aria-pressed="false" data-i18n="servers.filter_mod">Moderation</button>
+
+    <button class="srv-tab" type="button" data-srv-filter="member" aria-pressed="false" data-i18n="servers.filter_member">Member</button>
   </div>
-</article>
+
+  <button class="btn-preset" id="srvRefresh" type="button" data-i18n="servers.refresh">Refresh</button>
+</div>
+
+<div class="srv-list loading" id="srvList">
+  {% for i in range(0, 6) %}
+  <div class="srv-card card skeleton"></div>
+  {% endfor %}
+</div>
+
+<div id="srvEmpty" hidden>
+  <div class="card section srv-empty">
+    <svg class="srv-empty__icon icon" width="40" height="40" aria-hidden="true">
+      <use href="#server"></use>
+    </svg>
+
+    <div class="srv-empty__title" id="srvEmptyTitle" data-i18n="servers.empty_title">No servers found</div>
+
+    <div class="srv-empty__text" id="srvEmptyText" data-i18n="servers.empty_text">Add Wolium to a Discord server to get started.</div>
+
+    <a class="btn-preset" id="srvAddBot" href="https://discord.com/oauth2/authorize" target="_blank" rel="noopener" data-i18n="home.cta.add">Add Wolium</a>
+  </div>
+</div>
+
+<div id="srvError" hidden>
+  <div class="card section srv-empty srv-empty--error">
+    <svg class="srv-empty__icon icon" width="40" height="40" aria-hidden="true">
+      <use href="#alert"></use>
+    </svg>
+
+    <div class="srv-empty__title" data-i18n="servers.error_title">Could not load servers</div>
+
+    <div class="srv-empty__text" id="srvErrorText"></div>
+
+    <button class="btn-preset" id="srvRetry" type="button" data-i18n="servers.retry">Retry</button>
+  </div>
+</div>

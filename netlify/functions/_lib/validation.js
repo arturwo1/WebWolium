@@ -4,14 +4,19 @@ export const DIRECT_KINDS = new Set([
   "set_privacy",
   "delete_user_data",
   "delete_all_user_data",
-  "messages_series",
-  "voice_series",
-  "activities_series",
-  "commands_series"
+  "user_activities_series",
+  "guild_activities_series",
+  "guild_members_series"
 ]);
 
 export const BOT_KINDS = new Set([
-  "profile_stats",
+  "user_profile_stats",
+  "guild_profile_stats",
+  "user_messages_series",
+  "user_voice_series",
+  "user_commands_series",
+  "guild_messages_series",
+  "guild_voice_series",
   "user_guilds",
   "leaderboard"
 ]);

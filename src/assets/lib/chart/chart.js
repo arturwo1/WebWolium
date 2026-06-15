@@ -16,6 +16,7 @@ export function initChart(queueRequest, opts = {}) {
   const els = {
     chartGuildId: $("#chartGuildId"),
     chartChannelId: $("#chartChannelId"),
+    chartRoleId: $("#chartRoleId"),
     chartContext: $("#chartContext"),
     chartCommandName: $("#chartCommandName"),
     chartVoiceMinDuration: $("#chartVoiceMinDuration"),
@@ -38,6 +39,7 @@ export function initChart(queueRequest, opts = {}) {
   if (!canvas || !chartFrom || !chartTo) return null;
 
   const debug = !!opts.debug;
+  const guildId = String(opts.guildId ?? "").trim();
   const defaultDays = Number(opts.defaultDays ?? 30);
   const snapMs = Number(opts.snapMs ?? 60_000);
   const reqOpts = {
@@ -52,7 +54,7 @@ export function initChart(queueRequest, opts = {}) {
   const onTypeChange = typeof opts.onTypeChange === "function" ? opts.onTypeChange : null;
 
   const state = {
-    type: "messages",
+    type: "user_messages",
     dataMin: 0,
     dataMax: 0,
     viewMin: 0,
@@ -178,7 +180,13 @@ export function initChart(queueRequest, opts = {}) {
     const typeDef = resolveType(state.type);
 
     const payload = typeDef.buildPayload(
-      { from: state.viewMin, to: state.viewMax, bucketMs, limit: clamp(Math.floor(widthPx / 3), 160, 500) },
+      {
+        from: state.viewMin,
+        to: state.viewMax,
+        bucketMs,
+        limit: clamp(Math.floor(widthPx / 3), 160, 500),
+        guildId
+      },
       els
     );
 
@@ -267,6 +275,7 @@ export function initChart(queueRequest, opts = {}) {
 
   on(els.chartGuildId, "change", onManualRangeEdit);
   on(els.chartChannelId, "change", onManualRangeEdit);
+  on(els.chartRoleId, "change", onManualRangeEdit);
 
   on(els.chartContext, "input", () => scheduleRefresh(400));
   on(els.chartContext, "change", onManualRangeEdit);

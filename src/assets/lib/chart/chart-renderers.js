@@ -1,4 +1,4 @@
-import { escapeHtml, formatDiscordTime, formatDuration, formatTsFull, t, renderDiscordMarkdownToHtml } from "@/lib/index.js";
+import { escapeHtml, formatDiscordTime, formatDuration, formatNumber, formatTsFull, t, renderDiscordMarkdownToHtml } from "@/lib/index.js";
 import { parseJsonObject, parseAttachments, renderAttachmentsHtml, replaceImageLinksInHtml, formatArgsInline } from "./chart-utils.js";
 
 function hasSpriteSymbol(id) {
@@ -142,7 +142,67 @@ function buildPresenceBadgeHtml(status, desktop, mobile, web) {
   `;
 }
 
-export function renderMessagePreview(p, viewer) {
+function metricMeta(p) {
+  const meta = parseJsonObject(p?.meta) ?? {};
+
+  return {
+    guild: meta.guild_name ?? p?.sample_guild_id ?? t("common.server"),
+    channel: meta.channel_name ?? p?.sample_channel_id ?? "",
+    activity: meta.activity_name ?? "",
+    activityIcon: meta.activity_icon ?? "",
+    start: p?.bucket_start ?? meta.bucket_start ?? null,
+    end: p?.bucket_end ?? meta.bucket_end ?? null
+  };
+}
+
+function renderMetricPreview({ p, title, value, channel = true, activity = "", activityIcon = "" }) {
+  const meta = metricMeta(p);
+
+  return `
+    <div class="msg-preview__bar">
+      <span class="msg-preview__dot" aria-hidden="true"></span>
+      <div class="msg-preview__guild" title="${escapeHtml(meta.guild)}">${escapeHtml(meta.guild)}</div>
+      ${channel && meta.channel
+      ? `<div class="msg-preview__channel text-muted-sm" title="#${escapeHtml(meta.channel)}">${escapeHtml(meta.channel)}</div>`
+      : ``}
+    </div>
+
+    <div class="prev-voice">
+      <div class="prev-voice__row">
+        <span class="prev-badge">${escapeHtml(title)}: ${value}</span>
+        ${activity
+      ? `<span class="prev-badge prev-activity">
+              ${activityIcon ? `<img class="act-tip__large-img" src="${escapeHtml(activityIcon)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ``}
+              <span>${escapeHtml(activity)}</span>
+            </span>`
+      : ``}
+      </div>
+    </div>
+
+    <div class="act-tip__timing">
+      ${meta.start ? escapeHtml(formatTsFull(meta.start)) : ""}
+      ${meta.start && meta.end ? " — " : ""}
+      ${meta.end ? escapeHtml(formatTsFull(meta.end)) : ""}
+    </div>
+  `;
+}
+
+function renderMetricTiming(p) {
+  const start = p?.bucket?.start ?? p?.ts ?? null;
+  const end = p?.bucket?.end ?? null;
+
+  if (!start && !end) return "";
+
+  return `
+    <div class="act-tip__timing">
+      ${start ? escapeHtml(formatTsFull(start)) : ""}
+      ${start && end ? " — " : ""}
+      ${end ? escapeHtml(formatTsFull(end)) : ""}
+    </div>
+  `;
+}
+
+export function renderUserMessagePreview(p, viewer) {
   const meta = p?.meta ?? {};
 
   const guildName = meta.guild_name ?? t("common.server");
@@ -210,7 +270,7 @@ export function renderMessagePreview(p, viewer) {
   `;
 }
 
-export function renderVoicePreview(p) {
+export function renderUserVoicePreview(p) {
   const meta = p?.meta ?? {};
   const guild = meta.guild_name ?? meta.guild_id ?? meta.guild ?? t("common.server");
   const chan = meta.channel_name ?? meta.channel_id ?? meta.channel ?? t("profile.voice");
@@ -225,7 +285,7 @@ export function renderVoicePreview(p) {
   `;
 }
 
-export function renderActivityPreview(p, viewer) {
+export function renderUserActivityPreview(p, viewer) {
   const meta = parseJsonObject(p?.meta) ?? {};
 
   const activityDef = parseJsonObject(meta?.activity_def) ?? {};
@@ -435,7 +495,7 @@ export function renderActivityPreview(p, viewer) {
   `;
 }
 
-export function renderCommandsPreview(p, viewer) {
+export function renderUserCommandsPreview(p, viewer) {
   const meta = p?.meta ?? {};
 
   const guildName = meta.guild_name ?? t("common.server");
@@ -479,7 +539,7 @@ export function renderCommandsPreview(p, viewer) {
 
       <div class="msg-preview__content">
         <div class="msg-preview__meta">
-          <span class="text-truncate">${escapeHtml(authorName)}</span>
+          <span class="msg-preview__author text-truncate">${escapeHtml(authorName)}</span>
           ${ts ? `<span class="msg-preview__time text-muted-sm">${escapeHtml(formatDiscordTime(ts))}</span>` : ``}
         </div>
 
@@ -493,5 +553,48 @@ export function renderCommandsPreview(p, viewer) {
     <div class="msg-preview__hint">
       <span class="kbd js-preview-click">${command_name}</span>
     </div>
+  `;
+}
+
+export function renderGuildMessagePreview(p) {
+  return renderMetricPreview({
+    p,
+    title: t("profile.messages"),
+    value: escapeHtml(formatNumber(p?.y || 0)),
+    channel: true
+  });
+}
+
+export function renderGuildVoicePreview(p) {
+  return renderMetricPreview({
+    p,
+    title: t("profile.voice"),
+    value: escapeHtml(formatDuration(p?.y || 0)),
+    channel: true
+  });
+}
+
+export function renderGuildActivityPreview(p) {
+  const meta = metricMeta(p);
+
+  return renderMetricPreview({
+    p,
+    title: t("profile.time"),
+    value: escapeHtml(formatDuration(p?.y || 0)),
+    channel: false,
+    activity: meta.activity || t("profile.activities"),
+    activityIcon: meta.activityIcon
+  });
+}
+
+export function renderGuildMembersPreview(p) {
+  return `
+    <div class="prev-voice">
+      <div class="prev-voice__row">
+        <span class="prev-badge">${escapeHtml(t("server.analytics.members"))}: ${escapeHtml(formatNumber(p?.y ?? 0))}</span>
+      </div>
+    </div>
+
+    ${renderMetricTiming(p)}
   `;
 }

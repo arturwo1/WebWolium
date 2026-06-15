@@ -125,6 +125,7 @@ export function initDrawer() {
     if (missed > 0) {
       const badge = document.createElement("span");
       badge.className = "nav__badge";
+      badge.setAttribute("data-tone", "danger");
       badge.textContent = `+${missed}`;
       btnNews.appendChild(badge);
     }

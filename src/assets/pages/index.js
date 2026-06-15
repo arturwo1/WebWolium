@@ -16,7 +16,7 @@ export async function initHomePage() {
     const key = el.dataset.stat;
 
     if (key === "years") {
-      el.textContent = "2021-" + new Date().getFullYear();
+      el.textContent = "2023-" + new Date().getFullYear();
       return;
     }
 

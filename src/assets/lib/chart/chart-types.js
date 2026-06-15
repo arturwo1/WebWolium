@@ -1,10 +1,5 @@
 import { formatNumber, formatDuration, t } from "@/lib/index.js";
-import {
-  renderMessagePreview,
-  renderVoicePreview,
-  renderActivityPreview,
-  renderCommandsPreview
-} from "./chart-renderers.js";
+import  * as r from "./chart-renderers.js";
 
 function readPositiveInt(inputEl) {
   const raw = String(inputEl?.value ?? "").trim();
@@ -18,8 +13,8 @@ function readPositiveInt(inputEl) {
 }
 
 export const TYPE_REGISTRY = {
-  messages: {
-    kind: "messages_series",
+  user_messages: {
+    kind: "user_messages_series",
 
     filterIds: ["chartGuildId", "chartChannelId", "chartContext"],
 
@@ -40,7 +35,7 @@ export const TYPE_REGISTRY = {
     },
 
     renderPreview(p, viewer) {
-      return renderMessagePreview(p, viewer);
+      return r.renderUserMessagePreview(p, viewer);
     },
 
     summaryText(series) {
@@ -58,8 +53,8 @@ export const TYPE_REGISTRY = {
     }
   },
 
-  voice: {
-    kind: "voice_series",
+  user_voice: {
+    kind: "user_voice_series",
 
     filterIds: ["chartGuildId", "chartChannelId", "chartVoiceMinDuration", "chartVoiceMaxDuration"],
 
@@ -81,7 +76,7 @@ export const TYPE_REGISTRY = {
     },
 
     renderPreview(p) {
-      return renderVoicePreview(p);
+      return r.renderUserVoicePreview(p);
     },
 
     summaryText(series) {
@@ -93,8 +88,8 @@ export const TYPE_REGISTRY = {
     onPointClick() {}
   },
 
-  activities: {
-    kind: "activities_series",
+  user_activities: {
+    kind: "user_activities_series",
 
     filterIds: [
       "chartActivityName",
@@ -128,7 +123,7 @@ export const TYPE_REGISTRY = {
     },
 
     renderPreview(p, viewer) {
-      return renderActivityPreview(p, viewer);
+      return r.renderUserActivityPreview(p, viewer);
     },
 
     summaryText(series) {
@@ -140,8 +135,8 @@ export const TYPE_REGISTRY = {
     onPointClick() {}
   },
 
-  commands: {
-    kind: "commands_series",
+  user_commands: {
+    kind: "user_commands_series",
 
     filterIds: ["chartGuildId", "chartChannelId", "chartCommandName"],
 
@@ -162,7 +157,7 @@ export const TYPE_REGISTRY = {
     },
 
     renderPreview(p, viewer) {
-      return renderCommandsPreview(p, viewer);
+      return r.renderUserCommandsPreview(p, viewer);
     },
 
     summaryText(series) {
@@ -172,13 +167,165 @@ export const TYPE_REGISTRY = {
     },
 
     onPointClick() {}
-  }
+  },
+
+  guild_messages: {
+    kind: "guild_messages_series",
+
+    filterIds: ["chartChannelId", "chartRoleId"],
+
+    buildPayload({ from, to, bucketMs, limit, guildId }, els) {
+      return {
+        from,
+        to,
+        bucket_ms: bucketMs,
+        limit,
+        channel_id: els.chartChannelId?.value || "",
+        role_id: els.chartRoleId?.value || "",
+        guild_id: guildId || ""
+      };
+    },
+
+    tipVal(p) {
+      return `${t("profile.messages")}: ${formatNumber(p.y)}`;
+    },
+
+    renderPreview(p, viewer) {
+      return r.renderGuildMessagePreview(p, viewer);
+    },
+
+    summaryText(series) {
+      if (!series.length) return t("chart.summary.messages", { count: 0 });
+      const sum = series.reduce((a, p) => a + (p.y || 0), 0);
+      return t("chart.summary.messages", { count: formatNumber(sum) });
+    },
+
+    onPointClick(point) {
+      if (Math.round(point.y) !== 1) return;
+      const url = point?.sample_url;
+      if (url && typeof url === "string" && (url.startsWith("http://") || url.startsWith("https://"))) {
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
+    }
+  },
+
+  guild_voice: {
+    kind: "guild_voice_series",
+
+    filterIds: ["chartChannelId", "chartRoleId", "chartVoiceMinDuration", "chartVoiceMaxDuration"],
+
+    buildPayload({ from, to, bucketMs, limit, guildId }, els) {
+      return {
+        from,
+        to,
+        bucket_ms: bucketMs,
+        limit,
+        guild_id: guildId || "",
+        channel_id: els.chartChannelId?.value || "",
+        role_id: els.chartRoleId?.value || "",
+        min_duration_seconds: readPositiveInt(els.chartVoiceMinDuration),
+        max_duration_seconds: readPositiveInt(els.chartVoiceMaxDuration)
+      };
+    },
+
+    tipVal(p) {
+      return `${t("profile.voice")}: ${formatDuration(p.y || 0)}`;
+    },
+
+    renderPreview(p) {
+      return r.renderGuildVoicePreview(p);
+    },
+
+    summaryText(series) {
+      if (!series.length) return t("chart.summary.time", { value: "00:00" });
+      const sum = series.reduce((a, p) => a + (p.y || 0), 0);
+      return t("chart.summary.time", { value: formatDuration(sum) });
+    },
+
+    onPointClick() {}
+  },
+
+  guild_activities: {
+    kind: "guild_activities_series",
+
+    filterIds: [
+      "chartActivityName",
+      "chartActivityStatus",
+      "chartActivityMinDuration",
+      "chartActivityMaxDuration"
+    ],
+
+    buildPayload({ from, to, bucketMs, limit, guildId }, els) {
+      return {
+        guild_id: guildId,
+        from,
+        to,
+        bucket_ms: bucketMs,
+        limit,
+        activity_name: els.chartActivityName?.value || "",
+        status: els.chartActivityStatus?.value || "",
+        min_duration_seconds: readPositiveInt(els.chartActivityMinDuration),
+        max_duration_seconds: readPositiveInt(els.chartActivityMaxDuration)
+      };
+    },
+
+    tipVal(p) {
+      return `${t("profile.time")}: ${formatDuration(p.y || 0)}`;
+    },
+
+    renderPreview(p, viewer) {
+      return r.renderGuildActivityPreview(p, viewer);
+    },
+
+    summaryText(series) {
+      if (!series.length) return t("chart.summary.time", { value: "00:00" });
+      const sum = series.reduce((a, p) => a + (p.y || 0), 0);
+      return t("chart.summary.time", { value: formatDuration(sum) });
+    },
+
+    onPointClick() {}
+  },
+
+  guild_members: {
+    kind: "guild_members_series",
+
+    filterIds: [],
+
+    buildPayload({ from, to, bucketMs, limit, guildId }) {
+      return {
+        guild_id: guildId,
+        from,
+        to,
+        bucket_ms: bucketMs,
+        limit
+      };
+    },
+
+    tipVal(p) {
+      return `${t("server.analytics.members")}: ${formatNumber(p?.y ?? 0)}`;
+    },
+
+    renderPreview(p) {
+      return r.renderGuildMembersPreview(p);
+    },
+
+    summaryText(series) {
+      const last = series.at(-1);
+
+      return t("chart.summary.members", {
+        count: formatNumber(last?.y ?? 0)
+      });
+    },
+
+    onPointClick() {}
+  },
+
 };
 
 export function resolveType(type) {
-  return TYPE_REGISTRY[type] ?? TYPE_REGISTRY.messages;
+  return TYPE_REGISTRY[type] ?? TYPE_REGISTRY.user_messages;
 }
 
 export function normalizeType(type) {
-  return TYPE_REGISTRY[type] ? type : "messages";
+  return TYPE_REGISTRY[type] ? type : "user_messages";
 }

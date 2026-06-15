@@ -1,0 +1,101 @@
+---
+layout: app.njk
+title: Server Settings
+description: Manage your Discord server analytics, bot settings, and server configuration in one dashboard.
+pageId: server
+permalink: /server/
+noindex: true
+---
+
+<h1 class="h1" data-i18n="page.title.server">Server</h1>
+
+<div id="serverBotMissing" hidden>
+  <article class="card section server-missing">
+    <svg class="server-missing__icon icon" width="44" height="44" aria-hidden="true">
+      <use href="#server"></use>
+    </svg>
+
+    <div class="server-missing__body">
+      <div class="section-title" data-i18n="server.bot_missing_title">Wolium is not on this server</div>
+      <div class="server-missing__text" data-i18n="server.bot_missing_text">Invite Wolium to this server to use this dashboard.</div>
+    </div>
+
+    <a class="btn-preset" href="https://discord.com/oauth2/authorize?client_id=1051105900116574250" target="_blank" rel="noopener" data-i18n="home.cta.add">Add Wolium</a>
+  </article>
+</div>
+
+<div id="serverApp">
+  <article class="card profile-card loading" id="profileCard">
+    <div class="profile-top">
+      <div class="pfp-wrap">
+        <img class="pfp skeleton" id="profilePfp" alt="Server icon" data-i18n-attr="alt: server.icon_alt"/>
+      </div>
+
+      <div class="user-lines">
+        <div class="name skeleton" id="profileName">—</div>
+      </div>
+
+      <div class="level skeleton" id="profileLevel">— LvL</div>
+    </div>
+
+    <div class="bar skeleton" id="profileXpBarContainer" aria-describedby="profileXpLine" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="XP progress" data-i18n-attr="aria-label: server.xp_progress">
+      <div id="profileXpBar" style="width:0%"></div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between;">
+      <div class="badge-row" id="profileBadges" aria-label="Quick icons" data-i18n-attr="aria-label: profile.quick_icons" hidden></div>
+
+      <div class="xp-line skeleton" id="profileXpLine">—</div>
+    </div>
+  </article>
+
+  <div class="card section server-tabs" id="serverTabs">
+    <button class="server-tab is-active" type="button" data-server-tab="analytics" aria-selected="true" data-i18n="server.tab.analytics">Analytics</button>
+    <button class="server-tab" type="button" data-server-tab="settings" aria-selected="false" tabindex="-1" data-i18n="server.tab.settings" disabled>Settings</button>
+  </div>
+
+  <section data-server-view="analytics">
+    <div class="card section stats loading" id="profileStats">
+      <button class="stat stat--link" data-chart="messages" type="button">
+        <div class="stat__label" data-i18n="profile.messages">Messages</div>
+        <div class="stat__value skeleton" id="statMessages">—</div>
+      </button>
+
+      <button class="stat stat--link" data-chart="voice" type="button">
+        <div class="stat__label" data-i18n="profile.voice">Voice</div>
+        <div class="stat__value skeleton" id="statVoice">—</div>
+      </button>
+
+      <button class="stat stat--link" data-chart="activities" type="button">
+        <div class="stat__label" data-i18n="profile.activities">Activity</div>
+        <div class="stat__value skeleton" id="statActivities">—</div>
+      </button>
+
+      <div class="stat">
+        <div class="stat__label" data-i18n="profile.balance.total">Total Balance</div>
+        <div class="stat__value skeleton" id="statMoneyTotal">—</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat__label" data-i18n="profile.balance.bank">Bank Balance</div>
+        <div class="stat__value skeleton" id="statMoneyBank">—</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat__label" data-i18n="profile.balance">Cash Balance</div>
+        <div class="stat__value skeleton" id="statMoneyCash">—</div>
+      </div>
+
+      <button class="stat stat--link" data-chart="members" type="button">
+        <div class="stat__label" data-i18n="server.analytics.members">Members</div>
+        <div class="stat__value skeleton" id="statMembers">—</div>
+      </button>
+    </div>
+  </section>
+
+  <section data-server-view="settings" hidden>
+    <div class="card section" id="serverSettings">
+      <div class="section-title" data-i18n="server.settings.title">Settings</div>
+    </div>
+  </section>
+</div>

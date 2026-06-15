@@ -22,11 +22,15 @@ import {
   t
 } from "@/lib/index.js";
 
+import { DISCORD_AUTH_LOST_EVENT, clearDiscordTokenCache } from "@/lib/auth/discordProviderToken.js";
+
 import { initProfilePage } from "./pages/profile.js";
 import { initHomePage } from "./pages/index.js";
 import { initSettingsPage } from "./pages/settings.js";
 import { initNewsPage } from "./pages/news.js";
 import { initLeaderboardPage } from "./pages/leaderboard.js";
+import { initServersPage } from "./pages/servers.js";
+import { initServerPage } from "./pages/server.js";
 
 import { initPageTransitions } from "@/lib/ui/pageTransitions.js";
 
@@ -120,6 +124,18 @@ async function initCurrentPage(sb, session) {
     started.add("leaderboard");
     await initLeaderboardPage(sb);
     return;
+  } else if (pid === "server") {
+    if (!session) return;
+    if (started.has("server")) return;
+    started.add("server");
+    await initServerPage(sb);
+    return;
+  } else if (pid === "servers") {
+    if (!session) return;
+    if (started.has("servers")) return;
+    started.add("servers");
+    await initServersPage(sb);
+    return;
   }
 }
 
@@ -135,8 +151,31 @@ async function boot() {
   const sb = createSupabaseClient(CFG);
   if (!sb) console.error("[app] Supabase client not configured.");
 
+  let authLostHandling = false;
+
+  async function handleDiscordAuthLost() {
+    if (authLostHandling) return;
+    authLostHandling = true;
+
+    try {
+      clearDiscordTokenCache();
+      lsDel("wolium:last_identity");
+      started.clear();
+
+      await sb?.auth?.signOut();
+
+      setLoggedInUI(null, null);
+      showGate();
+    } finally {
+      authLostHandling = false;
+    }
+  }
+
+  window.addEventListener(DISCORD_AUTH_LOST_EVENT, handleDiscordAuthLost);
+
   initUserDropdown({
     onLogout: async () => {
+      clearDiscordTokenCache();
       lsDel("wolium:last_identity");
       await sb?.auth?.signOut();
       started.clear();

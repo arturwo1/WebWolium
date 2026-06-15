@@ -1,4 +1,4 @@
-import { $, lsJSONGet, lsJSONSet, lsCleanExpired, readIdentity, escapeHtml, t, onLangChange, hud, formatNumber } from "@/lib/index.js";
+import { $, lsJSONGet, lsJSONSet, lsCleanExpired, readIdentity, escapeHtml, t, onLangChange, hud, formatNumber, on } from "@/lib/index.js";
 
 import { createWebRequestService } from "@/services/index.js";
 import { initChart } from "@/lib/chart/chart.js";
@@ -7,16 +7,20 @@ function setText(el, value) {
   if (el) el.textContent = String(value ?? "");
 }
 
+function setHidden(el, hidden) {
+  if (el) el.hidden = Boolean(hidden);
+}
+
 function hasSpriteSymbol(id) {
   if (!id) return false;
   return !!document.getElementById(String(id));
 }
 
 function normalizeChartType(type) {
-  if (type === "voice") return "voice";
-  if (type === "activities") return "activities";
-  if (type === "commands") return "commands";
-  return "messages";
+  if (type === "voice" || type === "user_voice") return "user_voice";
+  if (type === "activities" || type === "user_activities") return "user_activities";
+  if (type === "commands" || type === "user_commands") return "user_commands";
+  return "user_messages";
 }
 
 const CLIENT_ICON_IDS = {
@@ -53,9 +57,9 @@ function setModalOpen(modal, open) {
 }
 
 function chartTitle(type) {
-  if (type === "messages") return t("profile.messages");
-  if (type === "voice") return t("profile.voice");
-  if (type === "activities") return t("profile.activities");
+  if (type === "user_messages") return t("profile.messages");
+  if (type === "user_voice") return t("profile.voice");
+  if (type === "user_activities") return t("profile.activities");
   return t("chart.title");
 }
 
@@ -214,6 +218,12 @@ export async function initProfilePage(sb) {
     return null;
   }
 
+  for (const tab of chartTabs) {
+    if (!String(tab.dataset.chartType || "").startsWith("user_")) {
+      tab.dataset.chartType = `user_${tab.dataset.chartType}`;
+    }
+  }
+
   const wr = createWebRequestService(sb, {
     defaultCacheTtlMs: 30_000,
     defaultCooldownMs: 1_500,
@@ -222,7 +232,7 @@ export async function initProfilePage(sb) {
 
   const queueChart = wr.makeLatestDebouncedQueue({
     debounceMs: 200,
-    kinds: new Set(["messages_series", "voice_series", "activities_series", "commands_series"]),
+    kinds: new Set(["user_messages_series", "user_voice_series", "user_activities_series", "user_commands_series"]),
   });
 
   let lastProfileResponse = null;
@@ -244,10 +254,10 @@ export async function initProfilePage(sb) {
 
   function renderChannelOptions(guildId = "", type = "") {
     let channels = {};
-    if (type == "voice") {
+    if (type == "user_voice") {
       channels = Ids.guilds?.[guildId]?.voice_channels;
     } else {
-      channels = Ids.guilds?.[guildId]?.text_channels;
+      channels = Ids.guilds?.[guildId]?.message_channels;
     }
 
     chartChannelId.innerHTML = "";
@@ -386,8 +396,10 @@ export async function initProfilePage(sb) {
     const userId = data?.session?.user?.id || userDiscordId || "anon";
     const lastKey = `wolium:last_profile_stats:${userId}`;
 
+    setHidden($("#commandsTab"), false);
+
     try {
-      const res = await wr.queue("profile_stats", { "user_id": userDiscordId }, {
+      const res = await wr.queue("user_profile_stats", { "user_id": userDiscordId }, {
         cacheTtlMs: 30_000,
         cooldownMs: 1_500,
         timeoutMs: 5_000
@@ -404,7 +416,7 @@ export async function initProfilePage(sb) {
 
       if (userDiscordId) return res;
       Ids.guilds = res?.guilds ?? {};
-      renderGuildOptions(normalizeChartType(chartModal?.dataset?.chartType || "messages"));
+      renderGuildOptions(normalizeChartType(chartModal?.dataset?.chartType || "user_messages"));
 
       return res;
     } catch (e) {
@@ -413,7 +425,7 @@ export async function initProfilePage(sb) {
         renderStats(saved.res);
         if (userDiscordId) return saved.res;
         Ids.guilds = saved.res?.guilds ?? {};
-        renderGuildOptions(normalizeChartType(chartModal?.dataset?.chartType || "messages"));
+        renderGuildOptions(normalizeChartType(chartModal?.dataset?.chartType || "user_messages"));
         return saved.res;
       }
       throw e;
@@ -475,8 +487,18 @@ export async function initProfilePage(sb) {
   }
 
   chartGuildId.addEventListener("change", () => {
-    const type = normalizeChartType(chartModal?.dataset?.chartType || "messages");
+    const type = normalizeChartType(chartModal?.dataset?.chartType || "user_messages");
     renderChannelOptions(chartGuildId.value, type);
+  });
+
+  document.querySelectorAll("[data-chart-type]").forEach((el) => {
+    on(el, "click", (e) => {
+      e.stopPropagation();
+      setTimeout(() => {
+        const type = normalizeChartType(chartModal?.dataset?.chartType || "user_messages");
+        renderChannelOptions(chartGuildId.value, type);
+      }, 0);
+    });
   });
 
   try {
@@ -498,10 +520,10 @@ export async function initProfilePage(sb) {
     if (e.target === chartModal) closeChart();
   });
 
-  syncChartUi("messages");
+  syncChartUi("user_messages");
 
   onLangChange(() => {
-    const currentType = chartModal?.dataset?.chartType || "messages";
+    const currentType = chartModal?.dataset?.chartType || "user_messages";
 
     if (chartModal?.classList.contains("is-open")) {
       syncChartUi(currentType);
