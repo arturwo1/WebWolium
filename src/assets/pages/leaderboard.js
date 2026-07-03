@@ -226,7 +226,10 @@ export async function initLeaderboardPage(sb) {
 
   function updatePagination() {
     lbPagination.hidden = state.pages <= 1;
-    lbPageLabel.textContent = `Page ${state.page} / ${state.pages}`;
+    lbPageLabel.textContent = t("news.pagination.page_line", {
+      current: state.page,
+      total: state.pages
+    });
     lbPageInput.value = state.page;
     lbPageInput.max = state.pages;
     lbPrevPage.disabled = state.page <= 1;

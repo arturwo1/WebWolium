@@ -20,15 +20,13 @@ noindex: true
     <div class="lb-filter-section">
       <div class="lb-filter-label" data-i18n="leaderboard.scope">Scope</div>
       <div class="lb-scope-row">
-        <button class="btn-preset lb-scope-btn is-active" data-scope="world"
-          type="button" data-i18n="leaderboard.scope_world">World</button>
+        <button class="btn-preset lb-scope-btn is-active" data-scope="world" type="button" data-i18n="leaderboard.scope_world">World</button>
 
         <select class="input lb-server-select" id="lbServerSelect">
           <option value="" data-i18n="leaderboard.select_server">Select server…</option>
         </select>
 
-        <button class="btn-preset lb-scope-btn" data-scope="top_servers"
-          type="button" data-i18n="leaderboard.scope_top_servers">Top Servers</button>
+        <button class="btn-preset lb-scope-btn" data-scope="top_servers" type="button" data-i18n="leaderboard.scope_top_servers">Top Servers</button>
       </div>
     </div>
 
@@ -56,30 +54,26 @@ noindex: true
     </div>
   </div>
 
-  <nav class="lb-pagination" id="lbPagination" hidden
-    aria-label="Leaderboard pages"
-    data-i18n-attr="aria-label: leaderboard.pagination_aria">
+  <nav class="lb-pagination" id="lbPagination" hidden aria-label="Leaderboard pages" data-i18n-attr="aria-label: leaderboard.pagination_aria">
 
-    <button id="lbPrevPage" type="button"
-      aria-label="Previous page"
-      data-i18n-attr="aria-label: news.pagination.prev">
-      <svg class="icon"><use href="#left"></use></svg>
+    <button id="lbPrevPage" type="button" aria-label="Previous page" data-i18n-attr="aria-label: news.pagination.prev">
+      <svg class="icon">
+        <use href="#left"></use>
+      </svg>
     </button>
 
     <div class="news-pagination__center">
       <span id="lbPageLabel">Page 1 / 1</span>
       <div class="news-page-jump">
-        <label class="news-page-jump__label" for="lbPageInput"
-          data-i18n="news.pagination.goto">Go to</label>
-        <input id="lbPageInput" class="input--sm"
-          type="number" min="1" step="1" inputmode="numeric" value="1" />
+        <label class="news-page-jump__label" for="lbPageInput" data-i18n="news.pagination.goto">Go to</label>
+        <input id="lbPageInput" class="input--sm" type="number" min="1" step="1" inputmode="numeric" value="1" />
       </div>
     </div>
 
-    <button id="lbNextPage" type="button"
-      aria-label="Next page"
-      data-i18n-attr="aria-label: news.pagination.next">
-      <svg class="icon"><use href="#right"></use></svg>
+    <button id="lbNextPage" type="button" aria-label="Next page" data-i18n-attr="aria-label: news.pagination.next">
+      <svg class="icon">
+        <use href="#right"></use>
+      </svg>
     </button>
 
   </nav>

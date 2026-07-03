@@ -193,7 +193,7 @@ export function makeDrawer(canvas, state) {
 
     const visible = state.series.filter((p) => p.ts >= state.viewMin && p.ts <= state.viewMax);
     const ys = visible.map((p) => p.y);
-    state.yMax = (ys.length ? Math.max(1, ...ys) : 1) * 1.15;
+    state.yMax = (ys.length ? Math.max(1, ...ys) : 1) * 1.5;
 
     state.hoverIdx = -1;
     drawChart();

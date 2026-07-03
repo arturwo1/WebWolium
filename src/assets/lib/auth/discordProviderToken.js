@@ -13,13 +13,13 @@ const DISCORD_API_BASE = "https://discord.com/api/v10";
 const REFRESH_ENDPOINT = "/.netlify/functions/discord-refresh-token";
 const TOKEN_SKEW_MS = 60_000;
 
+let refreshLock = null;
 let cachedAccessToken = null;
 let cachedRefreshToken = null;
 let cachedExpiresAt = 0;
 
 function emitDiscordAuthLost(error) {
   if (typeof window === "undefined") return;
-
   window.dispatchEvent(new CustomEvent(DISCORD_AUTH_LOST_EVENT, {
     detail: {
       code: error?.code || "DISCORD_AUTH_LOST",
@@ -49,68 +49,73 @@ async function readJsonSafe(res) {
 
 async function getSession(sb) {
   const { data, error } = await sb.auth.getSession();
-
-  if (error) {
-    throw authError(error.message, "SUPABASE_SESSION_ERROR");
-  }
-
-  if (!data?.session) {
-    throw authError("Discord session was not found. Please sign in again.", "NO_SESSION");
-  }
-
+  if (error) throw authError(error.message, "SUPABASE_SESSION_ERROR");
+  if (!data?.session) throw authError("Discord session was not found. Please sign in again.", "NO_SESSION");
   return data.session;
 }
 
-async function refreshSupabaseSession(sb) {
-  const { data, error } = await sb.auth.refreshSession();
-
-  if (error) {
-    throw authError(error.message, "SUPABASE_REFRESH_ERROR");
-  }
-
-  if (!data?.session) {
-    throw authError("Discord session could not be refreshed. Please sign in again.", "NO_SESSION");
-  }
-
-  return data.session;
-}
-
-async function refreshDiscordToken(providerRefreshToken) {
+async function refreshDiscordToken(sb, providerRefreshToken) {
   if (!providerRefreshToken) {
-    throw authError(
-      "Discord refresh token was not found. Please sign in again.",
-      "NO_PROVIDER_REFRESH_TOKEN"
+    throw authError("NO_REFRESH_TOKEN", "NO_REFRESH_TOKEN");
+  }
+
+  if (refreshLock) return refreshLock;
+
+  refreshLock = (async () => {
+    const session = await getSession(sb);
+
+    const res = await fetch(REFRESH_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ refresh_token: providerRefreshToken }),
+    });
+
+    const data = await readJsonSafe(res);
+
+    if (!res.ok || !data?.access_token) {
+      throw authError("DISCORD_REFRESH_FAILED", "DISCORD_REFRESH_FAILED");
+    }
+
+    cachedAccessToken = data.access_token;
+    cachedRefreshToken = data.refresh_token;
+    cachedExpiresAt = Date.now() + data.expires_in * 1000;
+
+    await sb.from("discord_tokens").upsert(
+      {
+        user_id: session.user.id,
+        refresh_token: data.refresh_token,
+      },
+      { onConflict: "user_id" }
     );
+
+    return cachedAccessToken;
+  })();
+
+  try {
+    return await refreshLock;
+  } finally {
+    refreshLock = null;
   }
+}
 
-  const res = await fetch(REFRESH_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      refresh_token: providerRefreshToken,
-    }),
-  });
+export async function initDiscordAuth(sb) {
+  const session = await getSession(sb);
 
-  const data = await readJsonSafe(res);
+  if (!session) return;
 
-  if (!res.ok) {
-    throw authError(
-      data?.error || "Could not refresh Discord token.",
-      data?.code || "DISCORD_REFRESH_ERROR"
-    );
-  }
+  const refreshToken =
+    session.provider_refresh_token || cachedRefreshToken;
 
-  if (!data?.access_token) {
-    throw authError("Discord did not return a new access token.", "NO_DISCORD_ACCESS_TOKEN");
-  }
+  if (!refreshToken) return;
 
-  cachedAccessToken = data.access_token;
-  cachedRefreshToken = data.refresh_token || providerRefreshToken;
-  cachedExpiresAt = Date.now() + Number(data.expires_in || 0) * 1000;
+  await refreshDiscordToken(sb, refreshToken);
+}
 
-  return cachedAccessToken;
+export function logout(error = null) {
+  emitDiscordAuthLost(error);
 }
 
 export function clearDiscordTokenCache() {
@@ -119,32 +124,44 @@ export function clearDiscordTokenCache() {
   cachedExpiresAt = 0;
 }
 
-export async function getDiscordProviderToken(sb, options = {}) {
-  const forceRefresh = Boolean(options.forceRefresh);
+export async function initDiscordTokenCache(sb) {
+  const { data, error } = await sb
+    .from("discord_tokens")
+    .select("refresh_token")
+    .limit(1)
+    .maybeSingle();
 
-  if (!forceRefresh && isCachedTokenValid()) {
+  if (error) {
+    console.error("discord_tokens init error:", error);
+    return;
+  }
+
+  if (data?.refresh_token) {
+    cachedRefreshToken = data.refresh_token;
+  }
+}
+
+export async function getDiscordProviderToken(sb) {
+  if (isCachedTokenValid()) return cachedAccessToken;
+
+  const session = await getSession(sb);
+
+  if (session.provider_token) {
+    cachedAccessToken = session.provider_token;
+    cachedRefreshToken = session.provider_refresh_token || cachedRefreshToken;
+    cachedExpiresAt = Date.now() + 3600 * 1000;
+
     return cachedAccessToken;
   }
 
-  let session = await getSession(sb);
+  const refreshToken =
+    session.provider_refresh_token || cachedRefreshToken;
 
-  if (!forceRefresh && session.provider_token) {
-    cachedRefreshToken = session.provider_refresh_token || cachedRefreshToken;
-    return session.provider_token;
+  if (!refreshToken) {
+    throw authError("NO_REFRESH_TOKEN", "NO_REFRESH_TOKEN");
   }
 
-  session = await refreshSupabaseSession(sb);
-
-  const providerRefreshToken =
-    session.provider_refresh_token ||
-    cachedRefreshToken;
-
-  if (!forceRefresh && session.provider_token) {
-    cachedRefreshToken = providerRefreshToken || cachedRefreshToken;
-    return session.provider_token;
-  }
-
-  return await refreshDiscordToken(providerRefreshToken);
+  return await refreshDiscordToken(sb, refreshToken);
 }
 
 export async function discordApiFetch(sb, path, options = {}) {
@@ -152,33 +169,29 @@ export async function discordApiFetch(sb, path, options = {}) {
     ? path
     : `${DISCORD_API_BASE}${path}`;
 
-  try {
-    for (let attempt = 0; attempt < 2; attempt++) {
-      const token = await getDiscordProviderToken(sb, {
-        forceRefresh: attempt > 0,
-      });
+  let token = await getDiscordProviderToken(sb);
 
-      const headers = new Headers(options.headers || {});
-      headers.set("Authorization", `Bearer ${token}`);
+  let res = await fetch(url, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
-      const res = await fetch(url, {
-        ...options,
-        headers,
-      });
+  if (res.status === 401) {
+    clearDiscordTokenCache();
 
-      if (res.status !== 401) {
-        return res;
-      }
+    token = await getDiscordProviderToken(sb);
 
-      clearDiscordTokenCache();
-    }
-
-    throw authError(
-      "Discord token expired. Please sign in again.",
-      "DISCORD_TOKEN_EXPIRED"
-    );
-  } catch (error) {
-    maybeEmitDiscordAuthLost(error);
-    throw error;
+    res = await fetch(url, {
+      ...options,
+      headers: {
+        ...(options.headers || {}),
+        Authorization: `Bearer ${token}`,
+      },
+    });
   }
+
+  return res;
 }

@@ -142,99 +142,138 @@ function buildPresenceBadgeHtml(status, desktop, mobile, web) {
   `;
 }
 
-function metricMeta(p) {
-  const meta = parseJsonObject(p?.meta) ?? {};
-
-  return {
-    guild: meta.guild_name ?? p?.sample_guild_id ?? t("common.server"),
-    channel: meta.channel_name ?? p?.sample_channel_id ?? "",
-    activity: meta.activity_name ?? "",
-    activityIcon: meta.activity_icon ?? "",
-    start: p?.bucket_start ?? meta.bucket_start ?? null,
-    end: p?.bucket_end ?? meta.bucket_end ?? null
-  };
+function resolveGuildChannel(meta, fallbacks = {}) {
+  const guildName = firstNonEmpty(meta?.guild_name, meta?.guild_id, meta?.guild) || fallbacks.guild || "";
+  const channelName = firstNonEmpty(meta?.channel_name, meta?.channel_id, meta?.channel) || fallbacks.channel || "";
+  return { guildName, channelName };
 }
 
-function renderMetricPreview({ p, title, value, channel = true, activity = "", activityIcon = "" }) {
-  const meta = metricMeta(p);
+function renderSourceBar(guildName, channelName) {
+  if (!guildName && !channelName) return "";
 
   return `
     <div class="msg-preview__bar">
       <span class="msg-preview__dot" aria-hidden="true"></span>
-      <div class="msg-preview__guild" title="${escapeHtml(meta.guild)}">${escapeHtml(meta.guild)}</div>
-      ${channel && meta.channel
-      ? `<div class="msg-preview__channel text-muted-sm" title="#${escapeHtml(meta.channel)}">${escapeHtml(meta.channel)}</div>`
-      : ``}
-    </div>
-
-    <div class="prev-voice">
-      <div class="prev-voice__row">
-        <span class="prev-badge">${escapeHtml(title)}: ${value}</span>
-        ${activity
-      ? `<span class="prev-badge prev-activity">
-              ${activityIcon ? `<img class="act-tip__large-img" src="${escapeHtml(activityIcon)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ``}
-              <span>${escapeHtml(activity)}</span>
-            </span>`
-      : ``}
-      </div>
-    </div>
-
-    <div class="act-tip__timing">
-      ${meta.start ? escapeHtml(formatTsFull(meta.start)) : ""}
-      ${meta.start && meta.end ? " — " : ""}
-      ${meta.end ? escapeHtml(formatTsFull(meta.end)) : ""}
+      ${guildName ? `<div class="msg-preview__guild" title="${escapeHtml(guildName)}">${escapeHtml(guildName)}</div>` : ""}
+      ${channelName ? `<div class="msg-preview__channel text-muted-sm" title="#${escapeHtml(channelName)}">${escapeHtml(channelName)}</div>` : ""}
     </div>
   `;
 }
 
-function renderMetricTiming(p) {
-  const start = p?.bucket?.start ?? p?.ts ?? null;
-  const end = p?.bucket?.end ?? null;
+function renderTimingFooter({ start, end, count = null, duration = null, buttons = [], badgeLabel = null }) {
+  const durationParts = [];
 
-  if (!start && !end) return "";
+  if (count && count > 1) {
+    durationParts.push(`<span class="act-tip__count">${escapeHtml(t("chart.preview.activity_count", { count }))}</span>`);
+  }
+
+  if (duration != null) {
+    durationParts.push(escapeHtml(formatDuration(duration)));
+  }
 
   return `
     <div class="act-tip__timing">
+      ${buttons.length
+      ? `
+        <div class="act-tip__buttons">
+          ${buttons.map((btn) => `
+            <a class="act-tip__btn" href="${escapeHtml(btn.href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(btn.label)}</a>
+          `).join("")}
+        </div>
+      `
+      : badgeLabel
+        ? `
+        <div class="act-tip__badges">
+          <div class="act-tip__type-badge">${escapeHtml(badgeLabel)}</div>
+        </div>
+      `
+        : ``}
       ${start ? escapeHtml(formatTsFull(start)) : ""}
-      ${start && end ? " — " : ""}
+      ${start && end ? "—" : ""}
       ${end ? escapeHtml(formatTsFull(end)) : ""}
+      ${durationParts.length ? `<span class="act-tip__dur">• ${durationParts.join(" • ")}</span>` : ""}
     </div>
   `;
+}
+
+function renderActivityBlock({ image = null, smallImage = null, name = null, fields = [] }) {
+  const hasMedia = !!(image || name || fields.length);
+
+  if (!hasMedia) return "";
+
+  return `
+    <div class="act-tip__activity">
+      ${hasMedia ? `
+        <div class="act-tip__media${image ? "" : " act-tip__media--noimg"}">
+          ${image ? `
+            <div class="act-tip__images">
+              <div class="act-tip__large-wrap">
+                <img class="act-tip__large-img" src="${escapeHtml(image)}" alt="" loading="lazy" referrerpolicy="no-referrer">
+
+                ${smallImage ? `
+                  <div class="act-tip__small-wrap">
+                    <img class="act-tip__small-img" src="${escapeHtml(smallImage)}" alt="" loading="lazy">
+                  </div>
+                ` : ""}
+              </div>
+            </div>
+          ` : ""}
+
+          <div class="act-tip__info">
+            ${name ? `<div class="act-tip__name text-truncate" title="${escapeHtml(String(name))}">${escapeHtml(String(name))}</div>` : ""}
+            ${fields.map((field) => `<div class="act-tip__field" title="${escapeHtml(field)}">${escapeHtml(field)}</div>`).join("")}
+          </div>
+        </div>
+      ` : ""}
+    </div>
+  `;
+}
+
+function renderStatCard({ guildName = "", channelName = "", image = null, smallImage = null, name = null, fields = [], start = null, end = null, count = null, duration = null }) {
+  return `
+    <div class="act-tip__card">
+      ${renderSourceBar(guildName, channelName)}
+      ${renderActivityBlock({ image, smallImage, name, fields })}
+      ${renderTimingFooter({ start, end, count, duration })}
+    </div>
+  `;
+}
+
+function renderGuildBucketStat(p, { useTsFallback = false } = {}) {
+  const meta = p?.meta ?? {};
+  const { guildName, channelName } = resolveGuildChannel(meta);
+
+  return renderStatCard({
+    guildName,
+    channelName,
+    start: p?.bucket?.start ?? (useTsFallback ? p?.ts ?? null : null),
+    end: p?.bucket?.end ?? null,
+    count: p?.count ?? meta?.total_bucket_count ?? null
+  });
 }
 
 export function renderUserMessagePreview(p, viewer) {
   const meta = p?.meta ?? {};
 
-  const guildName = meta.guild_name ?? t("common.server");
-  const channelName = meta.channel_name ?? t("common.channel");
-
+  const { guildName, channelName } = resolveGuildChannel(meta, { guild: t("common.server"), channel: t("common.channel") });
   const ts = meta.created_at ?? meta.timestamp ?? null;
-
   const authorName = viewer.name ?? t("common.user");
   const authorAvatar = viewer.avatar ?? null;
 
   const text = String(p?.sample_content ?? "").trim();
   const url = p?.sample_url ?? meta.url ?? null;
-
   const attachments = parseAttachments(p?.sample_attachments);
-
   const safeText = !text && attachments.length ? "" : text ? text : t("chart.preview.no_preview");
-
-  const rawBodyHtml = renderDiscordMarkdownToHtml(safeText);
-  const bodyHtml = replaceImageLinksInHtml(rawBodyHtml);
+  const bodyHtml = replaceImageLinksInHtml(renderDiscordMarkdownToHtml(safeText));
   const attachmentsHtml = renderAttachmentsHtml(attachments);
 
   return `
-    <div class="msg-preview__bar">
-      <span class="msg-preview__dot" aria-hidden="true"></span>
-      <div class="msg-preview__guild" title="${escapeHtml(guildName)}">${escapeHtml(guildName)}</div>
-      <div class="msg-preview__channel text-muted-sm" title="#${escapeHtml(channelName)}">${escapeHtml(channelName)}</div>
-    </div>
+    ${renderSourceBar(guildName, channelName)}
 
     <div class="msg-preview__row">
       <div class="msg-preview__avatar" aria-hidden="true">
         ${authorAvatar
-      ? `<img class="msg-preview__avatarImg" src="${escapeHtml(authorAvatar)}" alt="" loading="lazy" />`
+      ? `<img class="msg-preview__avatarImg" src="${escapeHtml(authorAvatar)}" alt="" loading="lazy"/>`
       : `<span class="msg-preview__avatarFallback">${escapeHtml((authorName[0] || "U").toUpperCase())}</span>`
     }
       </div>
@@ -253,7 +292,7 @@ export function renderUserMessagePreview(p, viewer) {
       </div>
     </div>
 
-    ${url && Math.round(p.y) == 1 ? `
+    ${url && Math.round(p.y) === 1 ? `
       <div class="msg-preview__hint">
         <span class="kbd js-preview-click">${t("chart.preview.click")}</span>
         <span class="msg-preview__hintText">${t("chart.preview.discord")}</span>
@@ -272,16 +311,14 @@ export function renderUserMessagePreview(p, viewer) {
 
 export function renderUserVoicePreview(p) {
   const meta = p?.meta ?? {};
-  const guild = meta.guild_name ?? meta.guild_id ?? meta.guild ?? t("common.server");
-  const chan = meta.channel_name ?? meta.channel_id ?? meta.channel ?? t("profile.voice");
+  const { guildName, channelName } = resolveGuildChannel(meta, { guild: t("common.server"), channel: t("common.channel") });
 
   return `
-    <div class="prev-voice">
-      <div class="prev-voice__row">
-        <span class="prev-badge">${escapeHtml(guild)}</span>
-        <span class="prev-badge">${escapeHtml(chan)}</span>
-      </div>
-    </div>
+    ${renderSourceBar(guildName, channelName)}
+    ${renderTimingFooter({
+    start: p?.bucket?.start ?? null,
+    end: p?.bucket?.end ?? null
+  })}
   `;
 }
 
@@ -350,29 +387,12 @@ export function renderUserActivityPreview(p, viewer) {
     ? firstNonEmpty(directTrack, raw.details, serviceName, "Activity")
     : firstNonEmpty(meta.name, serviceName, raw.details, "Activity");
 
-  const largeImage =
-    raw.spotify_album_cover_url ??
-    raw.large_image_url ??
-    null;
-
-  const smallImage =
-    raw.small_image_url ??
-    null;
-
-  const artistText = directArtist;
-  const albumText = directAlbum;
-  const stateText = raw.state ?? null;
-  const detailsText = raw.details ?? null;
+  const largeImage = raw.spotify_album_cover_url ?? raw.large_image_url ?? null;
+  const smallImage = raw.small_image_url ?? null;
 
   const fields = isSpotify
-    ? dedupeStrings(
-      [artistText, albumText],
-      { exclude: [activityName, badgeLabel] }
-    )
-    : dedupeStrings(
-      [detailsText, stateText],
-      { exclude: [activityName, badgeLabel] }
-    );
+    ? dedupeStrings([directArtist, directAlbum], { exclude: [activityName, badgeLabel] })
+    : dedupeStrings([raw.details ?? null, raw.state ?? null], { exclude: [activityName, badgeLabel] });
 
   const buttons = [];
 
@@ -386,12 +406,11 @@ export function renderUserActivityPreview(p, viewer) {
   const bucketCount = p?.count ?? meta?.total_bucket_count ?? 1;
   const bucketDuration = p?.y ?? meta?.total_bucket_duration ?? 0;
 
-  const startedAt = bucketCount > 1 && p?.bucket_start ? p.bucket_start : (meta.started_at ?? p?.bucket_start ?? p?.ts);
-  const endedAt = bucketCount > 1 && p?.bucket_end ? p.bucket_end : (meta.ended_at ?? p?.bucket_end ?? p?.ts);
+  const bucketStart = p?.bucket?.start ?? null;
+  const bucketEnd = p?.bucket?.end ?? null;
 
-  const countBadge = bucketCount > 1
-    ? `<span class="act-tip__count" style="font-weight: 600; color: var(--text-muted);">${t("chart.preview.activity_count", { count: bucketCount })} &nbsp;•&nbsp; </span>`
-    : ``;
+  const startedAt = bucketCount > 1 ? (bucketStart ?? p?.ts) : (meta.started_at ?? bucketStart ?? p?.ts);
+  const endedAt = bucketCount > 1 ? (bucketEnd ?? p?.ts) : (meta.ended_at ?? bucketEnd ?? p?.ts);
 
   return `
     <div class="act-tip__card">
@@ -406,7 +425,7 @@ export function renderUserActivityPreview(p, viewer) {
 
         <div class="act-tip__names">
           <div class="act-tip__nick text-truncate" title="${escapeHtml(primaryName)}">${escapeHtml(primaryName)}</div>
-          ${showSecondaryName
+            ${showSecondaryName
       ? `<div class="act-tip__dname text-truncate" title="${escapeHtml(secondaryName)}">${escapeHtml(secondaryName)}</div>`
       : ``}
         </div>
@@ -420,114 +439,39 @@ export function renderUserActivityPreview(p, viewer) {
       : ``}
       </div>
 
-      <div class="act-tip__activity">
-        ${badgeLabel
-      ? `
-            <div class="act-tip__badges">
-              <div class="act-tip__type-badge">${escapeHtml(badgeLabel)}</div>
-            </div>
-          `
-      : ``}
+      ${renderActivityBlock({ image: largeImage, smallImage, name: activityName, fields })}
 
-        <div class="act-tip__media${largeImage ? "" : " act-tip__media--noimg"}">
-          ${largeImage
-      ? `
-              <div class="act-tip__images">
-                <div class="act-tip__large-wrap">
-                  <img
-                    class="act-tip__large-img"
-                    src="${escapeHtml(largeImage)}"
-                    alt=""
-                    loading="lazy"
-                  />
-
-                  ${smallImage
-        ? `
-                      <div class="act-tip__small-wrap">
-                        <img
-                          class="act-tip__small-img"
-                          src="${escapeHtml(smallImage)}"
-                          alt=""
-                          loading="lazy"
-                        />
-                      </div>
-                    `
-        : ``}
-                </div>
-              </div>
-            `
-      : ``}
-
-          <div class="act-tip__info">
-            <div class="act-tip__name text-truncate" title="${escapeHtml(activityName)}">${escapeHtml(activityName)}</div>
-
-            ${fields.map((field) => `
-              <div class="act-tip__field" title="${escapeHtml(field)}">${escapeHtml(field)}</div>
-            `).join("")}
-          </div>
-        </div>
-
-        ${buttons.length
-      ? `
-            <div class="act-tip__buttons">
-              ${buttons.map((btn) => `
-                <a
-                  class="act-tip__btn"
-                  href="${escapeHtml(btn.href)}"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >${escapeHtml(btn.label)}</a>
-              `).join("")}
-            </div>
-          `
-      : ``}
-      </div>
-
-      <div class="act-tip__timing">
-        ${escapeHtml(formatTsFull(startedAt))}
-        —
-        ${escapeHtml(formatTsFull(endedAt))}
-        <span class="act-tip__dur">
-          • ${countBadge}${escapeHtml(formatDuration(bucketDuration))}
-        </span>
-      </div>
+      ${renderTimingFooter({ start: startedAt, end: endedAt, count: bucketCount, duration: bucketDuration, buttons, badgeLabel })}
     </div>
   `;
 }
 
 export function renderUserCommandsPreview(p, viewer) {
   const meta = p?.meta ?? {};
-
-  const guildName = meta.guild_name ?? t("common.server");
-  const channelName = meta.channel_name ?? t("common.channel");
+  const { guildName, channelName } = resolveGuildChannel(meta, { guild: t("common.server"), channel: t("common.channel") });
 
   const ts = meta.created_at ?? meta.timestamp ?? null;
-
   const authorName = viewer.name ?? t("common.user");
   const authorAvatar = viewer.avatar ?? null;
+  const commandName = "/" + (p?.sample_command_name ?? "unknown");
 
-  const command_name = "/" + (p?.sample_command_name ?? "unknown");
+  let rawArgs = p?.sample_args;
 
-  let raw = p?.sample_args;
-
-  if (typeof raw === "string") {
+  if (typeof rawArgs === "string") {
     try {
-      raw = JSON.parse(raw);
+      rawArgs = JSON.parse(rawArgs);
     } catch {
-      raw = null;
+      rawArgs = null;
     }
   }
 
-  const args = (raw && typeof raw === "object" && Object.keys(raw).length > 0)
-    ? formatArgsInline(raw)
+  const hasArgs = rawArgs && typeof rawArgs === "object" && Object.keys(rawArgs).length > 0;
+  const args = hasArgs
+    ? formatArgsInline(rawArgs)
     : `<span class="muted">${escapeHtml(t("common.args"))}</span>`;
 
   return `
-    <div class="msg-preview__bar">
-      <span class="msg-preview__dot" aria-hidden="true"></span>
-      <div class="msg-preview__guild" title="${escapeHtml(guildName)}">${escapeHtml(guildName)}</div>
-      <div class="msg-preview__channel text-muted-sm" title="#${escapeHtml(channelName)}">${escapeHtml(channelName)}</div>
-    </div>
+    ${renderSourceBar(guildName, channelName)}
 
     <div class="msg-preview__row">
       <div class="msg-preview__avatar" aria-hidden="true">
@@ -544,57 +488,39 @@ export function renderUserCommandsPreview(p, viewer) {
         </div>
 
         <div class="msg-preview__text md">
-          ${(raw && typeof raw === "object" && Object.keys(raw).length > 0) ? `<span class="kbd js-preview-click">${command_name}</span>` : ``}
+          ${hasArgs ? `<span class="kbd js-preview-click">${commandName}</span>` : ``}
           <span>${args}</span>
         </div>
       </div>
     </div>
 
     <div class="msg-preview__hint">
-      <span class="kbd js-preview-click">${command_name}</span>
+      <span class="kbd js-preview-click">${commandName}</span>
     </div>
   `;
 }
 
 export function renderGuildMessagePreview(p) {
-  return renderMetricPreview({
-    p,
-    title: t("profile.messages"),
-    value: escapeHtml(formatNumber(p?.y || 0)),
-    channel: true
-  });
+  return renderGuildBucketStat(p);
 }
 
 export function renderGuildVoicePreview(p) {
-  return renderMetricPreview({
-    p,
-    title: t("profile.voice"),
-    value: escapeHtml(formatDuration(p?.y || 0)),
-    channel: true
-  });
+  return renderGuildBucketStat(p);
 }
 
 export function renderGuildActivityPreview(p) {
-  const meta = metricMeta(p);
+  const meta = p?.meta ?? {};
 
-  return renderMetricPreview({
-    p,
-    title: t("profile.time"),
-    value: escapeHtml(formatDuration(p?.y || 0)),
-    channel: false,
-    activity: meta.activity || t("profile.activities"),
-    activityIcon: meta.activityIcon
+  return renderStatCard({
+    image: meta.activity_icon ?? null,
+    name: meta.activity_name ?? t("chart.preview.no_preview"),
+    start: p?.bucket?.start ?? null,
+    end: p?.bucket?.end ?? null,
+    duration: p?.y || 0,
+    count: p?.count ?? meta?.total_bucket_count ?? null
   });
 }
 
 export function renderGuildMembersPreview(p) {
-  return `
-    <div class="prev-voice">
-      <div class="prev-voice__row">
-        <span class="prev-badge">${escapeHtml(t("server.analytics.members"))}: ${escapeHtml(formatNumber(p?.y ?? 0))}</span>
-      </div>
-    </div>
-
-    ${renderMetricTiming(p)}
-  `;
+  return renderGuildBucketStat(p, { useTsFallback: true });
 }

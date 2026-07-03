@@ -138,6 +138,7 @@ function applyDocumentMetaI18n() {
       "settings": "page.title.settings",
       "news": "page.title.news",
       "servers": "page.title.servers",
+      "server": "page.title.server",
       "privacy": "page.title.privacy",
       "terms-of-service": "page.title.tos",
       "rules": "page.title.rules"

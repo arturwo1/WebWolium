@@ -1,5 +1,5 @@
 import { formatNumber, formatDuration, t } from "@/lib/index.js";
-import  * as r from "./chart-renderers.js";
+import * as r from "./chart-renderers.js";
 
 function readPositiveInt(inputEl) {
   const raw = String(inputEl?.value ?? "").trim();
@@ -85,7 +85,7 @@ export const TYPE_REGISTRY = {
       return t("chart.summary.time", { value: formatDuration(sum) });
     },
 
-    onPointClick() {}
+    onPointClick() { }
   },
 
   user_activities: {
@@ -132,7 +132,7 @@ export const TYPE_REGISTRY = {
       return t("chart.summary.time", { value: formatDuration(sum) });
     },
 
-    onPointClick() {}
+    onPointClick() { }
   },
 
   user_commands: {
@@ -166,7 +166,7 @@ export const TYPE_REGISTRY = {
       return t("chart.summary.commands", { count: formatNumber(sum) });
     },
 
-    onPointClick() {}
+    onPointClick() { }
   },
 
   guild_messages: {
@@ -242,7 +242,7 @@ export const TYPE_REGISTRY = {
       return t("chart.summary.time", { value: formatDuration(sum) });
     },
 
-    onPointClick() {}
+    onPointClick() { }
   },
 
   guild_activities: {
@@ -273,8 +273,8 @@ export const TYPE_REGISTRY = {
       return `${t("profile.time")}: ${formatDuration(p.y || 0)}`;
     },
 
-    renderPreview(p, viewer) {
-      return r.renderGuildActivityPreview(p, viewer);
+    renderPreview(p) {
+      return r.renderGuildActivityPreview(p);
     },
 
     summaryText(series) {
@@ -283,7 +283,7 @@ export const TYPE_REGISTRY = {
       return t("chart.summary.time", { value: formatDuration(sum) });
     },
 
-    onPointClick() {}
+    onPointClick() { }
   },
 
   guild_members: {
@@ -317,7 +317,7 @@ export const TYPE_REGISTRY = {
       });
     },
 
-    onPointClick() {}
+    onPointClick() { }
   },
 
 };

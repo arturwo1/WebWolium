@@ -1,6 +1,6 @@
 ---
 layout: app.njk
-title: Server Settings
+title: Server
 description: Manage your Discord server analytics, bot settings, and server configuration in one dashboard.
 pageId: server
 permalink: /server/
@@ -96,6 +96,31 @@ noindex: true
   <section data-server-view="settings" hidden>
     <div class="card section" id="serverSettings">
       <div class="section-title" data-i18n="server.settings.title">Settings</div>
+
+      <form id="serverSettingsForm">
+        <div class="privacy-sections" id="serverSettingsSections"></div>
+
+        <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+          <button class="btn-preset" type="submit" id="btnSaveServerSettings" data-i18n="save">Save</button>
+        </div>
+    </form>
     </div>
   </section>
 </div>
+
+<template id="serverSectionTemplate">
+  <div class="privacy-section">
+    <h3 class="privacy-section__title" data-i18n=""></h3>
+
+    <div class="privacy-flags">
+    </div>
+  </div>
+</template>
+
+<template id="serverFlagTemplate">
+  <div class="server-control-row" style="display: flex; flex-direction: column; gap: 4px;">
+    <label class="server-control-label" style="font-weight: 600; font-size: 14px;"></label>
+    <div class="server-control-field">
+      </div>
+  </div>
+</template>

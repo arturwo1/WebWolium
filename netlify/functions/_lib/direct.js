@@ -530,6 +530,175 @@ export async function handleGuildMemberSeries(client, auth, payload) {
   });
 }
 
+export async function handleGetGuildConfig(client, auth, payload) {
+  const guildId = payload.guild_id;
+  const discordToken = payload.discord_token;
+  if (!guildId) throw new Error("NO_GUILD_ID");
+  if (!discordToken) throw new Error("NO_DISCORD_TOKEN");
+
+  const url = "https://discord.com/api/v10/users/@me/guilds";
+
+  const headers = new Headers({});
+  headers.set("Authorization", `Bearer ${discordToken}`);
+
+  const guildsResponse = await fetch(url, { headers });
+  if (!guildsResponse.ok) throw new Error("DISCORD_API_ERROR");
+
+  const guilds = await guildsResponse.json();
+  const guild = guilds.find(guild => guild?.id === guildId);
+  if (!guild) throw new Error("INVALID_GUILD_ID");
+
+  const guildPermissions = guild?.permissions;
+  if (!guildPermissions) throw new Error("NO_PERMISSIONS");
+  if (!guild?.owner && (BigInt(guildPermissions) & (1n << 3n)) === 0n) throw new Error("NO_PERMISSIONS");
+
+  const res = await client.query("select guild_id, mod_log_channel, events, moderation, aibot, moderation_type, rules, word_channel, words, number_channel, filter, news_channel, important_channel, critical_channel, news, important, ttl_channel, ttl_messages, ai_message_ttl, ai_long_message_ttl from guild_settings where guild_id=$1::bigint;", [guildId]);
+
+  if (res.rows[0]) return res.rows[0];
+  return {};
+}
+
+export async function handleSaveGuildConfig(client, auth, payload) {
+  const guildId = payload.guild_id;
+  const discordToken = payload.discord_token;
+  if (!guildId) throw new Error("NO_GUILD_ID");
+  if (!discordToken) throw new Error("NO_DISCORD_TOKEN");
+
+  const headers = new Headers({});
+  headers.set("Authorization", `Bearer ${discordToken}`);
+
+  const guildsResponse = await fetch("https://discord.com/api/v10/users/@me/guilds", { headers });
+  if (!guildsResponse.ok) throw new Error("DISCORD_API_ERROR");
+
+  const guilds = await guildsResponse.json();
+  const guild = guilds.find(g => g?.id === guildId);
+  if (!guild) throw new Error("GUILD_NOT_FOUND");
+
+  const perms = guild?.permissions;
+  if (!perms) throw new Error("NO_PERMISSIONS");
+  if (!guild?.owner && (BigInt(perms) & (1n << 3n)) === 0n) throw new Error("ADMIN_REQUIRED");
+
+  const {
+    mod_log_channel,
+    moderation,
+    moderation_type,
+    rules,
+    aibot,
+    ai_message_ttl,
+    ai_long_message_ttl,
+    word_channel,
+    words,
+    filter,
+    number_channel,
+    news,
+    news_channel,
+    important,
+    important_channel,
+    critical_channel,
+    ttl_channel,
+  } = payload;
+
+  if (moderation_type !== undefined && !["AI", "normal"].includes(moderation_type))
+    throw new Error("INVALID_MODERATION_TYPE");
+
+  if (filter !== undefined && !["normal", "extreme"].includes(filter))
+    throw new Error("INVALID_FILTER");
+
+  if (words !== undefined) {
+    try {
+      const parsed = JSON.parse(words);
+      if (!Array.isArray(parsed) || !parsed.every(w => typeof w === "string"))
+        throw new Error();
+    } catch {
+      throw new Error("INVALID_WORDS_FORMAT");
+    }
+  }
+
+  const TTL_REGEX = /^((\d+)d\s*)?((\d+)h\s*)?((\d+)m\s*)?((\d+)s\s*)?$/;
+  const MAX_DAYS = 365 * 24 * 60 * 60;
+
+  if (ttl_channel !== undefined) {
+    let parsed;
+    try {
+      parsed = JSON.parse(ttl_channel);
+      if (typeof parsed !== "object" || Array.isArray(parsed)) throw new Error();
+    } catch {
+      throw new Error("INVALID_TTL_FORMAT");
+    }
+
+    const channelIds = Object.keys(parsed);
+    if (new Set(channelIds).size !== channelIds.length)
+      throw new Error("TTL_DUPLICATE_CHANNELS");
+
+    for (const [channelId, ttl] of Object.entries(parsed)) {
+      if (!/^\d+$/.test(channelId)) throw new Error(`TTL_INVALID_CHANNEL_ID: ${channelId}`);
+      if (!TTL_REGEX.test(ttl.trim())) throw new Error(`TTL_INVALID_FORMAT: ${channelId}`);
+
+      const d = ttl.match(/(\d+)d/)?.[1] ?? 0;
+      const h = ttl.match(/(\d+)h/)?.[1] ?? 0;
+      const m = ttl.match(/(\d+)m/)?.[1] ?? 0;
+      const s = ttl.match(/(\d+)s/)?.[1] ?? 0;
+      const totalSeconds = Number(d) * 86400 + Number(h) * 3600 + Number(m) * 60 + Number(s);
+
+      if (totalSeconds === 0) throw new Error(`TTL_ZERO: ${channelId}`);
+      if (totalSeconds > MAX_DAYS) throw new Error(`TTL_EXCEEDS_365_DAYS: ${channelId}`);
+    }
+  }
+
+  await client.query(`
+    insert into guild_settings (
+      guild_id, mod_log_channel, moderation, moderation_type, rules, aibot,
+      ai_message_ttl, ai_long_message_ttl, word_channel, words, filter,
+      number_channel, news, news_channel, important, important_channel,
+      critical_channel, ttl_channel
+    ) values (
+      $1::bigint, $2::bigint, $3, $4, $5, $6,
+      $7, $8, $9::bigint, $10::jsonb, $11,
+      $12::bigint, $13, $14::bigint, $15, $16::bigint,
+      $17::bigint, $18::jsonb
+    )
+    on conflict (guild_id) do update set
+      mod_log_channel = excluded.mod_log_channel,
+      moderation = excluded.moderation,
+      moderation_type = excluded.moderation_type,
+      rules = excluded.rules,
+      aibot = excluded.aibot,
+      ai_message_ttl = excluded.ai_message_ttl,
+      ai_long_message_ttl = excluded.ai_long_message_ttl,
+      word_channel = excluded.word_channel,
+      words = excluded.words,
+      filter = excluded.filter,
+      number_channel = excluded.number_channel,
+      news = excluded.news,
+      news_channel = excluded.news_channel,
+      important = excluded.important,
+      important_channel = excluded.important_channel,
+      critical_channel = excluded.critical_channel,
+      ttl_channel = excluded.ttl_channel
+  `, [
+    guildId,
+    mod_log_channel ?? null,
+    moderation ?? null,
+    moderation_type ?? null,
+    rules ?? null,
+    aibot ?? null,
+    ai_message_ttl ?? null,
+    ai_long_message_ttl ?? null,
+    word_channel ?? null,
+    words ?? null,
+    filter ?? null,
+    number_channel ?? null,
+    news ?? null,
+    news_channel ?? null,
+    important ?? null,
+    important_channel ?? null,
+    critical_channel ?? null,
+    ttl_channel ?? null,
+  ]);
+
+  return { success: true };
+}
+
 export async function handleDirectKind(client, auth, kind, payload) {
   if (kind === "public_stats") return await handlePublicStats(client);
   if (kind === "user_privacy") return await handleUserPrivacy(client, auth);
@@ -539,6 +708,8 @@ export async function handleDirectKind(client, auth, kind, payload) {
   if (kind === "user_activities_series") return await handleUserActivitiesSeries(client, auth, payload);
   if (kind === "guild_activities_series") return await handleGuildActivitiesSeries(client, auth, payload);
   if (kind === "guild_members_series") return await handleGuildMemberSeries(client, auth, payload);
+  if (kind === "get_guild_config") return await handleGetGuildConfig(client, auth, payload);
+  if (kind === "save_guild_config") return await handleSaveGuildConfig(client, auth, payload);
 
   const err = new Error("NOT_DIRECT_KIND");
   err.status = 400;
