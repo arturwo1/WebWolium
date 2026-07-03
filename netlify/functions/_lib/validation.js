@@ -6,7 +6,9 @@ export const DIRECT_KINDS = new Set([
   "delete_all_user_data",
   "user_activities_series",
   "guild_activities_series",
-  "guild_members_series"
+  "guild_members_series",
+  "get_guild_config",
+  "save_guild_config"
 ]);
 
 export const BOT_KINDS = new Set([

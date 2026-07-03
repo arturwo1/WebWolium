@@ -1,6 +1,6 @@
 import { grantConsent, denyConsent } from '@/lib/consent/google.js';
 import { createWebRequestService } from "@/services/index.js";
-import { $, $$, hud, lsJSONGet, lsJSONSet, getLang, setLang, onLangChange, getSupportedLangs, getLanguageNativeName, warmLanguageNativeNames, t } from "@/lib/index.js";
+import { $, $$, hud, lsJSONGet, lsJSONSet, getLang, setLang, onLangChange, getSupportedLangs, getLanguageNativeName, warmLanguageNativeNames, initCollapsible, t } from "@/lib/index.js";
 
 const lang = $("[data-lang-select]");
 const variation = $("[data-variation-select]");
@@ -154,6 +154,8 @@ export async function initSettingsPage(sb) {
       if (!flags || !flags.length) continue;
 
       const sectionEl = sectionTemplate.content.cloneNode(true);
+      const section = sectionEl.querySelector(".privacy-section");
+      section.dataset.sectionKey = sectionKey;
       const title = sectionEl.querySelector(".privacy-section__title");
       title.setAttribute("data-i18n", SECTION_LABELS[sectionKey]);
       title.textContent = t(SECTION_LABELS[sectionKey]);
@@ -181,6 +183,8 @@ export async function initSettingsPage(sb) {
       privacySections.appendChild(sectionEl);
       $("#privacySettings").classList.remove("loading");
     }
+
+    initCollapsible(privacySections, ["messages", "voice", "activity", "diagnostics", "visibility"]);
   }
 
   function syncUIWithState() {

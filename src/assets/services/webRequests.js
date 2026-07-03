@@ -19,7 +19,9 @@ const DEFAULT_ALLOWED_KINDS = new Set([
   "guild_members_series",
   "guild_profile_stats",
   "user_guilds",
-  "leaderboard"
+  "leaderboard",
+  "get_guild_config",
+  "save_guild_config"
 ]);
 
 function resultCacheKey(userId, kind, payload) {
@@ -301,7 +303,7 @@ export function createApiService(sb, {
 
     const stopHud = typeof hud?.loading === "function"
       ? hud.loading(kind)
-      : () => {};
+      : () => { };
 
     const p = (async () => {
       try {

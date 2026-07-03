@@ -19,6 +19,7 @@
         "npm:highlight.js@^11.11.1",
         "npm:luxon@^3.7.2",
         "npm:pg@^8.21.0",
+        "npm:sharp@~0.35.2",
         "npm:vite@^7.3.1"
       ]
     }

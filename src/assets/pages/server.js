@@ -1,9 +1,61 @@
-import { $, lsJSONGet, lsJSONSet, lsCleanExpired, escapeHtml, t, onLangChange, hud, formatNumber, on } from "@/lib/index.js";
-
+import { $, lsJSONGet, lsJSONSet, lsCleanExpired, escapeHtml, t, onLangChange, hud, formatNumber, on, initCollapsible } from "@/lib/index.js";
 import { createWebRequestService } from "@/services/index.js";
 import { initChart } from "@/lib/chart/chart.js";
+import { getDiscordProviderToken, logout } from "@/lib/auth/discordProviderToken.js"
 
 const SERVER_TABS = new Set(["analytics", "settings"]);
+
+const SECTION_ORDER = ["log_channels", "auto_moderation", "ai", "games", "notifications", "ttl"];
+
+const SECTION_LABELS = {
+  "log_channels": "server.section_log_channels",
+  "auto_moderation": "server.section_auto_moderation",
+  "ai": "server.section_ai",
+  "games": "server.section_games",
+  "notifications": "server.section_notifications",
+  "ttl": "server.section_ttl",
+};
+
+const FLAGS_OPTIONS = {
+  "normal": "server.option_normal",
+  "ai": "server.option_ai",
+  "extreme": "server.option_extreme",
+}
+
+const CONFIG_SCHEMA = {
+  mod_log_channel: { type: "channel", channelType: "message_channels", label: "server.flag_mod_log_channel", tooltip: "server.tooltip_mod_log_channel" },
+
+  moderation: { type: "boolean", label: "server.flag_moderation", tooltip: "server.tooltip_moderation" },
+  moderation_type: { type: "select", label: "server.flag_moderation_type", tooltip: "server.tooltip_moderation_type", options: [{ v: "normal", t: FLAGS_OPTIONS.normal }, { v: "ai", t: FLAGS_OPTIONS.ai }] },
+  rules: { type: "textarea", label: "server.flag_rules", tooltip: "server.tooltip_rules" },
+
+  aibot: { type: "boolean", label: "server.flag_aibot", tooltip: "server.tooltip_aibot" },
+  ai_message_ttl: { type: "number", label: "server.flag_ai_message_ttl", tooltip: "server.tooltip_ai_message_ttl" },
+  ai_long_message_ttl: { type: "number", label: "server.flag_ai_long_message_ttl", tooltip: "server.tooltip_ai_long_message_ttl" },
+
+  word_channel: { type: "channel", channelType: "message_channels", label: "server.flag_word_channel", tooltip: "server.tooltip_word_channel" },
+  words: { type: "json_array", label: "server.flag_words", tooltip: "server.tooltip_words" },
+  filter: { type: "select", label: "server.flag_filter", tooltip: "server.tooltip_filter", options: [{ v: "normal", t: FLAGS_OPTIONS.normal }, { v: "extreme", t: FLAGS_OPTIONS.extreme }] },
+  number_channel: { type: "channel", channelType: "message_channels", label: "server.flag_number_channel", tooltip: "server.tooltip_number_channel" },
+
+  news: { type: "boolean", label: "server.flag_news", tooltip: "server.tooltip_news" },
+  news_channel: { type: "channel", channelType: "message_channels", label: "server.flag_news_channel", tooltip: "server.tooltip_news_channel" },
+  important: { type: "boolean", label: "server.flag_important", tooltip: "server.tooltip_important" },
+  important_channel: { type: "channel", channelType: "message_channels", label: "server.flag_important_channel", tooltip: "server.tooltip_important_channel" },
+  critical: { type: "boolean", label: "server.flag_critical", disabled: true, forcedValue: true, tooltip: "server.tooltip_critical" },
+  critical_channel: { type: "channel", channelType: "message_channels", label: "server.flag_critical_channel", tooltip: "server.tooltip_critical_channel" },
+
+  ttl_channel: { type: "ttl_map", label: "server.flag_ttl_channel", tooltip: "server.tooltip_ttl_channel" },
+};
+
+const SECTION_FLAGS = {
+  "log_channels": ["mod_log_channel"],
+  "auto_moderation": ["moderation", "moderation_type", "rules"],
+  "ai": ["aibot", "ai_message_ttl", "ai_long_message_ttl"],
+  "games": ["word_channel", "words", "filter", "number_channel"],
+  "notifications": ["news", "news_channel", "important", "important_channel", "critical", "critical_channel"],
+  "ttl": ["ttl_channel"],
+};
 
 function setText(el, value) {
   if (el) el.textContent = String(value ?? "");
@@ -77,11 +129,7 @@ function renderBadgeRow(badgeRowEl, badges) {
     const title = t(`server.badges.${badgeId}`);
 
     return `
-      <div
-        class="badge"
-        title="${escapeHtml(title)}"
-        aria-label="${escapeHtml(title)}"
-      >
+      <div class="badge" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}">
         <svg class="icon badge-icon" aria-hidden="true" viewBox="0 0 24 24">
           <use href="#${badgeId}"></use>
         </svg>
@@ -143,7 +191,22 @@ export async function initServerPage(sb) {
   const chartChannelId = $("#chartChannelId");
   const chartRoleId = $("#chartRoleId");
 
+  const serverSettingsSections = $("#serverSettingsSections");
+  const serverSettingsForm = $("#serverSettingsForm");
+  const serverSettingsCard = $("#serverSettings");
+
   const guildId = getParam("guild_id") || "";
+  const administrator = getParam("administrator") === "true";
+
+  const { data: sessionData } = await sb.auth.getSession();
+
+  let discordToken = null;
+  try {
+    discordToken = await getDiscordProviderToken(sb);
+  } catch (error) {
+    hud.error(error);
+    return logout(error);
+  }
 
   const Ids = {
     channels: {},
@@ -173,6 +236,452 @@ export async function initServerPage(sb) {
 
   let lastProfileResponse = null;
   let chart = null;
+
+  let currentServerConfig = null;
+  let isConfigLoaded = false;
+
+  function parseTtlMap(val) {
+    if (!val) return {};
+    if (typeof val === "object" && !Array.isArray(val)) return val;
+    try { return JSON.parse(val); } catch { return {}; }
+  }
+
+  const TTL_RE = /^(?:(\d+)d\s*)?(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s\s*)?$/;
+
+  function validateTtl(str) {
+    const s = str.trim();
+    if (!s) return { ok: false, msg: t("server.ttl_empty") };
+    if (!TTL_RE.test(s)) return { ok: false, msg: t("server.ttl_invalid") };
+    const [, d, h, m, sec] = s.match(TTL_RE).map(Number);
+    const totalSec = (d || 0) * 86400 + (h || 0) * 3600 + (m || 0) * 60 + (sec || 0);
+    if (totalSec === 0) return { ok: false, msg: t("server.ttl_zero") };
+    if (totalSec > 365 * 86400) return { ok: false, msg: t("server.ttl_too_long") };
+    return { ok: true };
+  }
+
+  function createTtlEditor(key, currentChannels) {
+    const ttlMap = parseTtlMap(currentServerConfig[key] || "{}");
+
+    const root = document.createElement("div");
+    root.className = "ttl-editor";
+
+    const list = document.createElement("div");
+    list.className = "ttl-list";
+
+    function renderList() {
+      list.innerHTML = "";
+      const entries = Object.entries(ttlMap);
+
+      if (!entries.length) {
+        const empty = document.createElement("div");
+        empty.className = "ttl-empty";
+        empty.setAttribute("data-i18n", "server.ttl_no_channels");
+        empty.textContent = t("server.ttl_no_channels");
+        list.appendChild(empty);
+        return;
+      }
+
+      entries.forEach(([chId, ttlStr]) => {
+        const chName = currentChannels[chId]?.name || chId;
+
+        const row = document.createElement("div");
+        row.className = "ttl-row";
+
+        const nameEl = document.createElement("span");
+        nameEl.className = "ttl-row__name";
+        nameEl.textContent = `#${chName}`;
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "input ttl-row__input";
+        input.value = ttlStr;
+        input.placeholder = "e.g. 1d 2h";
+        input.name = `ttl__${chId}`;
+
+        const errEl = document.createElement("span");
+        errEl.className = "ttl-row__err";
+        errEl.hidden = true;
+
+        input.addEventListener("input", () => {
+          const { ok, msg } = validateTtl(input.value);
+          errEl.hidden = ok;
+          errEl.textContent = msg || "";
+          if (ok) {
+            ttlMap[chId] = input.value.trim();
+          }
+        });
+
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "ttl-row__remove";
+        removeBtn.title = t("remove");
+        removeBtn.innerHTML = `
+          <svg class="icon">
+            <use href="#close"></use>
+          </svg>
+        `;
+        removeBtn.addEventListener("click", () => {
+          delete ttlMap[chId];
+          renderList();
+        });
+
+        row.appendChild(nameEl);
+        row.appendChild(input);
+        row.appendChild(errEl);
+        row.appendChild(removeBtn);
+        list.appendChild(row);
+      });
+    }
+
+    renderList();
+
+    const addRow = document.createElement("div");
+    addRow.className = "ttl-add-row";
+
+    const channelSelect = document.createElement("select");
+    channelSelect.className = "input ttl-add__select";
+
+    const defOpt = document.createElement("option");
+    defOpt.value = "";
+    defOpt.textContent = t("chart.preset.channel");
+    channelSelect.appendChild(defOpt);
+
+    Object.entries(currentChannels).forEach(([chId, chProps]) => {
+      if (ttlMap[chId] !== undefined) return;
+      const opt = document.createElement("option");
+      opt.value = chId;
+      opt.textContent = `#${chProps?.name || chId}`;
+      channelSelect.appendChild(opt);
+    });
+
+    const ttlInput = document.createElement("input");
+    ttlInput.type = "text";
+    ttlInput.className = "input ttl-add__value";
+    ttlInput.placeholder = "1d 2h 30m";
+
+    const addErrEl = document.createElement("span");
+    addErrEl.className = "ttl-row__err";
+    addErrEl.hidden = true;
+
+    const addBtn = document.createElement("button");
+    addBtn.type = "button";
+    addBtn.className = "btn-preset ttl-add__btn";
+    addBtn.setAttribute("data-i18n", "server.ttl_add");
+    addBtn.textContent = t("server.ttl_add");
+
+    addBtn.addEventListener("click", () => {
+      const chId = channelSelect.value;
+      const ttlStr = ttlInput.value.trim();
+
+      if (!chId) {
+        addErrEl.textContent = t("server.ttl_pick_channel_err");
+        addErrEl.hidden = false;
+        return;
+      }
+
+      const { ok, msg } = validateTtl(ttlStr);
+      if (!ok) {
+        addErrEl.textContent = msg;
+        addErrEl.hidden = false;
+        return;
+      }
+
+      addErrEl.hidden = true;
+      ttlMap[chId] = ttlStr;
+
+      const addedOpt = channelSelect.querySelector(`option[value="${chId}"]`);
+      addedOpt?.remove();
+      channelSelect.value = "";
+      ttlInput.value = "";
+
+      renderList();
+    });
+
+    const origRenderList = renderList;
+    function renderListAndSync() {
+      origRenderList();
+
+      [...channelSelect.options].forEach(opt => {
+        if (opt.value && ttlMap[opt.value] !== undefined) opt.remove();
+      });
+
+      Object.entries(currentChannels).forEach(([chId, chProps]) => {
+        if (ttlMap[chId] !== undefined) return;
+        if (channelSelect.querySelector(`option[value="${chId}"]`)) return;
+        const opt = document.createElement("option");
+        opt.value = chId;
+        opt.textContent = `#${chProps?.name || chId}`;
+        channelSelect.appendChild(opt);
+      });
+    }
+
+    list._rerender = renderListAndSync;
+
+    removeBtn_patch: {
+      list.addEventListener("click", e => {
+        const btn = e.target.closest(".ttl-row__remove");
+        if (!btn) return;
+        const row = btn.closest(".ttl-row");
+        const input = row?.querySelector(".ttl-row__input");
+        if (!input) return;
+        const chId = input.name.replace("ttl__", "");
+        delete ttlMap[chId];
+        renderListAndSync();
+      });
+    }
+
+    addRow.appendChild(channelSelect);
+    addRow.appendChild(ttlInput);
+    addRow.appendChild(addBtn);
+    addRow.appendChild(addErrEl);
+
+    root.appendChild(list);
+    root.appendChild(addRow);
+
+    root._getTtlValue = () => JSON.stringify(ttlMap);
+
+    return root;
+  }
+
+  function createInputField(key, schema, val, labelText = "") {
+    if (schema.type === "boolean") {
+      const wrapper = document.createElement("label");
+      wrapper.className = "input";
+      wrapper.style.display = "flex";
+      wrapper.style.alignItems = "center";
+      wrapper.style.gap = "8px";
+      wrapper.style.cursor = schema.disabled ? "not-allowed" : "pointer";
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.name = key;
+      checkbox.checked = schema.forcedValue !== undefined ? schema.forcedValue : Boolean(val);
+
+      if (schema.disabled) {
+        checkbox.disabled = true;
+      }
+
+      wrapper.appendChild(checkbox);
+
+      if (labelText) {
+        const textSpan = document.createElement("span");
+        textSpan.setAttribute("data-i18n", schema.label);
+        textSpan.textContent = labelText;
+        wrapper.appendChild(textSpan);
+
+        if (schema.tooltip) {
+          const infoIcon = document.createElement("span");
+          infoIcon.textContent = " ⓘ";
+          infoIcon.style.cursor = "help";
+          infoIcon.style.opacity = "0.6";
+          infoIcon.style.marginLeft = "4px";
+          infoIcon.title = t(schema.tooltip);
+          wrapper.appendChild(infoIcon);
+        }
+      }
+
+      return wrapper;
+    }
+
+    if (schema.type === "select") {
+      const select = document.createElement("select");
+      select.className = "input";
+      select.name = key;
+      schema.options.forEach(opt => {
+        const option = document.createElement("option");
+        option.value = opt.v;
+        option.textContent = t(opt.t);
+        if (opt.v === val) option.selected = true;
+        select.appendChild(option);
+      });
+      return select;
+    }
+
+    if (schema.type === "channel") {
+      const select = document.createElement("select");
+      select.className = "input";
+      select.name = key;
+
+      const defOpt = document.createElement("option");
+      defOpt.value = "";
+      defOpt.textContent = t("chart.preset.channel");
+      select.appendChild(defOpt);
+
+      const channels = Ids.channels?.[schema.channelType] || {};
+      for (const [chId, chProps] of Object.entries(channels)) {
+        const option = document.createElement("option");
+        option.value = chId;
+        option.textContent = chProps?.name || chId;
+        if (chId === String(val)) option.selected = true;
+        select.appendChild(option);
+      }
+      return select;
+    }
+
+    if (schema.type === "textarea") {
+      const textarea = document.createElement("textarea");
+      textarea.className = "input";
+      textarea.name = key;
+      textarea.style.minHeight = "120px";
+      textarea.value = String(val ?? "");
+      return textarea;
+    }
+
+    const input = document.createElement("input");
+    input.className = "input";
+    input.name = key;
+
+    if (schema.type === "number") {
+      input.type = "number";
+      input.min = "0";
+      input.placeholder = "0";
+      input.value = val !== undefined && val !== null ? String(val) : "";
+    }
+
+    if (schema.type === "json_array") {
+      input.type = "text";
+      try {
+        const parsed = typeof val === "string" ? JSON.parse(val) : val;
+        input.value = Array.isArray(parsed) ? parsed.join(", ") : "";
+      } catch { input.value = String(val ?? ""); }
+    }
+
+    if (schema.type === "ttl_map") {
+      const channels = Ids.channels?.message_channels ?? {};
+      return createTtlEditor(key, channels);
+    }
+
+    return input;
+  }
+
+  function buildServerSettingsDOM(configData) {
+    if (!serverSettingsSections) return;
+    serverSettingsSections.innerHTML = "";
+
+    for (const sectionKey of SECTION_ORDER) {
+      const flags = SECTION_FLAGS[sectionKey];
+      if (!flags || !flags.length) continue;
+
+      const sectionEl = $("#serverSectionTemplate").content.cloneNode(true);
+      const sectionDiv = sectionEl.querySelector(".privacy-section");
+      sectionDiv.dataset.sectionKey = sectionKey;
+
+      const title = sectionEl.querySelector(".privacy-section__title");
+      title.setAttribute("data-i18n", SECTION_LABELS[sectionKey]);
+      title.textContent = t(SECTION_LABELS[sectionKey]);
+
+      const flagsContainer = sectionEl.querySelector(".privacy-flags");
+      flagsContainer.classList.add("server-section-body");
+
+      for (const flagKey of flags) {
+        const schema = CONFIG_SCHEMA[flagKey];
+        if (!schema) continue;
+
+        const flagEl = $("#serverFlagTemplate").content.cloneNode(true);
+        const label = flagEl.querySelector(".server-control-label");
+        const fieldContainer = flagEl.querySelector(".server-control-field");
+
+        if (schema.type === "boolean") {
+          label.remove();
+          const inputField = createInputField(flagKey, schema, configData[flagKey], t(schema.label));
+          fieldContainer.appendChild(inputField);
+        } else {
+          label.setAttribute("data-i18n", schema.label);
+          label.textContent = t(schema.label);
+
+          if (schema.tooltip) {
+            const infoIcon = document.createElement("span");
+            infoIcon.textContent = " ⓘ";
+            infoIcon.style.cssText = "cursor:help;opacity:.6;font-size:12px;";
+            infoIcon.title = t(schema.tooltip);
+            label.appendChild(infoIcon);
+          }
+
+          const inputField = createInputField(flagKey, schema, configData[flagKey]);
+          fieldContainer.appendChild(inputField);
+        }
+
+        flagsContainer.appendChild(flagEl);
+      }
+
+      serverSettingsSections.appendChild(sectionEl);
+    }
+
+    serverSettingsCard?.classList.remove("loading");
+
+    initCollapsible(serverSettingsSections, ["ttl", "ai"]);
+  }
+
+  serverSettingsForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(serverSettingsForm);
+    const payload = { guild_id: guildId, discord_token: discordToken };
+
+    for (const [key, schema] of Object.entries(CONFIG_SCHEMA)) {
+      if (schema.forcedValue !== undefined) {
+        payload[key] = schema.forcedValue;
+        continue;
+      }
+
+      if (schema.type === "boolean") {
+        payload[key] = formData.has(key);
+      } else if (schema.type === "number") {
+        const rawNum = formData.get(key);
+        const parsedNum = parseInt(rawNum, 10);
+        payload[key] = isNaN(parsedNum) || parsedNum <= 0 ? 0 : parsedNum;
+      } else if (schema.type === "json_array") {
+        const rawValue = formData.get(key) || "";
+        const arr = rawValue.split(",").map(s => s.trim()).filter(Boolean);
+        payload[key] = JSON.stringify(arr);
+      } else if (schema.type === "ttl_map") {
+        const ttlEditor = serverSettingsSections.querySelector(".ttl-editor");
+        payload[key] = ttlEditor?._getTtlValue?.() ?? "{}";
+        continue;
+      } else {
+        payload[key] = formData.get(key) || null;
+      }
+    }
+
+    try {
+      const res = await wr.queue("save_guild_config", payload, {
+        cacheTtlMs: 0, cooldownMs: 1_000, timeoutMs: 7_000
+      });
+
+      if (res && !res.error) {
+        hud.success(t("settings.privacy_saved"));
+        currentServerConfig = { ...currentServerConfig, ...payload };
+      } else {
+        throw new Error(res?.error || "Save error");
+      }
+    } catch (e) {
+      console.error("[server] Failed to save settings:", e);
+      hud.error(t("settings.privacy_save_error"));
+    }
+  });
+
+  async function loadServerConfig() {
+    if (isConfigLoaded || !administrator) return;
+
+    serverSettingsCard?.classList.add("loading");
+
+    try {
+      const res = await wr.queue("get_guild_config", { guild_id: guildId, discord_token: discordToken }, {
+        cacheTtlMs: 15_000, cooldownMs: 1_000, timeoutMs: 5_000
+      });
+
+      if (res && !res.error) {
+        currentServerConfig = res;
+        isConfigLoaded = true;
+        buildServerSettingsDOM(currentServerConfig);
+      } else {
+        throw new Error(res?.error || "Load error");
+      }
+    } catch (e) {
+      console.error("[server] Settings didnt loaded:", e);
+      hud.error(t("settings.privacy_load_error"));
+    }
+  }
 
   function setActiveTab(tab, options = {}) {
     const normalizedTab = normalizeServerTab(tab);
@@ -346,6 +855,11 @@ export async function initServerPage(sb) {
       Ids.roles = res?.roles ?? {};
       renderOptions(normalizeChartType(chartModal?.dataset?.chartType || "guild_messages"));
 
+      if (administrator) {
+        loadServerConfig();
+        document.querySelector('[data-server-tab="settings"]').disabled = !administrator;
+      }
+
       return res;
     } catch (e) {
       const saved = lsJSONGet(lastKey, null);
@@ -361,6 +875,10 @@ export async function initServerPage(sb) {
         Ids.channels = saved.res?.channels ?? {};
         Ids.roles = saved.res?.roles ?? {};
         renderOptions(normalizeChartType(chartModal?.dataset?.chartType || "guild_messages"));
+        if (administrator) {
+          loadServerConfig();
+          document.querySelector('[data-server-tab="settings"]').disabled = !administrator;
+        }
         return saved.res;
       }
 

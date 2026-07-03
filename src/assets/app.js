@@ -22,7 +22,7 @@ import {
   t
 } from "@/lib/index.js";
 
-import { DISCORD_AUTH_LOST_EVENT, clearDiscordTokenCache } from "@/lib/auth/discordProviderToken.js";
+import { DISCORD_AUTH_LOST_EVENT, clearDiscordTokenCache, initDiscordTokenCache, initDiscordAuth } from "@/lib/auth/discordProviderToken.js";
 
 import { initProfilePage } from "./pages/profile.js";
 import { initHomePage } from "./pages/index.js";
@@ -195,6 +195,12 @@ async function boot() {
   $("#btnLoginCenter")?.addEventListener("click", onLogin);
 
   const session = await syncAuthUI(sb);
+
+  if (session) {
+    await initDiscordTokenCache(sb);
+    await initDiscordAuth(sb);
+  }
+
   await initCurrentPage(sb, session);
 
   requestAnimationFrame(() => {

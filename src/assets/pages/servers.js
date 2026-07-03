@@ -135,11 +135,6 @@ const state = {
   query: "",
 };
 
-function tr(key, fallback) {
-  const value = t(key);
-  return value && value !== key ? value : fallback;
-}
-
 function createEl(tag, options = {}) {
   const node = document.createElement(tag);
 
@@ -210,7 +205,7 @@ function getPermissionBadges(guild, bits) {
   if (guild.owner) {
     badges.push({
       id: "owner",
-      label: tr("servers.perm_owner", "Owner"),
+      label: t("servers.perm_owner"),
       tone: "owner",
       rank: 120,
     });
@@ -219,7 +214,7 @@ function getPermissionBadges(guild, bits) {
   if (hasBit(bits, PERMISSIONS.ADMINISTRATOR)) {
     badges.push({
       id: "administrator",
-      label: tr("servers.perm_admin", "Administrator"),
+      label: t("servers.perm_admin"),
       tone: "admin",
       rank: 110,
     });
@@ -232,7 +227,7 @@ function getPermissionBadges(guild, bits) {
 
     badges.push({
       id: permission.id,
-      label: tr(permission.key, permission.fallback),
+      label: t(permission.key),
       tone: permission.tone,
       rank: permission.rank,
     });
@@ -241,7 +236,7 @@ function getPermissionBadges(guild, bits) {
   if (!badges.length) {
     badges.push({
       id: "member",
-      label: tr("servers.perm_member", "Member"),
+      label: t("servers.perm_member"),
       tone: "muted",
       rank: 0,
     });
@@ -275,8 +270,8 @@ function getGuildPower(guild, bits) {
   if (owner) {
     return {
       id: "owner",
-      label: tr("servers.level_owner", "Owner"),
-      hint: tr("servers.hint_owner", "Full control over this server."),
+      label: t("servers.level_owner"),
+      hint: t("servers.hint_owner"),
       rank: 0,
       full: true,
       manage: true,
@@ -288,8 +283,8 @@ function getGuildPower(guild, bits) {
   if (admin) {
     return {
       id: "admin",
-      label: tr("servers.level_admin", "Full access"),
-      hint: tr("servers.hint_admin", "Administrator permissions are available."),
+      label: t("servers.level_admin"),
+      hint: t("servers.hint_admin"),
       rank: 1,
       full: true,
       manage: true,
@@ -301,8 +296,8 @@ function getGuildPower(guild, bits) {
   if (canManage) {
     return {
       id: "manage",
-      label: tr("servers.level_manage", "Can manage"),
-      hint: tr("servers.hint_manage", "You have server management permissions."),
+      label: t("servers.level_manage", "Can manage"),
+      hint: t("servers.hint_manage", "You have server management permissions."),
       rank: 2,
       full: false,
       manage: true,
@@ -314,8 +309,8 @@ function getGuildPower(guild, bits) {
   if (canModerate) {
     return {
       id: "mod",
-      label: tr("servers.level_mod", "Moderation"),
-      hint: tr("servers.hint_mod", "You have moderation permissions here."),
+      label: t("servers.level_mod"),
+      hint: t("servers.hint_mod"),
       rank: 3,
       full: false,
       manage: false,
@@ -326,8 +321,8 @@ function getGuildPower(guild, bits) {
 
   return {
     id: "member",
-    label: tr("servers.level_member", "Member"),
-    hint: tr("servers.hint_member", "No important management permissions found."),
+    label: t("servers.level_member"),
+    hint: t("servers.hint_member"),
     rank: 4,
     full: false,
     manage: false,
@@ -343,7 +338,7 @@ function normalizeGuild(guild) {
   return {
     raw: guild,
     id: String(guild?.id ?? ""),
-    name: guild?.name || tr("servers.unknown", "Unknown server"),
+    name: guild?.name || t("servers.unknown"),
     iconUrl: getGuildIconUrl(guild),
     initials: getInitials(guild?.name),
     bits,
@@ -417,9 +412,9 @@ function buildServerCard(guild) {
   const card = createEl("a", {
     className: "srv-card card card-hover",
     attrs: {
-      href: `/server/?guild_id=${encodeURIComponent(guild.id)}`,
+      href: `/server/?guild_id=${encodeURIComponent(guild.id)}&administrator=${guild.badges.some(badge => ["administrator", "owner"].includes(badge.id))}`,
       "data-power": guild.power.id,
-      "aria-label": `${tr("servers.open_server", "Open server")}: ${guild.name}`,
+      "aria-label": `${t("servers.open_server")}: ${guild.name}`,
     },
   });
 
@@ -498,14 +493,14 @@ function renderEmpty(nodes, isFiltered) {
   setHidden(nodes.error, true);
 
   if (isFiltered) {
-    setText(nodes.emptyTitle, tr("servers.empty_filter_title", "Nothing found"));
-    setText(nodes.emptyText, tr("servers.empty_filter_text", "Try another search query or filter."));
+    setText(nodes.emptyTitle, t("servers.empty_filter_title"));
+    setText(nodes.emptyText, t("servers.empty_filter_text"));
     setHidden(nodes.addBot, true);
     return;
   }
 
-  setText(nodes.emptyTitle, tr("servers.empty_title", "No servers found"));
-  setText(nodes.emptyText, tr("servers.empty_text", "Add Wolium to a Discord server to get started."));
+  setText(nodes.emptyTitle, t("servers.empty_title"));
+  setText(nodes.emptyText, t("servers.empty_text"));
   setHidden(nodes.addBot, false);
 }
 
@@ -565,7 +560,7 @@ function renderError(nodes, error) {
   setHidden(nodes.empty, true);
   setHidden(nodes.error, false);
 
-  setText(nodes.errorText, error?.message || tr("servers.error_generic", "Something went wrong."));
+  setText(nodes.errorText, error?.message || t("servers.error_generic"));
 }
 
 function discordRequestError(status, body) {
@@ -575,20 +570,20 @@ function discordRequestError(status, body) {
 
     return new Error(
       seconds > 0
-        ? tr("servers.error_rate_limit_wait", "Too many requests. Try again in {seconds}s.").replace("{seconds}", seconds)
-        : tr("servers.error_rate_limit", "Too many requests. Try again later.")
+        ? t("servers.error_rate_limit_wait", { seconds: seconds })
+        : t("servers.error_rate_limit")
     );
   }
 
   if (status === 401) {
-    return new Error(tr("servers.error_unauthorized", "Discord session expired. Please sign in again."));
+    return new Error(t("servers.error_unauthorized"));
   }
 
   if (status === 403) {
-    return new Error(tr("servers.error_forbidden", "Discord denied access to your servers."));
+    return new Error(t("servers.error_forbidden"));
   }
 
-  return new Error(tr("servers.error_generic", "Something went wrong."));
+  return new Error(t("servers.error_generic"));
 }
 
 async function fetchGuilds(sb) {
@@ -643,7 +638,7 @@ export async function initServersPage(sb) {
   if (!nodes.list) return;
 
   if (nodes.search) {
-    nodes.search.placeholder = tr("servers.search_placeholder", "Search servers...");
+    nodes.search.placeholder = t("servers.search_placeholder");
   }
 
   let requestId = 0;
@@ -665,7 +660,7 @@ export async function initServersPage(sb) {
 
       console.error("[servers] load failed:", error);
       renderError(nodes, error);
-      hud.error(error, { title: tr("servers.error_title", "Could not load servers") });
+      hud.error(error, { title: t("servers.error_title") });
     }
   }
 
