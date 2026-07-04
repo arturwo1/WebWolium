@@ -77,6 +77,8 @@ export async function handler(event) {
     return json(500, {
       error: "DISCORD_REFRESH_FAILED",
       code: "DISCORD_REFRESH_FAILED",
+      discord_status: res.status,
+      discord_body: token,
     });
   }
 

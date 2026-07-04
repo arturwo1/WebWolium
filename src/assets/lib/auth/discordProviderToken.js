@@ -106,12 +106,16 @@ export async function initDiscordAuth(sb) {
 
   if (!session) return;
 
-  const refreshToken =
-    session.provider_refresh_token || cachedRefreshToken;
+  const refreshToken = cachedRefreshToken || session.provider_refresh_token;
 
   if (!refreshToken) return;
 
-  await refreshDiscordToken(sb, refreshToken);
+  try {
+    return await refreshDiscordToken(sb, refreshToken);
+  } catch (err) {
+    maybeEmitDiscordAuthLost(err);
+    throw err;
+  }
 }
 
 export function logout(error = null) {
@@ -154,14 +158,20 @@ export async function getDiscordProviderToken(sb) {
     return cachedAccessToken;
   }
 
-  const refreshToken =
-    session.provider_refresh_token || cachedRefreshToken;
+  const refreshToken = cachedRefreshToken || session.provider_refresh_token;
 
   if (!refreshToken) {
-    throw authError("NO_REFRESH_TOKEN", "NO_REFRESH_TOKEN");
+    const err = authError("NO_REFRESH_TOKEN", "NO_REFRESH_TOKEN");
+    maybeEmitDiscordAuthLost(err);
+    throw err;
   }
 
-  return await refreshDiscordToken(sb, refreshToken);
+  try {
+    return await refreshDiscordToken(sb, refreshToken);
+  } catch (err) {
+    maybeEmitDiscordAuthLost(err);
+    throw err;
+  }
 }
 
 export async function discordApiFetch(sb, path, options = {}) {
