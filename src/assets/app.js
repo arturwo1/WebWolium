@@ -4,7 +4,7 @@ import {
   bindHeadImages,
   createSupabaseClient,
   initDrawer,
-  initUserDropdown,
+  initDropdown,
   isPublicPage,
   readIdentity,
   registerServiceWorker,
@@ -140,6 +140,12 @@ async function initCurrentPage(sb, session) {
 }
 
 async function boot() {
+  const btnAvatar = $("#btnAvatar");
+  const userDropdown = $("#userDropdown");
+
+  const btnChartOptions = $("#btnChartOptions");
+  const chartOptionsDropdown = $("#chartOptionsDropdown");
+
   initPageTransitions();
 
   registerServiceWorker();
@@ -173,14 +179,21 @@ async function boot() {
 
   window.addEventListener(DISCORD_AUTH_LOST_EVENT, handleDiscordAuthLost);
 
-  initUserDropdown({
-    onLogout: async () => {
+  initDropdown({
+    button: btnAvatar,
+    dropdown: userDropdown,
+    onAction: async () => {
       clearDiscordTokenCache();
       lsDel("wolium:last_identity");
       await sb?.auth?.signOut();
       started.clear();
       await syncAuthUI(sb);
     }
+  });
+
+  initDropdown({
+    button: btnChartOptions,
+    dropdown: chartOptionsDropdown
   });
 
   const onLogin = async () => {

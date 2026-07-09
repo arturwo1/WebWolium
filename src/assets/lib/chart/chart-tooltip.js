@@ -90,6 +90,20 @@ export function makeTooltip(tip, tipTime, tipVal, tipPreview, canvas, state, vie
     requestAnimationFrame(() => placeTooltipAtPoint(px, py));
   }
 
+  function showSimpleTooltip(label, valueText, timeText, p, px, py) {
+    if (!hasTip) return;
+
+    tip.classList.add("is-on");
+    cancelHideTip();
+
+    tipTime.textContent = timeText;
+    tipVal.textContent = `${label}: ${valueText}`;
+    tipPreview.innerHTML = "";
+
+    tipPoint = p;
+    requestAnimationFrame(() => placeTooltipAtPoint(px, py));
+  }
+
   if (hasTip) {
     tip.addEventListener("mouseenter", () => {
       tipHover = true;
@@ -123,6 +137,7 @@ export function makeTooltip(tip, tipTime, tipVal, tipPreview, canvas, state, vie
     scheduleHideTip,
     cancelHideTip,
     showTooltipForPoint,
+    showSimpleTooltip,
     getTipHover: () => tipHover,
     HIDE_DELAY_FROM_CANVAS,
     HIDE_DELAY_FROM_TIP
