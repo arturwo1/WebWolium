@@ -4,6 +4,7 @@ import { eleventyImageTransformPlugin } from "@11ty/eleventy-img";
 import { DateTime } from "luxon";
 
 export default function (eleventyConfig) {
+  eleventyConfig.setUseGitIgnore(false);
   eleventyConfig.addPassthroughCopy({ "src/assets": "assets" });
   eleventyConfig.addWatchTarget("./src/assets/locales/");
 

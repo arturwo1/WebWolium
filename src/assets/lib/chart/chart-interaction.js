@@ -1,9 +1,9 @@
 import { clamp } from "@/lib/index.js";
-import { isMousePointerEvent } from "./chart-utils.js";
+import { isMousePointerEvent, unshiftComparePoint } from "./chart-utils.js";
 import { resolveType } from "./chart-types.js";
 
 export function attachInteractions(canvas, state, tooltip, drawer, onBucketChanged) {
-  const { hideTip, scheduleHideTip, showTooltipForPoint, getTipHover, hasTip, HIDE_DELAY_FROM_CANVAS, HIDE_DELAY_FROM_TIP } = tooltip;
+  const { hideTip, scheduleHideTip, showTooltipForPoint, showSimpleTooltip, getTipHover, hasTip, HIDE_DELAY_FROM_CANVAS, HIDE_DELAY_FROM_TIP } = tooltip;
   const { drawChart, findNearestPoint, renderWhenVisible } = drawer;
 
   const hoverMq = window.matchMedia("(hover: hover) and (pointer: fine)");
@@ -94,6 +94,7 @@ export function attachInteractions(canvas, state, tooltip, drawer, onBucketChang
   on(canvas, "mouseleave", () => {
     if (!canHover()) return;
     state.hoverIdx = -1;
+    state.hoverKind = null;
     if (hasTip && !getTipHover()) scheduleHideTip(HIDE_DELAY_FROM_CANVAS);
     drawChart();
   });
@@ -114,9 +115,18 @@ export function attachInteractions(canvas, state, tooltip, drawer, onBucketChang
 
     if (hit) {
       state.hoverIdx = hit.idx;
-      showTooltipForPoint(hit.point, hit.px, hit.py);
+      state.hoverKind = hit.kind;
+
+      if (hit.kind === "main") {
+        showTooltipForPoint(hit.point, hit.px, hit.py);
+      } else if (hit.kind === "compare") {
+        showTooltipForPoint(unshiftComparePoint(hit.point), hit.px, hit.py);
+      } else {
+        showSimpleTooltip(hit.tooltip.label, hit.tooltip.valueText, hit.tooltip.timeText, hit.point, hit.px, hit.py);
+      }
     } else {
       state.hoverIdx = -1;
+      state.hoverKind = null;
       if (hasTip && !getTipHover()) scheduleHideTip(HIDE_DELAY_FROM_TIP);
     }
 
@@ -126,12 +136,17 @@ export function attachInteractions(canvas, state, tooltip, drawer, onBucketChang
   on(canvas, "click", () => {
     if (!canHover()) return;
     if (Date.now() - lastTouchTs < 500) return;
+    if (state.hoverKind !== "main" && state.hoverKind !== "compare") return;
 
-    const s = state.series.filter((p) => p.ts >= state.viewMin && p.ts <= state.viewMax);
-    if (state.hoverIdx < 0 || state.hoverIdx >= s.length) return;
-
-    const point = s[state.hoverIdx];
-    resolveType(state.type).onPointClick(point);
+    if (state.hoverKind === "main") {
+      const s = state.series.filter((p) => p.ts >= state.viewMin && p.ts <= state.viewMax);
+      if (state.hoverIdx < 0 || state.hoverIdx >= s.length) return;
+      resolveType(state.type).onPointClick(s[state.hoverIdx]);
+    } else {
+      const cs = state.compareSeries.filter((p) => p.ts >= state.viewMin && p.ts <= state.viewMax);
+      if (state.hoverIdx < 0 || state.hoverIdx >= cs.length) return;
+      resolveType(state.type).onPointClick(unshiftComparePoint(cs[state.hoverIdx]));
+    }
   });
 
   on(canvas, "wheel", (e) => {
@@ -298,9 +313,18 @@ export function attachInteractions(canvas, state, tooltip, drawer, onBucketChang
 
         if (hit) {
           state.hoverIdx = hit.idx;
-          showTooltipForPoint(hit.point, hit.px, hit.py);
+          state.hoverKind = hit.kind;
+
+          if (hit.kind === "main") {
+            showTooltipForPoint(hit.point, hit.px, hit.py);
+          } else if (hit.kind === "compare") {
+            showTooltipForPoint(unshiftComparePoint(hit.point), hit.px, hit.py);
+          } else {
+            showSimpleTooltip(hit.tooltip.label, hit.tooltip.valueText, hit.tooltip.timeText, hit.point, hit.px, hit.py);
+          }
         } else {
           state.hoverIdx = -1;
+          state.hoverKind = null;
           if (hasTip) hideTip();
         }
 

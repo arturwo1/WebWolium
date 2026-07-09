@@ -31,6 +31,12 @@ export function initChart(queueRequest, opts = {}) {
     chartActivityArtist: $("#chartActivityArtist")
   };
 
+  const optionEls = {
+    average: $("#chartOptionsAverage"),
+    compare: $("#chartOptionsCompare"),
+    delta: $("#chartOptionsDelta")
+  };
+
   const tip = $("#chartTooltip");
   const tipTime = $("#tipTime");
   const tipVal = $("#tipVal");
@@ -63,11 +69,18 @@ export function initChart(queueRequest, opts = {}) {
     bucketMs: 0,
     yMax: 1,
     hoverIdx: -1,
+    hoverKind: null,
     dragging: false,
     dragStartX: 0,
     dragStartMin: 0,
     dragStartMax: 0,
-    padL: 70
+    padL: 70,
+    compareSeries: [],
+    options: {
+      average: !!optionEls.average?.checked,
+      compare: !!optionEls.compare?.checked,
+      delta: !!optionEls.delta?.checked
+    }
   };
 
   let reqSeq = 0;
@@ -179,12 +192,14 @@ export function initChart(queueRequest, opts = {}) {
 
     const typeDef = resolveType(state.type);
 
+    const limit = clamp(Math.floor(widthPx / 3), 160, 500);
+
     const payload = typeDef.buildPayload(
       {
         from: state.viewMin,
         to: state.viewMax,
         bucketMs,
-        limit: clamp(Math.floor(widthPx / 3), 160, 500),
+        limit,
         guildId
       },
       els
@@ -193,17 +208,42 @@ export function initChart(queueRequest, opts = {}) {
     try {
       const rows = await queueRequest(typeDef.kind, payload, reqOpts);
       if (mySeq !== reqSeq) return;
-
       const arr = Array.isArray(rows) ? rows : [];
       state.series = arr.map(normalizeSeriesPoint).filter(Boolean);
-
-      drawer.renderWhenVisible();
     } catch (e) {
       if (mySeq !== reqSeq) return;
       log("load failed:", e);
       state.series = [];
-      drawer.renderWhenVisible();
     }
+
+    if (state.options.compare) {
+      const rangeLen = state.dataMax - state.dataMin;
+      const compareFrom = state.dataMin - rangeLen;
+      const compareTo = state.dataMin;
+
+      const comparePayload = typeDef.buildPayload(
+        { from: compareFrom, to: compareTo, bucketMs, limit, guildId },
+        els
+      );
+
+      try {
+        const compareRows = await queueRequest(typeDef.kind, comparePayload, reqOpts);
+        if (mySeq !== reqSeq) return;
+        const cArr = Array.isArray(compareRows) ? compareRows : [];
+        state.compareSeries = cArr
+          .map(normalizeSeriesPoint)
+          .filter(Boolean)
+          .map((p) => ({ ...p, originalTs: p.ts, ts: p.ts + rangeLen }));
+      } catch (e) {
+        if (mySeq !== reqSeq) return;
+        log("compare load failed:", e);
+        state.compareSeries = [];
+      }
+    } else {
+      state.compareSeries = [];
+    }
+
+    drawer.renderWhenVisible();
 
     if (chartSum) chartSum.textContent = summaryText();
     chartModal.classList.remove("loading");
@@ -307,6 +347,21 @@ export function initChart(queueRequest, opts = {}) {
   on(els.chartActivityMore, "click", () => {
     activityMoreOpen = !activityMoreOpen;
     syncFilterUi();
+  });
+
+  on(optionEls.average, "change", () => {
+    state.options.average = !!optionEls.average.checked;
+    drawer.renderWhenVisible();
+  });
+
+  on(optionEls.delta, "change", () => {
+    state.options.delta = !!optionEls.delta.checked;
+    drawer.renderWhenVisible();
+  });
+
+  on(optionEls.compare, "change", () => {
+    state.options.compare = !!optionEls.compare.checked;
+    scheduleRefresh(0);
   });
 
   on(window, "resize", () => {

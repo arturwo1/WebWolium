@@ -725,9 +725,8 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 }
 
 .dropdown {
-  position: absolute;
-  top: 46px;
-  left: 0;
+  z-index: 1000;
+  position: fixed;
   min-width: 220px;
   border-radius: var(--r-md);
   border: var(--line);
@@ -740,11 +739,6 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 
 .dropdown.is-open {
   display: block;
-}
-
-.dropdown--right {
-  right: 0;
-  left: auto;
 }
 
 .dd-item {

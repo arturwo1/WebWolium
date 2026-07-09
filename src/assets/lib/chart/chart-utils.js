@@ -158,6 +158,16 @@ export function getChartLayout(state, width, height) {
   };
 }
 
+export function unshiftComparePoint(p) {
+  if (!p || p.originalTs == null) return p;
+  const shift = p.ts - p.originalTs;
+  return {
+    ...p,
+    ts: p.originalTs,
+    bucket: p.bucket ? { start: p.bucket.start - shift, end: p.bucket.end - shift } : p.bucket
+  };
+}
+
 export function formatArgsInline(obj) {
   return Object.entries(obj)
     .map(([key, value]) => {

@@ -552,7 +552,7 @@ export async function handleGetGuildConfig(client, auth, payload) {
   if (!guildPermissions) throw new Error("NO_PERMISSIONS");
   if (!guild?.owner && (BigInt(guildPermissions) & (1n << 3n)) === 0n) throw new Error("NO_PERMISSIONS");
 
-  const res = await client.query("select guild_id, mod_log_channel, events, moderation, aibot, moderation_type, rules, word_channel, words, number_channel, filter, news_channel, important_channel, critical_channel, news, important, ttl_channel, ttl_messages, ai_message_ttl, ai_long_message_ttl from guild_settings where guild_id=$1::bigint;", [guildId]);
+  const res = await client.query("select guild_id, mod_log_channel, events, moderation, aibot, moderation_type, rules, word_channel, words, number_channel, filter, news_channel, important_channel, critical_channel, news, important, ttl_channel, ttl_messages, ai_message_ttl, ai_long_message_ttl, ai_message_delete from guild_settings where guild_id=$1::bigint;", [guildId]);
 
   if (res.rows[0]) return res.rows[0];
   return {};
@@ -584,6 +584,7 @@ export async function handleSaveGuildConfig(client, auth, payload) {
     moderation_type,
     rules,
     aibot,
+    ai_message_delete,
     ai_message_ttl,
     ai_long_message_ttl,
     word_channel,
@@ -647,15 +648,15 @@ export async function handleSaveGuildConfig(client, auth, payload) {
 
   await client.query(`
     insert into guild_settings (
-      guild_id, mod_log_channel, moderation, moderation_type, rules, aibot,
+      guild_id, mod_log_channel, moderation, moderation_type, rules, aibot, ai_message_delete,
       ai_message_ttl, ai_long_message_ttl, word_channel, words, filter,
       number_channel, news, news_channel, important, important_channel,
       critical_channel, ttl_channel
     ) values (
-      $1::bigint, $2::bigint, $3, $4, $5, $6,
-      $7, $8, $9::bigint, $10::jsonb, $11,
-      $12::bigint, $13, $14::bigint, $15, $16::bigint,
-      $17::bigint, $18::jsonb
+      $1::bigint, $2::bigint, $3, $4, $5, $6, $7,
+      $8, $9, $10::bigint, $11::jsonb, $12,
+      $13::bigint, $14, $15::bigint, $16, $17::bigint,
+      $18::bigint, $19::jsonb
     )
     on conflict (guild_id) do update set
       mod_log_channel = excluded.mod_log_channel,
@@ -663,6 +664,7 @@ export async function handleSaveGuildConfig(client, auth, payload) {
       moderation_type = excluded.moderation_type,
       rules = excluded.rules,
       aibot = excluded.aibot,
+      ai_message_delete = excluded.ai_message_delete,
       ai_message_ttl = excluded.ai_message_ttl,
       ai_long_message_ttl = excluded.ai_long_message_ttl,
       word_channel = excluded.word_channel,
@@ -682,6 +684,7 @@ export async function handleSaveGuildConfig(client, auth, payload) {
     moderation_type ?? null,
     rules ?? null,
     aibot ?? null,
+    ai_message_delete ?? null,
     ai_message_ttl ?? null,
     ai_long_message_ttl ?? null,
     word_channel ?? null,

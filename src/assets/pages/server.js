@@ -30,6 +30,7 @@ const CONFIG_SCHEMA = {
   rules: { type: "textarea", label: "server.flag_rules", tooltip: "server.tooltip_rules" },
 
   aibot: { type: "boolean", label: "server.flag_aibot", tooltip: "server.tooltip_aibot" },
+  ai_message_delete: { type: "boolean", label: "server.flag_ai_message_delete", tooltip: "server.tooltip_ai_message_delete" },
   ai_message_ttl: { type: "number", label: "server.flag_ai_message_ttl", tooltip: "server.tooltip_ai_message_ttl" },
   ai_long_message_ttl: { type: "number", label: "server.flag_ai_long_message_ttl", tooltip: "server.tooltip_ai_long_message_ttl" },
 
@@ -51,7 +52,7 @@ const CONFIG_SCHEMA = {
 const SECTION_FLAGS = {
   "log_channels": ["mod_log_channel"],
   "auto_moderation": ["moderation", "moderation_type", "rules"],
-  "ai": ["aibot", "ai_message_ttl", "ai_long_message_ttl"],
+  "ai": ["aibot", "ai_message_delete", "ai_message_ttl", "ai_long_message_ttl"],
   "games": ["word_channel", "words", "filter", "number_channel"],
   "notifications": ["news", "news_channel", "important", "important_channel", "critical", "critical_channel"],
   "ttl": ["ttl_channel"],
@@ -586,13 +587,17 @@ export async function initServerPage(sb) {
           const inputField = createInputField(flagKey, schema, configData[flagKey], t(schema.label));
           fieldContainer.appendChild(inputField);
         } else {
-          label.setAttribute("data-i18n", schema.label);
-          label.textContent = t(schema.label);
+          label.textContent = "";
+
+          const labelTextSpan = document.createElement("span");
+          labelTextSpan.setAttribute("data-i18n", schema.label);
+          labelTextSpan.textContent = t(schema.label);
+          label.appendChild(labelTextSpan);
 
           if (schema.tooltip) {
             const infoIcon = document.createElement("span");
             infoIcon.textContent = " ⓘ";
-            infoIcon.style.cssText = "cursor:help;opacity:.6;font-size:12px;";
+            infoIcon.style.cssText = `cursor:help;opacity:.6;font-size:13px;line-height:1;display:inline-flex;align-items:center;vertical-align:middle;margin-left:4px;transform:scale(1.15);`; // change to SVG later
             infoIcon.title = t(schema.tooltip);
             label.appendChild(infoIcon);
           }
