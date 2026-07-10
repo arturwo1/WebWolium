@@ -115,6 +115,15 @@
     <rect style="fill:rgb(var(--rgb-bg))" width="20" height="2" rx="1" ry="1" x="2" y="20"/>
   </symbol>
 
+  <symbol id="more" viewBox="0 0 24 24">
+    <circle style="fill:rgb(var(--rgb-primary))" cx="3.7" cy="12" r="3.7"/>
+    <circle style="fill:rgb(var(--rgb-bg))" cx="3.7" cy="12" r="3"/>
+    <circle style="fill:rgb(var(--rgb-primary))" cx="12" cy="12" r="3.7"/>
+    <circle style="fill:rgb(var(--rgb-bg))" cx="12" cy="12" r="3"/>
+    <circle style="fill:rgb(var(--rgb-primary))" cx="20.3" cy="12" r="3.7"/>
+    <circle style="fill:rgb(var(--rgb-bg))" cx="20.3" cy="12" r="3"/>
+  </symbol>
+
   <symbol id="close" viewBox="0 0 24 24">
     <rect style="fill:currentColor" width="29.023211" height="7.2558026" x="2.4589589" y="-3.6279013" rx="2" ry="2" transform="rotate(45)"/>
     <rect style="fill:currentColor" width="29.023211" height="7.2558026" x="-14.511605" y="13.342663" rx="2" ry="2" transform="rotate(-45)"/>
@@ -138,6 +147,15 @@
     <rect style="fill:rgb(var(--rgb-bg))" width="20.5" height="2" rx="1" ry="1" x="-22.5" y="11" transform="scale(-1,1)"/>
     <rect style="fill:rgb(var(--rgb-bg))" width="13" height="2" rx="1" ry="1" x="-23.97039" y="-7.9703903" transform="matrix(-0.70711397,-0.70709959,-0.70711397,0.70709959,0,0)"/>
     <rect style="fill:rgb(var(--rgb-bg))" width="13" height="2" rx="1" ry="1" x="-6.9703903" y="-24.97039" transform="matrix(-0.70711397,0.70709959,-0.70711397,-0.70709959,0,0)"/>
+  </symbol>
+
+  <symbol id="info" viewBox="0 0 24 24">
+    <circle style="fill:rgb(var(--rgb-primary))" cx="12" cy="12" r="12"/>
+    <circle style="fill:rgb(var(--rgb-bg))" cx="12" cy="12" r="10"/>
+    <circle style="fill:rgb(var(--rgb-primary))" cx="12" cy="18" r="2"/>
+    <circle style="fill:rgb(var(--rgb-bg))" cx="12" cy="18" r="1"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="4" height="10" x="10" y="4" rx="0.6" ry="0.8"/>
+    <rect style="fill:rgb(var(--rgb-bg))" width="2" height="8" x="11" y="5" rx="0.6" ry="0.6"/>
   </symbol>
 
   <symbol id="messages" viewBox="0 0 24 24">

@@ -448,9 +448,6 @@ export async function initServerPage(sb) {
     if (schema.type === "boolean") {
       const wrapper = document.createElement("label");
       wrapper.className = "input";
-      wrapper.style.display = "flex";
-      wrapper.style.alignItems = "center";
-      wrapper.style.gap = "8px";
       wrapper.style.cursor = schema.disabled ? "not-allowed" : "pointer";
 
       const checkbox = document.createElement("input");
@@ -472,11 +469,9 @@ export async function initServerPage(sb) {
 
         if (schema.tooltip) {
           const infoIcon = document.createElement("span");
-          infoIcon.textContent = " ⓘ";
           infoIcon.style.cursor = "help";
-          infoIcon.style.opacity = "0.6";
-          infoIcon.style.marginLeft = "4px";
           infoIcon.title = t(schema.tooltip);
+          infoIcon.innerHTML = `<svg class="icon" aria-hidden="true"><use href="#info"></use></svg>`;
           wrapper.appendChild(infoIcon);
         }
       }
@@ -572,7 +567,6 @@ export async function initServerPage(sb) {
       title.textContent = t(SECTION_LABELS[sectionKey]);
 
       const flagsContainer = sectionEl.querySelector(".privacy-flags");
-      flagsContainer.classList.add("server-section-body");
 
       for (const flagKey of flags) {
         const schema = CONFIG_SCHEMA[flagKey];
@@ -581,6 +575,8 @@ export async function initServerPage(sb) {
         const flagEl = $("#serverFlagTemplate").content.cloneNode(true);
         const label = flagEl.querySelector(".server-control-label");
         const fieldContainer = flagEl.querySelector(".server-control-field");
+
+        label.className = "input";
 
         if (schema.type === "boolean") {
           label.remove();
@@ -596,9 +592,11 @@ export async function initServerPage(sb) {
 
           if (schema.tooltip) {
             const infoIcon = document.createElement("span");
-            infoIcon.textContent = " ⓘ";
-            infoIcon.style.cssText = `cursor:help;opacity:.6;font-size:13px;line-height:1;display:inline-flex;align-items:center;vertical-align:middle;margin-left:4px;transform:scale(1.15);`; // change to SVG later
+            infoIcon.style.cursor = "help";
+            infoIcon.style.fontSize = "initial";
+            infoIcon.style.fontWeight = "initial";
             infoIcon.title = t(schema.tooltip);
+            infoIcon.innerHTML = `<svg class="icon" aria-hidden="true"><use href="#info"></use></svg>`;
             label.appendChild(infoIcon);
           }
 
