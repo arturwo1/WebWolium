@@ -17,25 +17,16 @@ const SECTION_LABELS = {
   "visibility": "privacy.section_visibility",
 };
 
-const FLAG_DEPENDENCIES = {
-  "save_message_data": "save_messages",
-  "save_activity_data": "save_activity",
-  "save_activity_profile": "save_activity",
-};
-
 const SECTION_FLAGS = {
-  "messages": ["save_messages", "save_message_data"],
-  "voice": ["save_voice"],
-  "activity": ["save_activity", "save_activity_data", "save_activity_profile"],
+  "messages": ["save_message_data"],
+  "voice": [],
+  "activity": ["save_activity_data", "save_activity_profile"],
   "diagnostics": ["track_activity"],
   "visibility": ["publicity"],
 };
 
 const FLAG_TEXTS = {
-  "save_messages": "privacy.flag_save_messages",
   "save_message_data": "privacy.flag_save_message_data",
-  "save_voice": "privacy.flag_save_voice",
-  "save_activity": "privacy.flag_save_activity",
   "save_activity_data": "privacy.flag_save_activity_data",
   "save_activity_profile": "privacy.flag_save_activity_profile",
   "track_activity": "privacy.flag_track_activity",
@@ -44,30 +35,21 @@ const FLAG_TEXTS = {
 
 const PRESETS = {
   "private": {
-    "save_messages": false,
     "save_message_data": false,
-    "save_voice": false,
-    "save_activity": false,
     "save_activity_data": false,
     "save_activity_profile": false,
     "track_activity": false,
     "publicity": false,
   },
   "balanced": {
-    "save_messages": true,
     "save_message_data": false,
-    "save_voice": true,
-    "save_activity": true,
     "save_activity_data": false,
     "save_activity_profile": false,
     "track_activity": true,
     "publicity": false,
   },
   "analytics": {
-    "save_messages": true,
     "save_message_data": true,
-    "save_voice": true,
-    "save_activity": true,
     "save_activity_data": true,
     "save_activity_profile": true,
     "track_activity": true,
@@ -188,24 +170,10 @@ export async function initSettingsPage(sb) {
   }
 
   function syncUIWithState() {
-    for (const [dependent, parent] of Object.entries(FLAG_DEPENDENCIES)) {
-      if (currentPrivacy[parent] === false) {
-        currentPrivacy[dependent] = false;
-      }
-    }
-
     const allInputs = privacySections.querySelectorAll('.privacy-flag__input');
     allInputs.forEach(input => {
       const flagKey = input.dataset.flag;
       input.checked = currentPrivacy[flagKey] === true;
-
-      const parentFlag = Object.keys(FLAG_DEPENDENCIES).find(key => key === flagKey)
-        ? FLAG_DEPENDENCIES[flagKey]
-        : null;
-
-      if (parentFlag) {
-        input.disabled = currentPrivacy[parentFlag] === false;
-      }
     });
 
     lsJSONSet(CACHE_KEY, { t: Date.now(), res: currentPrivacy });

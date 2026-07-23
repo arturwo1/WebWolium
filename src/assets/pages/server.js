@@ -5,7 +5,7 @@ import { getDiscordProviderToken, logout } from "@/lib/auth/discordProviderToken
 
 const SERVER_TABS = new Set(["analytics", "settings"]);
 
-const SECTION_ORDER = ["log_channels", "auto_moderation", "ai", "games", "notifications", "ttl"];
+const SECTION_ORDER = ["log_channels", "auto_moderation", "ai", "games", "notifications", "ttl", "privacy"];
 
 const SECTION_LABELS = {
   "log_channels": "server.section_log_channels",
@@ -14,6 +14,7 @@ const SECTION_LABELS = {
   "games": "server.section_games",
   "notifications": "server.section_notifications",
   "ttl": "server.section_ttl",
+  "privacy": "server.section_privacy",
 };
 
 const FLAGS_OPTIONS = {
@@ -47,6 +48,10 @@ const CONFIG_SCHEMA = {
   critical_channel: { type: "channel", channelType: "message_channels", label: "server.flag_critical_channel", tooltip: "server.tooltip_critical_channel" },
 
   ttl_channel: { type: "ttl_map", label: "server.flag_ttl_channel", tooltip: "server.tooltip_ttl_channel" },
+
+  save_messages: { type: "boolean", label: "server.flag_save_messages", tooltip: "server.tooltip_save_messages" },
+  save_voice: { type: "boolean", label: "server.flag_save_voice", tooltip: "server.tooltip_save_voice" },
+  save_activity: { type: "boolean", label: "server.flag_save_activity", tooltip: "server.tooltip_save_activity" },
 };
 
 const SECTION_FLAGS = {
@@ -56,6 +61,7 @@ const SECTION_FLAGS = {
   "games": ["word_channel", "words", "filter", "number_channel"],
   "notifications": ["news", "news_channel", "important", "important_channel", "critical", "critical_channel"],
   "ttl": ["ttl_channel"],
+  "privacy": ["save_messages", "save_voice", "save_activity"],
 };
 
 function setText(el, value) {
