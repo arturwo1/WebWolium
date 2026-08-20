@@ -11,9 +11,10 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
-        "npm:@11ty/eleventy-img@^6.0.4",
+        "npm:@11ty/eleventy-img@7",
         "npm:@11ty/eleventy-plugin-vite@7",
         "npm:@11ty/eleventy@^3.1.2",
+        "npm:@netlify/blobs@^9.1.5",
         "npm:@netlify/plugin-sitemap@~0.8.1",
         "npm:@supabase/supabase-js@^2.95.3",
         "npm:highlight.js@^11.11.1",

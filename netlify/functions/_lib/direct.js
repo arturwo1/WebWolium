@@ -530,28 +530,26 @@ export async function handleGuildMemberSeries(client, auth, payload) {
   });
 }
 
-export async function handleGetGuildConfig(client, auth, payload) {
-  const guildId = payload.guild_id;
-  const discordToken = payload.discord_token;
+export async function assertGuildAdmin(guildId, discordToken) {
   if (!guildId) throw new Error("NO_GUILD_ID");
   if (!discordToken) throw new Error("NO_DISCORD_TOKEN");
-
-  const url = "https://discord.com/api/v10/users/@me/guilds";
 
   const headers = new Headers({});
   headers.set("Authorization", `Bearer ${discordToken}`);
 
-  const guildsResponse = await fetch(url, { headers });
+  const guildsResponse = await fetch("https://discord.com/api/v10/users/@me/guilds", { headers });
   if (!guildsResponse.ok) throw new Error("DISCORD_API_ERROR");
 
   const guilds = await guildsResponse.json();
-  const guild = guilds.find(guild => guild?.id === guildId);
+  const guild = guilds.find(g => g?.id === guildId);
   if (!guild) throw new Error("INVALID_GUILD_ID");
 
-  const guildPermissions = guild?.permissions;
-  if (!guildPermissions) throw new Error("NO_PERMISSIONS");
-  if (!guild?.owner && (BigInt(guildPermissions) & (1n << 3n)) === 0n) throw new Error("NO_PERMISSIONS");
+  const perms = guild?.permissions;
+  if (!perms) throw new Error("NO_PERMISSIONS");
+  if (!guild?.owner && (BigInt(perms) & (1n << 3n)) === 0n) throw new Error("NO_PERMISSIONS");
+}
 
+export async function fetchGuildConfig(client, guildId) {
   const res = await client.query(`
     select
       gs.guild_id,
@@ -584,29 +582,18 @@ export async function handleGetGuildConfig(client, auth, payload) {
     where gs.guild_id = $1::bigint;
   `, [guildId]);
 
-  if (res.rows[0]) return res.rows[0];
-  return {};
+  return res.rows[0] || {};
+}
+
+export async function handleGetGuildConfig(client, auth, payload) {
+  await assertGuildAdmin(payload.guild_id, payload.discord_token);
+  return await fetchGuildConfig(client, payload.guild_id);
 }
 
 export async function handleSaveGuildConfig(client, auth, payload) {
   const guildId = payload.guild_id;
   const discordToken = payload.discord_token;
-  if (!guildId) throw new Error("NO_GUILD_ID");
-  if (!discordToken) throw new Error("NO_DISCORD_TOKEN");
-
-  const headers = new Headers({});
-  headers.set("Authorization", `Bearer ${discordToken}`);
-
-  const guildsResponse = await fetch("https://discord.com/api/v10/users/@me/guilds", { headers });
-  if (!guildsResponse.ok) throw new Error("DISCORD_API_ERROR");
-
-  const guilds = await guildsResponse.json();
-  const guild = guilds.find(g => g?.id === guildId);
-  if (!guild) throw new Error("GUILD_NOT_FOUND");
-
-  const perms = guild?.permissions;
-  if (!perms) throw new Error("NO_PERMISSIONS");
-  if (!guild?.owner && (BigInt(perms) & (1n << 3n)) === 0n) throw new Error("ADMIN_REQUIRED");
+  await assertGuildAdmin(guildId, discordToken);
 
   const {
     mod_log_channel,
