@@ -1,0 +1,44 @@
+{% macro renderChartWidget() %}
+<div class="card section chart-widget" data-widget="chart-demo" id="chartModal">
+  <div class="modal__head">
+    <div class="modal__title" id="chartTitle" data-i18n="chart.title">Graphic</div>
+
+    <div class="modal__tabs" role="tablist">
+      <button class="modal__tab is-active" type="button" data-chart-type="messages" role="tab" aria-selected="true" tabindex="0">
+        <span data-i18n="profile.messages">Messages</span>
+      </button>
+      <button class="modal__tab" type="button" data-chart-type="voice" role="tab" aria-selected="false" tabindex="-1">
+        <span data-i18n="profile.voice">Voice</span>
+      </button>
+      <button class="modal__tab" type="button" data-chart-type="activities" role="tab" aria-selected="false" tabindex="-1">
+        <span data-i18n="profile.activities">Activity</span>
+      </button>
+      <button class="modal__tab" type="button" data-chart-type="members" data-field="members-tab" role="tab" aria-selected="false" tabindex="-1" hidden>
+        <span data-i18n="server.analytics.members">Members</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="modal__controls">
+    <div class="lb-scope-row" data-field="scope-row">
+      <button class="btn-preset lb-scope-btn is-active" type="button" data-scope="profile" data-field="scope-btn" data-i18n="chart.demo.scope_profile">My profile</button>
+      <button class="btn-preset lb-scope-btn" type="button" data-scope="server" data-field="scope-btn" data-i18n="chart.demo.scope_server">A server</button>
+    </div>
+
+    <input type="hidden" id="chartFrom">
+    <input type="hidden" id="chartTo">
+
+    <div class="modal__sum skeleton" id="chartSum">—</div>
+  </div>
+
+  <div class="chart">
+    <canvas class="chart__canvas skeleton" id="chartCanvas"></canvas>
+
+    <div class="tooltip" id="chartTooltip">
+      <div class="tooltip__time" id="tipTime">—</div>
+      <div class="tooltip__val" id="tipVal">—</div>
+      <div class="preview" id="tipPreview"></div>
+    </div>
+  </div>
+</div>
+{% endmacro %}

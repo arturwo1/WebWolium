@@ -1,0 +1,30 @@
+{% macro renderLeaderboardDemo() %}
+<div class="lb-filters">
+  <div class="lb-filter-section">
+    <div class="lb-filter-label" data-i18n="leaderboard.metric">Metric</div>
+    <div class="lb-chips" data-field="metric-chips" role="group"></div>
+  </div>
+
+  <div class="lb-filter-section">
+    <div class="lb-filter-label" data-i18n="leaderboard.scope">Scope</div>
+    <div class="lb-scope-row">
+      <button class="btn-preset lb-scope-btn is-active" data-scope="world" data-field="scope-btn" type="button" data-i18n="leaderboard.scope_world">World</button>
+      <select class="input lb-server-select" disabled data-field="server-select">
+        <option value="" data-i18n="leaderboard.select_server">Select server…</option>
+      </select>
+      <button class="btn-preset lb-scope-btn" data-scope="top_servers" data-field="scope-btn" type="button" data-i18n="leaderboard.scope_top_servers">Top Servers</button>
+    </div>
+  </div>
+</div>
+
+<div class="lb-head" style="margin-top: 14px;">
+  <span class="lb-total skeleton" data-field="total">&nbsp;</span>
+  <span class="lb-subtitle skeleton" data-field="subtitle">&nbsp;</span>
+</div>
+
+<div class="lb-list" data-field="list">
+  {% for i in range(0, 10) %}
+  <div class="lb-row skeleton"></div>
+  {% endfor %}
+</div>
+{% endmacro %}

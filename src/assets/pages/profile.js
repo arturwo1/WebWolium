@@ -62,7 +62,43 @@ function chartTitle(type) {
   return t("chart.title");
 }
 
-function renderPresenceBadgeState({ badgeEl, useEl, tooltipEl, status, clientStatus }) {
+function field(root, name) {
+  return root.querySelector(`[data-field="${name}"]`);
+}
+
+export function computeProfileDisplayData(res) {
+  const now = Number(res?.xp_now ?? 0);
+  const need = Number(res?.xp_need ?? 0);
+  const pct = need > 0 ? Math.min(100, Math.max(0, (now / need) * 100)) : 0;
+
+  return {
+    name: res?.user_name ?? t("profile.unknown_name"),
+    tag: res?.display_name ?? "",
+    avatar: res?.user_avatar ?? null,
+    levelText: t("profile.level", { level: formatNumber(res?.lvl) }),
+    xpLineText: t("profile.xp_line", {
+      now: formatNumber(res?.xp_now),
+      need: formatNumber(res?.xp_need),
+      total: formatNumber(res?.xp)
+    }),
+    xpPercent: pct,
+    status: res?.status ?? null,
+    clientStatus: res?.client_status ?? {},
+    badges: res?.badges ?? [],
+    messages: formatNumber(res?.messages),
+    voice: res?.voice_time ?? "00:00",
+    activities: res?.activity_seconds ?? "00:00",
+    total: formatMoney(res?.total_balance),
+    bank: formatMoney(res?.bank_balance),
+    cash: formatMoney(res?.balance),
+    commands: formatNumber(res?.user_commands),
+  };
+}
+
+function renderPresenceBadgeState(root, status, clientStatus) {
+  const badgeEl = field(root, "presence-badge");
+  const useEl = field(root, "presence-use");
+  const tooltipEl = field(root, "presence-tooltip");
   if (!badgeEl || !useEl || !tooltipEl) return;
 
   const statusId = String(status ?? "").trim();
@@ -128,7 +164,8 @@ function renderPresenceBadgeState({ badgeEl, useEl, tooltipEl, status, clientSta
   tooltipEl.setAttribute("aria-hidden", "true");
 }
 
-function renderBadgeRow(badgeRowEl, badges) {
+function renderBadgeRow(root, badges) {
+  const badgeRowEl = field(root, "badges");
   if (!badgeRowEl) return;
 
   let list = badges;
@@ -169,53 +206,70 @@ function renderBadgeRow(badgeRowEl, badges) {
   badgeRowEl.hidden = false;
 }
 
+export function applyProfileDisplayData(root, res, { interactive = false } = {}) {
+  const display = computeProfileDisplayData(res);
+
+  setText(field(root, "stat-messages"), display.messages);
+  setText(field(root, "stat-voice"), display.voice);
+  setText(field(root, "stat-activities"), display.activities);
+  setText(field(root, "stat-money-total"), display.total);
+  setText(field(root, "stat-money-bank"), display.bank);
+  setText(field(root, "stat-money-cash"), display.cash);
+  setText(field(root, "stat-commands"), display.commands);
+
+  setText(field(root, "xp-line"), display.xpLineText);
+  setText(field(root, "level"), display.levelText);
+
+  const xpBar = field(root, "xp-bar");
+  const xpBarContainer = field(root, "xp-bar-container");
+  if (xpBar) {
+    xpBar.style.width = `${display.xpPercent}%`;
+    if (xpBarContainer) xpBarContainer.ariaValueNow = Math.round(display.xpPercent);
+  }
+
+  setText(field(root, "name"), interactive ? display.tag : display.name);
+  setText(field(root, "tag"), interactive ? display.name : display.tag);
+
+  const pfp = field(root, "pfp");
+  if (pfp && display.avatar) pfp.src = display.avatar;
+
+  renderPresenceBadgeState(root, display.status, display.clientStatus);
+  renderBadgeRow(root, display.badges);
+
+  root.querySelector(".profile-card")?.classList.remove("loading");
+  root.querySelector(".stats")?.classList.remove("loading");
+}
+
 function getParam(key) {
   const params = new URLSearchParams(window.location.search);
   return (params.get(key) || "").trim();
 }
 
 export async function initProfilePage(sb) {
-  const statMessages = $("#statMessages");
-  const statVoice = $("#statVoice");
-  const statActivities = $("#statActivities");
-  const statMoneyTotal = $("#statMoneyTotal");
-  const statMoneyBank = $("#statMoneyBank");
-  const statMoneyCash = $("#statMoneyCash");
-  const statCommands = $("#statCommands");
-  const profileXpLine = $("#profileXpLine");
-  const profileXpBar = $("#profileXpBar");
-  const profileXpBarContainer = $("#profileXpBarContainer");
-  const profileLevel = $("#profileLevel");
-
-  const profilePfp = $("#profilePfp");
-  const profileName = $("#profileName");
-  const profileTag = $("#profileTag");
-
-  const profilePresenceBadge = $("#profilePresenceBadge");
-  const profilePresenceUse = $("#profilePresenceUse");
-  const profilePresenceTooltip = $("#profilePresenceTooltip");
-  const profileBadges = $("#profileBadges");
-  const profilePfpWrap = profilePresenceBadge?.closest(".pfp-wrap") || null;
-
-  const profileRoot = $("#profileCard");
-  const statsRoot = $("#profileStats");
+  const profileCard = $("#profileCard");
+  const profileStats = $("#profileStats");
   const chartModal = $("#chartModal");
   const chartClose = $("#chartClose");
   const chartTitleEl = $("#chartTitle");
   const chartTabs = Array.from(document.querySelectorAll("[data-chart-type]"));
-
   const chartGuildId = $("#chartGuildId");
   const chartChannelId = $("#chartChannelId");
 
-  const userDiscordId = getParam("user_id") || "";
-
-  const Ids = {
-    guilds: {}
-  };
-
-  if (!statsRoot || !chartModal || !chartClose || !chartTitleEl || !chartGuildId || !chartChannelId) {
+  if (!profileCard || !profileStats || !chartModal || !chartClose || !chartTitleEl || !chartGuildId || !chartChannelId) {
     return null;
   }
+
+  const profilePfp = field(profileCard, "pfp");
+  const profileName = field(profileCard, "name");
+  const profileTag = field(profileCard, "tag");
+  const profilePresenceTooltip = field(profileCard, "presence-tooltip");
+  const profilePfpWrap = profilePfp?.closest(".pfp-wrap") || null;
+
+  const userDiscordId = getParam("user_id") || "";
+
+  const Ids = { guilds: {} };
+  let lastProfileResponse = null;
+  let chart = null;
 
   for (const tab of chartTabs) {
     if (!String(tab.dataset.chartType || "").startsWith("user_")) {
@@ -233,9 +287,6 @@ export async function initProfilePage(sb) {
     debounceMs: 200,
     kinds: new Set(["user_messages_series", "user_voice_series", "user_activities_series", "user_commands_series"]),
   });
-
-  let lastProfileResponse = null;
-  let chart = null;
 
   function syncChartUi(type) {
     const normalizedType = normalizeChartType(type);
@@ -332,52 +383,7 @@ export async function initProfilePage(sb) {
 
   function renderStats(res) {
     lastProfileResponse = res ?? null;
-
-    setText(statMessages, formatNumber(res?.messages));
-    setText(statVoice, res?.voice_time ?? "00:00");
-    setText(statActivities, res?.activity_seconds ?? "00:00");
-
-    setText(statMoneyTotal, formatMoney(res?.total_balance));
-    setText(statMoneyBank, formatMoney(res?.bank_balance));
-    setText(statMoneyCash, formatMoney(res?.balance));
-
-    setText(statCommands, formatNumber(res?.user_commands));
-
-    setText(profileXpLine, t("profile.xp_line", {
-      now: formatNumber(res?.xp_now),
-      need: formatNumber(res?.xp_need),
-      total: formatNumber(res?.xp)
-    }));
-
-    setText(profileLevel, t("profile.level", { level: formatNumber(res?.lvl) }));
-
-    if (profileXpBar) {
-      const now = Number(res?.xp_now ?? 0);
-      const need = Number(res?.xp_need ?? 0);
-      const pct = need > 0 ? (now / need) * 100 : 0;
-
-      profileXpBar.style.width = `${Math.min(100, Math.max(0, pct))}%`;
-      profileXpBarContainer.ariaValueNow = Math.round(Math.min(100, Math.max(0, pct)));
-    }
-
-    setText(profileName, res?.user_name ?? t("profile.unknown_name"));
-
-    if (profilePfp && res?.user_avatar) {
-      profilePfp.src = res.user_avatar;
-    }
-
-    renderPresenceBadgeState({
-      badgeEl: profilePresenceBadge,
-      useEl: profilePresenceUse,
-      tooltipEl: profilePresenceTooltip,
-      status: res?.status,
-      clientStatus: res?.client_status
-    });
-
-    renderBadgeRow(profileBadges, res?.badges);
-
-    profileRoot.classList.remove("loading");
-    statsRoot.classList.remove("loading");
+    applyProfileDisplayData(profileCard.parentElement ?? document, res, { interactive: true });
 
     if (userDiscordId) {
       document.querySelectorAll('.stat.stat--link').forEach(btn => {
@@ -468,21 +474,10 @@ export async function initProfilePage(sb) {
   await fillIdentity();
 
   if (profilePfpWrap && profilePresenceTooltip) {
-    profilePfpWrap.addEventListener("mouseenter", () => {
-      setPresenceTooltipOpen(profilePresenceTooltip, true);
-    });
-
-    profilePfpWrap.addEventListener("mouseleave", () => {
-      setPresenceTooltipOpen(profilePresenceTooltip, false);
-    });
-
-    profilePfpWrap.addEventListener("focusin", () => {
-      setPresenceTooltipOpen(profilePresenceTooltip, true);
-    });
-
-    profilePfpWrap.addEventListener("focusout", () => {
-      setPresenceTooltipOpen(profilePresenceTooltip, false);
-    });
+    profilePfpWrap.addEventListener("mouseenter", () => setPresenceTooltipOpen(profilePresenceTooltip, true));
+    profilePfpWrap.addEventListener("mouseleave", () => setPresenceTooltipOpen(profilePresenceTooltip, false));
+    profilePfpWrap.addEventListener("focusin", () => setPresenceTooltipOpen(profilePresenceTooltip, true));
+    profilePfpWrap.addEventListener("focusout", () => setPresenceTooltipOpen(profilePresenceTooltip, false));
   }
 
   chartGuildId.addEventListener("change", () => {
@@ -506,7 +501,7 @@ export async function initProfilePage(sb) {
     console.warn("[profile] init failed:", e);
   }
 
-  statsRoot.addEventListener("click", (e) => {
+  profileStats.addEventListener("click", (e) => {
     const btn = e.target.closest(".stat--link");
     const type = btn?.dataset?.chart;
     if (!type) return;
@@ -532,15 +527,8 @@ export async function initProfilePage(sb) {
     }
 
     if (lastProfileResponse) {
-      renderPresenceBadgeState({
-        badgeEl: profilePresenceBadge,
-        useEl: profilePresenceUse,
-        tooltipEl: profilePresenceTooltip,
-        status: lastProfileResponse?.status,
-        clientStatus: lastProfileResponse?.client_status
-      });
-
-      renderBadgeRow(profileBadges, lastProfileResponse?.badges);
+      renderPresenceBadgeState(profileCard.parentElement ?? document, lastProfileResponse?.status, lastProfileResponse?.client_status);
+      renderBadgeRow(profileCard.parentElement ?? document, lastProfileResponse?.badges);
     }
   });
 

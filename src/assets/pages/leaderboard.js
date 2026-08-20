@@ -1,108 +1,9 @@
 import { createWebRequestService } from "@/services/index.js";
 import { $, $$, hud, formatDuration, formatNumber, t, onLangChange } from "@/lib/index.js";
+import { METRICS, fmtValue, buildRow } from "@/lib/leaderboard/leaderboardRow.js";
+import { buildMetricChips } from "@/lib/leaderboard/metricChips.js";
 
-const METRICS = [
-  { key: "total_balance", i18n: "leaderboard.metric_total_balance", format: "sparks" },
-  { key: "bank_balance", i18n: "leaderboard.metric_bank_balance", format: "sparks" },
-  { key: "balance", i18n: "leaderboard.metric_balance", format: "sparks" },
-  { key: "upgrade", i18n: "leaderboard.metric_upgrade", format: "number" },
-  { key: "total_xp", i18n: "leaderboard.metric_total_xp", format: "number" },
-  { key: "level", i18n: "leaderboard.metric_level", format: "number" },
-  { key: "experience", i18n: "leaderboard.metric_experience", format: "number" },
-  { key: "message_count", i18n: "leaderboard.metric_message_count", format: "number" },
-  { key: "voice_time", i18n: "leaderboard.metric_voice_time", format: "time" },
-  { key: "votes", i18n: "leaderboard.metric_votes", format: "number" },
-  { key: "streak_votes", i18n: "leaderboard.metric_streak_votes", format: "number" },
-  { key: "activity_time", i18n: "leaderboard.metric_activity_time", format: "time" },
-  { key: "commands", i18n: "leaderboard.metric_commands", format: "number" },
-];
-
-const METRICS_MAP = Object.fromEntries(
-  METRICS.map(m => [m.key, m])
-);
-
-function fmtValue(value, metricKey) {
-  if (METRICS_MAP[metricKey]?.format == "sparks") return formatNumber(value ?? 0) + "₩";
-  if (METRICS_MAP[metricKey]?.format == "number") return formatNumber(value ?? 0);
-  if (METRICS_MAP[metricKey]?.format == "time") return formatDuration(value ?? 0);
-  return formatNumber(value ?? 0);
-}
-
-function rankBadge(rank) {
-  if (rank === 1) return "🥇";
-  if (rank === 2) return "🥈";
-  if (rank === 3) return "🥉";
-  return `#${rank}`;
-}
-
-function rankClass(rank) {
-  if (rank === 1) return "lb-row--gold";
-  if (rank === 2) return "lb-row--silver";
-  if (rank === 3) return "lb-row--bronze";
-  return "";
-}
-
-function buildAvatar(src, name) {
-  if (src) {
-    const img = document.createElement("img");
-    img.className = "lb-row__avatar";
-    img.src = src;
-    img.alt = "";
-    img.loading = "lazy";
-    return img;
-  }
-  const fallback = document.createElement("span");
-  fallback.className = "lb-row__avatar lb-row__avatar--fallback";
-  fallback.textContent = (name ?? "?")[0].toUpperCase();
-  return fallback;
-}
-
-function buildRow(entry, { isSelf = false, isServerScope = false, metricKey }) {
-  const row = document.createElement("div");
-  row.className = [
-    "lb-row",
-    rankClass(entry.rank),
-    isSelf ? "lb-row--own" : "",
-    (!isSelf && !isServerScope && entry.user_id) ? "lb-row--link" : "",
-  ].filter(Boolean).join(" ");
-
-  const rankEl = document.createElement("span");
-  rankEl.className = "lb-row__rank";
-  rankEl.textContent = rankBadge(entry.rank);
-
-  const nameEl = document.createElement("span");
-  nameEl.className = "lb-row__name";
-
-  if (isServerScope) {
-    nameEl.appendChild(buildAvatar(entry.icon ?? null, entry.guild_name));
-    const label = document.createElement("span");
-    label.className = "lb-row__display text-truncate";
-    label.textContent = entry.guild_name ?? t("leaderboard.unknown");
-    nameEl.appendChild(label);
-  } else {
-    nameEl.appendChild(buildAvatar(entry.avatar ?? null, entry.display_name));
-    const label = document.createElement("span");
-    label.className = "lb-row__display text-truncate";
-    label.textContent = entry.display_name ?? t("leaderboard.unknown");
-    nameEl.appendChild(label);
-
-    if (!isSelf && entry.user_id) {
-      const href = `/profile/?user_id=${entry.user_id}`;
-      row.setAttribute("role", "link");
-      row.setAttribute("tabindex", "0");
-      row.title = entry.display_name ?? "";
-      row.addEventListener("click", () => { window.location.href = href; });
-      row.addEventListener("keydown", e => { if (e.key === "Enter") window.location.href = href; });
-    }
-  }
-
-  const valueEl = document.createElement("span");
-  valueEl.className = "lb-row__value";
-  valueEl.textContent = fmtValue(entry.value, metricKey);
-
-  row.append(rankEl, nameEl, valueEl);
-  return row;
-}
+const formatters = { number: formatNumber, duration: formatDuration };
 
 export async function initLeaderboardPage(sb) {
   const wr = createWebRequestService(sb, {
@@ -136,25 +37,12 @@ export async function initLeaderboardPage(sb) {
     loading: false,
   };
 
-  function buildMetricChips() {
-    lbMetricChips.innerHTML = "";
-    for (const m of METRICS) {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "news-chip lb-metric-chip";
-      btn.dataset.metric = m.key;
-      btn.textContent = t(m.i18n);
-      if (m.key === state.metric) btn.classList.add("is-active");
-      btn.addEventListener("click", () => {
-        state.metric = m.key;
-        state.page = 1;
-        lbMetricChips.querySelectorAll(".lb-metric-chip").forEach(b =>
-          b.classList.toggle("is-active", b.dataset.metric === state.metric)
-        );
-        load();
-      });
-      lbMetricChips.appendChild(btn);
-    }
+  function rebuildMetricChips() {
+    buildMetricChips(lbMetricChips, state.metric, t, (metricKey) => {
+      state.metric = metricKey;
+      state.page = 1;
+      load();
+    });
   }
 
   function updateScopeUI() {
@@ -266,11 +154,11 @@ export async function initLeaderboardPage(sb) {
       const res = await wr.queue("leaderboard", params, {
         cacheTtlMs: 30_000,
         cooldownMs: 500,
-        timeoutMs: 10_000,
+        timeoutMs: 10_000
       });
       if (res?.error) {
         hud.error(res?.error, { title: t("error.load_guilds") });
-        console.warn("[leaderboard] load failed:", e);
+        console.warn("[leaderboard] load failed:", res?.error);
         return
       };
 
@@ -283,7 +171,7 @@ export async function initLeaderboardPage(sb) {
         : t("leaderboard.unit_users");
       lbTotal.textContent = `${totalStr} ${countUnit}`;
       lbTotal.className = "lb-total";
-      lbSubtitle.textContent = `${scopeLabel()} · ${t(METRICS.find(m => m.key === state.metric)?.i18n ?? state.metric)} · ${fmtValue(res.total_value ?? 0, state.metric)}`;
+      lbSubtitle.textContent = `${scopeLabel()} · ${t(METRICS.find(m => m.key === state.metric)?.i18nKey ?? state.metric)} · ${fmtValue(res.total_value ?? 0, state.metric, formatters)}`;
       lbSubtitle.className = "lb-subtitle";
 
       lbList.innerHTML = "";
@@ -297,7 +185,7 @@ export async function initLeaderboardPage(sb) {
           lbList.appendChild(buildRow(entry, {
             isServerScope,
             metricKey: state.metric
-          }));
+          }, t, formatters));
         }
       }
 
@@ -308,7 +196,7 @@ export async function initLeaderboardPage(sb) {
       lbOwn.hidden = true;
 
       if (self && !selfInTop && !isServerScope) {
-        const ownEl = buildRow(self, { isSelf: true, metricKey: state.metric });
+        const ownEl = buildRow(self, { isSelf: true, metricKey: state.metric }, t, formatters);
         lbOwn.appendChild(ownEl);
         lbOwn.hidden = false;
       }
@@ -326,9 +214,9 @@ export async function initLeaderboardPage(sb) {
     }
   }
 
-  onLangChange(() => buildMetricChips());
+  onLangChange(() => rebuildMetricChips());
 
-  buildMetricChips();
+  rebuildMetricChips();
   await loadGuilds();
   await load();
 }

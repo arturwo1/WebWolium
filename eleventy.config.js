@@ -1,7 +1,13 @@
+import { register } from "node:module";
+import { pathToFileURL } from "node:url";
+
+register("./src/_build/aliasLoader.mjs", pathToFileURL("./"));
+
 import path from "node:path";
 import EleventyVitePlugin from "@11ty/eleventy-plugin-vite";
 import { eleventyImageTransformPlugin } from "@11ty/eleventy-img";
 import { DateTime } from "luxon";
+import { i18nKey } from "./src/_data/i18nKeyBuilder.js";
 
 export default function (eleventyConfig) {
   eleventyConfig.setUseGitIgnore(false);
@@ -12,6 +18,18 @@ export default function (eleventyConfig) {
     if (!value) return "";
     const d = value instanceof Date ? value : new Date(value);
     return DateTime.fromJSDate(d, { zone: "utc" }).toFormat(format);
+  });
+
+  eleventyConfig.addFilter("concat", (arr, item) => {
+    return [...(arr || []), item];
+  });
+
+  eleventyConfig.addFilter("i18nKeyFilter", (fullPath, section, audience, field) => {
+    return i18nKey(section, audience, fullPath, field);
+  });
+
+  eleventyConfig.addFilter("stripSlash", (str) => {
+    return typeof str === "string" ? str.replace(/^\//, "") : str;
   });
 
   eleventyConfig.addPlugin(eleventyImageTransformPlugin, {
@@ -30,6 +48,7 @@ export default function (eleventyConfig) {
       server: {
         host: "0.0.0.0",
         middlewareMode: true,
+        allowedHosts: true,
         fs: { allow: [path.resolve(".")] }
       },
       build: {

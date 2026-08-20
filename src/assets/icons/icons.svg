@@ -149,13 +149,31 @@
     <rect style="fill:rgb(var(--rgb-bg))" width="13" height="2" rx="1" ry="1" x="-6.9703903" y="-24.97039" transform="matrix(-0.70711397,0.70709959,-0.70711397,-0.70709959,0,0)"/>
   </symbol>
 
+  <symbol id="top" viewBox="0 0 24 24">
+    <rect style="fill:rgb(var(--rgb-primary))" width="16" height="6" rx="2" ry="2" x="9" y="-10" transform="matrix(0.70877052,0.70543912,-0.70877052,0.70543912,0,0)"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="16" height="6" rx="2" ry="2" x="-8" y="6.8" transform="matrix(-0.70877052,0.70543912,0.70877052,0.70543912,0,0)"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="24" height="6" rx="2" ry="2" x="0" y="9" transform="matrix(0,1,1,0,0,0)"/>
+    <rect style="fill:rgb(var(--rgb-bg))" width="20.5" height="2" rx="1" ry="1" x="1.5" y="11" transform="matrix(0,1,1,0,0,0)"/>
+    <rect style="fill:rgb(var(--rgb-bg))" width="13" height="2" rx="1" ry="1" x="-7" y="9" transform="matrix(-0.70877052,0.70543912,0.70877052,0.70543912,0,0)"/>
+    <rect style="fill:rgb(var(--rgb-bg))" width="13" height="2" rx="1" ry="1" x="10" y="-8" transform="matrix(0.70877052,0.70543912,-0.70877052,0.70543912,0,0)"/>
+  </symbol>
+
+  <symbol id="down" viewBox="0 0 24 24">
+    <rect style="fill:rgb(var(--rgb-primary))" width="16" height="6" rx="2" ry="2" x="-24.9" y="-10.1" transform="matrix(-0.70909165,-0.70511633,0.70909165,-0.70511633,0,0)"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="16" height="6" rx="2" ry="2" x="-8.1" y="-27.1" transform="matrix(0.70909165,-0.70511633,-0.70909165,-0.70511633,0,0)"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="24" height="6" rx="2" ry="2" x="-24" y="-15" transform="matrix(0,-1,-1,0,0,0)"/>
+    <rect style="fill:rgb(var(--rgb-bg))" width="20.5" height="2" rx="1" ry="1" x="-22.5" y="-13" transform="matrix(0,-1,-1,0,0,0)"/>
+    <rect style="fill:rgb(var(--rgb-bg))" width="13" height="2" rx="1" ry="1" x="-7" y="-24.9" transform="matrix(0.70909165,-0.70511633,-0.70909165,-0.70511633,0,0)"/>
+    <rect style="fill:rgb(var(--rgb-bg))" width="13" height="2" rx="1" ry="1" x="-23.9" y="-8" transform="matrix(-0.70909165,-0.70511633,0.70909165,-0.70511633,0,0)"/>
+  </symbol>
+
   <symbol id="info" viewBox="0 0 24 24">
-    <circle style="fill:rgb(var(--rgb-primary))" cx="12" cy="12" r="12"/>
-    <circle style="fill:rgb(var(--rgb-bg))" cx="12" cy="12" r="10"/>
-    <circle style="fill:rgb(var(--rgb-primary))" cx="12" cy="18" r="2"/>
-    <circle style="fill:rgb(var(--rgb-bg))" cx="12" cy="18" r="1"/>
-    <rect style="fill:rgb(var(--rgb-primary))" width="4" height="10" x="10" y="4" rx="0.6" ry="0.8"/>
-    <rect style="fill:rgb(var(--rgb-bg))" width="2" height="8" x="11" y="5" rx="0.6" ry="0.6"/>
+    <circle cx="12" cy="12" r="12" fill="rgb(var(--rgb-primary))"/>
+    <circle cx="12" cy="12" r="10" fill="rgb(var(--rgb-bg))"/>
+    <circle cx="12" cy="6" r="2" fill="rgb(var(--rgb-primary))"/>
+    <circle cx="12" cy="6" r="1" fill="rgb(var(--rgb-bg))"/>
+    <rect x="10" y="10" width="4" height="10" rx=".6" ry=".8" fill="rgb(var(--rgb-primary))"/>
+    <rect x="11" y="11" width="2" height="8" rx=".6" ry=".6" fill="rgb(var(--rgb-bg))"/>
   </symbol>
 
   <symbol id="messages" viewBox="0 0 24 24">

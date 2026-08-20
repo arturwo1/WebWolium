@@ -1,61 +1,11 @@
 import { grantConsent, denyConsent } from '@/lib/consent/google.js';
 import { createWebRequestService } from "@/services/index.js";
 import { $, $$, hud, lsJSONGet, lsJSONSet, getLang, setLang, onLangChange, getSupportedLangs, getLanguageNativeName, warmLanguageNativeNames, initCollapsible, t } from "@/lib/index.js";
+import { buildAccountSettingsForm, syncAccountSettingsInputs, applyAccountSettingsPreset } from "@/lib/settings/accountSettingsForm.js";
 
 const lang = $("[data-lang-select]");
 const variation = $("[data-variation-select]");
 const cookieConsent = $("#cookie-consent");
-
-const SECTION_ORDER = ["overview", "messages", "voice", "activity", "diagnostics", "visibility"];
-
-const SECTION_LABELS = {
-  "overview": "privacy.section_overview",
-  "messages": "privacy.section_messages",
-  "voice": "privacy.section_voice",
-  "activity": "privacy.section_activity",
-  "diagnostics": "privacy.section_diagnostics",
-  "visibility": "privacy.section_visibility",
-};
-
-const SECTION_FLAGS = {
-  "messages": ["save_message_data"],
-  "voice": [],
-  "activity": ["save_activity_data", "save_activity_profile"],
-  "diagnostics": ["track_activity"],
-  "visibility": ["publicity"],
-};
-
-const FLAG_TEXTS = {
-  "save_message_data": "privacy.flag_save_message_data",
-  "save_activity_data": "privacy.flag_save_activity_data",
-  "save_activity_profile": "privacy.flag_save_activity_profile",
-  "track_activity": "privacy.flag_track_activity",
-  "publicity": "privacy.flag_publicity",
-};
-
-const PRESETS = {
-  "private": {
-    "save_message_data": false,
-    "save_activity_data": false,
-    "save_activity_profile": false,
-    "track_activity": false,
-    "publicity": false,
-  },
-  "balanced": {
-    "save_message_data": false,
-    "save_activity_data": false,
-    "save_activity_profile": false,
-    "track_activity": true,
-    "publicity": false,
-  },
-  "analytics": {
-    "save_message_data": true,
-    "save_activity_data": true,
-    "save_activity_profile": true,
-    "track_activity": true,
-    "publicity": true,
-  },
-};
 
 function languageLabel(code) {
   return getLanguageNativeName(code);
@@ -96,14 +46,18 @@ export async function initSettingsPage(sb) {
     defaultTimeoutMs: 15_000
   });
 
-  const { data: sessionData } = await sb.auth.getSession();
+  await sb.auth.getSession();
   const CACHE_KEY = `wolium:last_privacy_settings`;
   const CACHE_TTL_MS = 5 * 60 * 1000;
 
-  let currentPrivacy = {};
+  let currentAccountSettings = {};
 
   await syncLangSelect();
-  onLangChange(() => syncLangSelect());
+  onLangChange(() => {
+    syncLangSelect();
+    buildAccountSettingsDOM();
+    syncAccountSettingsInputs(accountSettingsSections, currentAccountSettings);
+  });
 
   lang.addEventListener("change", async () => {
     await setLang(lang.value);
@@ -122,69 +76,30 @@ export async function initSettingsPage(sb) {
     cookieConsent.checked ? grantConsent() : denyConsent();
   };
 
-  const privacySections = $("#privacySections");
-  const sectionTemplate = $("#privacySectionTemplate");
-  const flagTemplate = $("#privacyFlagTemplate");
+  const accountSettingsSections = $("#privacySections");
 
-  function buildPrivacyDOM() {
-    privacySections.innerHTML = "";
+  function buildAccountSettingsDOM() {
+    buildAccountSettingsForm(accountSettingsSections, currentAccountSettings, t, async (flagKey, checked) => {
+      currentAccountSettings[flagKey] = checked;
+      syncUIWithState();
+      await saveAccountSettingsState(currentAccountSettings);
+    });
 
-    for (const sectionKey of SECTION_ORDER) {
-      if (sectionKey === "overview") continue;
-
-      const flags = SECTION_FLAGS[sectionKey];
-      if (!flags || !flags.length) continue;
-
-      const sectionEl = sectionTemplate.content.cloneNode(true);
-      const section = sectionEl.querySelector(".privacy-section");
-      section.dataset.sectionKey = sectionKey;
-      const title = sectionEl.querySelector(".privacy-section__title");
-      title.setAttribute("data-i18n", SECTION_LABELS[sectionKey]);
-      title.textContent = t(SECTION_LABELS[sectionKey]);
-
-      const flagsContainer = sectionEl.querySelector(".privacy-flags");
-
-      for (const flagKey of flags) {
-        const flagEl = flagTemplate.content.cloneNode(true);
-        const input = flagEl.querySelector(".privacy-flag__input");
-        const label = flagEl.querySelector(".privacy-flag__label");
-
-        input.dataset.flag = flagKey;
-        label.setAttribute("data-i18n", FLAG_TEXTS[flagKey]);
-        label.textContent = t(FLAG_TEXTS[flagKey]);
-
-        input.addEventListener("change", async () => {
-          currentPrivacy[flagKey] = input.checked;
-          syncUIWithState();
-          await savePrivacyState(currentPrivacy);
-        });
-
-        flagsContainer.appendChild(flagEl);
-      }
-
-      privacySections.appendChild(sectionEl);
-      $("#privacySettings").classList.remove("loading");
-    }
-
-    initCollapsible(privacySections, ["messages", "voice", "activity", "diagnostics", "visibility"]);
+    $("#privacySettings").classList.remove("loading");
+    initCollapsible(accountSettingsSections, ["messages", "voice", "activity", "diagnostics", "visibility"]);
   }
 
   function syncUIWithState() {
-    const allInputs = privacySections.querySelectorAll('.privacy-flag__input');
-    allInputs.forEach(input => {
-      const flagKey = input.dataset.flag;
-      input.checked = currentPrivacy[flagKey] === true;
-    });
-
-    lsJSONSet(CACHE_KEY, { t: Date.now(), res: currentPrivacy });
+    syncAccountSettingsInputs(accountSettingsSections, currentAccountSettings);
+    lsJSONSet(CACHE_KEY, { t: Date.now(), res: currentAccountSettings });
   }
 
-  async function loadPrivacySettings() {
+  async function loadAccountSettings() {
     const now = Date.now();
     const saved = lsJSONGet(CACHE_KEY, null);
 
     if (saved?.res && (now - saved.t < CACHE_TTL_MS)) {
-      currentPrivacy = saved.res;
+      currentAccountSettings = saved.res;
       syncUIWithState();
       return;
     }
@@ -197,23 +112,23 @@ export async function initSettingsPage(sb) {
       });
 
       if (res && !res.error) {
-        currentPrivacy = res;
+        currentAccountSettings = res;
         syncUIWithState();
       } else {
         throw new Error(res?.error || "Unknown load error");
       }
     } catch (e) {
-      console.warn("[settings] privacy load failed, using cache fallback:", e);
+      console.warn("[settings] account settings load failed, using cache fallback:", e);
       if (saved?.res) {
-        currentPrivacy = saved.res;
+        currentAccountSettings = saved.res;
         syncUIWithState();
       }
       hud.error(t("settings.privacy_load_error"));
     }
   }
 
-  async function savePrivacyState(payload) {
-    const backupState = { ...currentPrivacy };
+  async function saveAccountSettingsState(payload) {
+    const backupState = { ...currentAccountSettings };
 
     try {
       const res = await wr.queue("set_privacy", payload, {
@@ -223,24 +138,24 @@ export async function initSettingsPage(sb) {
       });
 
       if (!res?.error) {
-        if (Object.keys(res).length > 0) currentPrivacy = res;
+        if (Object.keys(res).length > 0) currentAccountSettings = res;
         syncUIWithState();
         hud.success(t("settings.privacy_saved"));
       } else {
         throw new Error(res.error);
       }
     } catch (e) {
-      currentPrivacy = backupState;
+      currentAccountSettings = backupState;
       syncUIWithState();
       hud.error(t("settings.privacy_save_error"), e);
     }
   }
 
   async function applyPreset(preset) {
-    const flags = PRESETS[preset];
-    if (!flags) return;
+    const flags = applyAccountSettingsPreset(preset, currentAccountSettings);
+    if (flags === currentAccountSettings) return;
 
-    currentPrivacy = { ...currentPrivacy, ...flags };
+    currentAccountSettings = flags;
     syncUIWithState();
 
     try {
@@ -251,7 +166,7 @@ export async function initSettingsPage(sb) {
       });
 
       if (!res?.error) {
-        if (Object.keys(res).length > 0) currentPrivacy = res;
+        if (Object.keys(res).length > 0) currentAccountSettings = res;
         syncUIWithState();
         hud.success(t("settings.preset_applied"));
       } else {
@@ -261,7 +176,7 @@ export async function initSettingsPage(sb) {
       hud.error(t("settings.preset_error"));
       const saved = lsJSONGet(CACHE_KEY, null);
       if (saved?.res) {
-        currentPrivacy = saved.res;
+        currentAccountSettings = saved.res;
         syncUIWithState();
       }
     }
@@ -339,6 +254,6 @@ export async function initSettingsPage(sb) {
     }
   });
 
-  buildPrivacyDOM();
-  await loadPrivacySettings();
+  buildAccountSettingsDOM();
+  await loadAccountSettings();
 }

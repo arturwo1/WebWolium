@@ -18,61 +18,54 @@ noindex: true
   <div class="stats srv-head__stats">
     <div class="stat card-hover">
       <div class="stat__label" data-i18n="servers.stat_all">Servers</div>
-      <div class="stat__value" id="srvStatAll">—</div>
+      <div class="stat__value" id="srvStatAll" data-field="stat-all">—</div>
     </div>
 
     <div class="stat card-hover">
       <div class="stat__label" data-i18n="servers.stat_full">Full access</div>
-      <div class="stat__value" id="srvStatFull">—</div>
+      <div class="stat__value" id="srvStatFull" data-field="stat-full">—</div>
     </div>
 
     <div class="stat card-hover">
       <div class="stat__label" data-i18n="servers.stat_manage">Manageable</div>
-      <div class="stat__value" id="srvStatManage">—</div>
+      <div class="stat__value" id="srvStatManage" data-field="stat-manage">—</div>
     </div>
 
     <div class="stat card-hover">
       <div class="stat__label" data-i18n="servers.stat_mod">Moderation</div>
-      <div class="stat__value" id="srvStatMod">—</div>
+      <div class="stat__value" id="srvStatMod" data-field="stat-mod">—</div>
     </div>
   </div>
 </article>
 
 <div class="card section srv-toolbar">
-  <input class="input--sm srv-search" id="srvSearch" type="search" autocomplete="off" placeholder="Search servers..." data-i18n-attr="placeholder: servers.search_placeholder">
+  <input class="input--sm srv-search" id="srvSearch" data-field="search" type="search" autocomplete="off" placeholder="Search servers..." data-i18n-attr="placeholder: servers.search_placeholder">
 
   <div class="srv-tabs" id="srvFilters">
-    <button class="srv-tab is-active" type="button" data-srv-filter="all" aria-pressed="true" data-i18n="servers.filter_all">All</button>
-
-    <button class="srv-tab" type="button" data-srv-filter="full" aria-pressed="false" data-i18n="servers.filter_full">Full access</button>
-
-    <button class="srv-tab" type="button" data-srv-filter="manage" aria-pressed="false" data-i18n="servers.filter_manage">Management</button>
-
-    <button class="srv-tab" type="button" data-srv-filter="mod" aria-pressed="false" data-i18n="servers.filter_mod">Moderation</button>
-
-    <button class="srv-tab" type="button" data-srv-filter="member" aria-pressed="false" data-i18n="servers.filter_member">Member</button>
+    <button class="srv-tab is-active" type="button" data-srv-filter="all" data-field="filter" aria-pressed="true" data-i18n="servers.filter_all">All</button>
+    <button class="srv-tab" type="button" data-srv-filter="full" data-field="filter" aria-pressed="false" data-i18n="servers.filter_full">Full access</button>
+    <button class="srv-tab" type="button" data-srv-filter="manage" data-field="filter" aria-pressed="false" data-i18n="servers.filter_manage">Management</button>
+    <button class="srv-tab" type="button" data-srv-filter="mod" data-field="filter" aria-pressed="false" data-i18n="servers.filter_mod">Moderation</button>
+    <button class="srv-tab" type="button" data-srv-filter="member" data-field="filter" aria-pressed="false" data-i18n="servers.filter_member">Member</button>
   </div>
 
   <button class="btn-preset" id="srvRefresh" type="button" data-i18n="servers.refresh">Refresh</button>
 </div>
 
-<div class="srv-list loading" id="srvList">
+<div class="srv-list loading" id="srvList" data-field="list">
   {% for i in range(0, 6) %}
   <div class="srv-card card skeleton"></div>
   {% endfor %}
 </div>
 
-<div id="srvEmpty" hidden>
+<div id="srvEmpty" data-field="empty" hidden>
   <div class="card section srv-empty">
     <svg class="srv-empty__icon icon" width="40" height="40" aria-hidden="true">
       <use href="#server"></use>
     </svg>
-
-    <div class="srv-empty__title" id="srvEmptyTitle" data-i18n="servers.empty_title">No servers found</div>
-
-    <div class="srv-empty__text" id="srvEmptyText" data-i18n="servers.empty_text">Add Wolium to a Discord server to get started.</div>
-
-    <a class="btn-preset" id="srvAddBot" href="https://discord.com/oauth2/authorize" target="_blank" rel="noopener" data-i18n="home.cta.add">Add Wolium</a>
+    <div class="srv-empty__title" id="srvEmptyTitle" data-field="empty-title" data-i18n="servers.empty_title">No servers found</div>
+    <div class="srv-empty__text" id="srvEmptyText" data-field="empty-text" data-i18n="servers.empty_text">Add Wolium to a Discord server to get started.</div>
+    <a class="btn-preset" id="srvAddBot" data-field="add-bot" href="https://discord.com/oauth2/authorize" target="_blank" rel="noopener" data-i18n="home.cta.add">Add Wolium</a>
   </div>
 </div>
 
@@ -81,11 +74,8 @@ noindex: true
     <svg class="srv-empty__icon icon" width="40" height="40" aria-hidden="true">
       <use href="#alert"></use>
     </svg>
-
     <div class="srv-empty__title" data-i18n="servers.error_title">Could not load servers</div>
-
     <div class="srv-empty__text" id="srvErrorText"></div>
-
     <button class="btn-preset" id="srvRetry" type="button" data-i18n="servers.retry">Retry</button>
   </div>
 </div>

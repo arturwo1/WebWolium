@@ -1,0 +1,148 @@
+{% import "partials/profileCard.njk" as profileCard %}
+{% import "partials/serversCardList.njk" as serversList %}
+{% import "partials/serverAnalyticsCard.njk" as serverAnalyticsCard %}
+{% import "partials/accountSettingsPage.njk" as accountSettingsPage %}
+{% import "partials/leaderboardDemo.njk" as leaderboardDemo %}
+{% import "partials/chartWidget.njk" as chartWidget %}
+
+{% macro renderDemoWidget(node, leafKeyBase) %}
+  {% if node.meta.widget == "profile-demo" %}
+    <div class="home-shot home-shot--profile-demo" data-widget="profile-demo">
+      {{ profileCard.renderProfileCard(false, demoProfileSeed) }}
+    </div>
+  {% elif node.meta.widget == "servers-demo" %}
+    <div class="home-shot home-shot--servers-demo" data-widget="servers-demo">
+      {{ serversList.renderServersDemo(demoServersSeed) }}
+    </div>
+  {% elif node.meta.widget == "server-demo" %}
+    <div class="home-shot home-shot--server-demo" data-widget="server-demo">
+      {{ serverAnalyticsCard.renderServerAnalytics(false, demoServerAnalyticsSeed) }}
+    </div>
+  {% elif node.meta.widget == "settings-demo" %}
+    <div class="home-shot home-shot--settings-demo" data-widget="settings-demo">
+      <div class="card section loading" data-field="settings-card">
+        <div class="section-title" data-i18n="home.webwolium.admin.server-settings.teaser">Server settings</div>
+        <div class="privacy-sections" data-field="settings-sections"></div>
+      </div>
+    </div>
+  {% elif node.meta.widget == "settings-account-demo" %}
+    <div class="home-shot home-shot--settings-account-demo" data-widget="settings-account-demo">
+      {{ accountSettingsPage.renderAccountSettingsPage(false, demoAccountSettingsSeed) }}
+    </div>
+  {% elif node.meta.widget == "chart-demo" %}
+    <div class="home-shot home-shot--chart-demo">
+      {{ chartWidget.renderChartWidget() }}
+    </div>
+  {% elif node.meta.widget == "leaderboard-demo" %}
+    <div class="home-shot home-shot--leaderboard-demo" data-widget="leaderboard-demo">
+      {{ leaderboardDemo.renderLeaderboardDemo() }}
+    </div>
+  {% else %}
+    <div class="home-shot" data-widget="{{ node.meta.widget }}">
+      <div class="home-demo-placeholder" data-i18n="{{ leafKeyBase }}.teaser">{{ node.id }}</div>
+    </div>
+  {% endif %}
+{% endmacro %}
+
+{% macro renderLeafInner(node, section, audience, fullPath) %}
+{% set leafKeyBase = "home." + section + "." + audience + "." + (fullPath | join(".")) %}
+{% set commandLabel = node.meta.command %}
+{% set commandName = commandLabel | stripSlash if commandLabel else "" %}
+
+{% if node.reveal == "tooltip" %}
+  {% if node.text.short or node.text.full %}
+    <button type="button" class="home-leaf__teaser-btn" data-tooltip-trigger>
+      {% if commandLabel %}<code class="home-leaf__command">/<span data-i18n="commands.{{ commandName }}">{{ commandName }}</span></code>{% endif %}
+      <span data-i18n="{{ leafKeyBase }}.teaser">{{ node.id }}</span>
+    </button>
+    <div class="home-leaf__tooltip" data-tooltip-panel hidden>
+      {% if node.text.short %}<p data-i18n="{{ leafKeyBase }}.short">{{ node.id }}</p>{% endif %}
+      {% if node.text.full %}<p data-i18n="{{ leafKeyBase }}.full">{{ node.id }}</p>{% endif %}
+    </div>
+  {% else %}
+    <div class="home-leaf__teaser-static">
+      {% if commandLabel %}<code class="home-leaf__command">/<span data-i18n="commands.{{ commandName }}">{{ commandName }}</span></code>{% endif %}
+      <span data-i18n="{{ leafKeyBase }}.teaser">{{ node.id }}</span>
+    </div>
+  {% endif %}
+
+{% elif node.reveal == "modal" %}
+  <div class="home-leaf__card">
+    {% if commandLabel %}<code class="home-leaf__command">/<span data-i18n="commands.{{ commandName }}">{{ commandName }}</span></code>{% endif %}
+    {% if node.text.teaser %}<div class="home-leaf__teaser" data-i18n="{{ leafKeyBase }}.teaser">{{ node.id }}</div>{% endif %}
+    {% if node.text.short %}<p class="home-leaf__short" data-i18n="{{ leafKeyBase }}.short">{{ node.id }}</p>{% endif %}
+    {% if node.text.full %}
+      <button type="button" class="home-leaf__more-btn" data-modal-trigger data-i18n="ui.read_more">Read more</button>
+      <div class="home-leaf__modal-content" data-modal-content hidden>
+        <div data-modal-title data-i18n="{{ leafKeyBase }}.teaser">{{ node.id }}</div>
+        {% if node.meta.media %}<img class="home-leaf__modal-media" src="{{ node.meta.media }}" alt="" loading="lazy" eleventy:ignore>{% endif %}
+        <p class="home-leaf__full" data-i18n="{{ leafKeyBase }}.full">{{ node.id }}</p>
+      </div>
+    {% endif %}
+  </div>
+
+{% elif node.reveal == "spoiler" %}
+  <div class="home-leaf__card">
+    {% if commandLabel %}<code class="home-leaf__command">/<span data-i18n="commands.{{ commandName }}">{{ commandName }}</span></code>{% endif %}
+    {% if node.text.teaser %}<div class="home-leaf__teaser" data-i18n="{{ leafKeyBase }}.teaser">{{ node.id }}</div>{% endif %}
+    {% if node.text.short %}<p class="home-leaf__short" data-i18n="{{ leafKeyBase }}.short">{{ node.id }}</p>{% endif %}
+    {% if node.text.full %}
+      <button type="button" class="home-leaf__spoiler-btn" data-spoiler-trigger aria-expanded="false" data-i18n="ui.read_more">Read more</button>
+      <div class="home-leaf__spoiler-content" data-spoiler-content hidden>
+        <p class="home-leaf__full" data-i18n="{{ leafKeyBase }}.full">{{ node.id }}</p>
+      </div>
+    {% endif %}
+  </div>
+
+{% else %}
+  <div class="home-leaf__card">
+    {% if commandLabel %}<code class="home-leaf__command">/<span data-i18n="commands.{{ commandName }}">{{ commandName }}</span></code>{% endif %}
+    {% if node.text.teaser %}<div class="home-leaf__teaser" data-i18n="{{ leafKeyBase }}.teaser">{{ node.id }}</div>{% endif %}
+    {% if node.text.short %}<p class="home-leaf__short" data-i18n="{{ leafKeyBase }}.short">{{ node.id }}</p>{% endif %}
+    {% if node.text.full %}<p class="home-leaf__full" data-i18n="{{ leafKeyBase }}.full">{{ node.id }}</p>{% endif %}
+  </div>
+{% endif %}
+{% endmacro %}
+
+{% macro renderLeaf(node, section, audience, fullPath, addHoverClass, skipFlyWrap, forceStatic) %}
+{% set commandLabel = node.meta.command %}
+{% set leafKeyBase = "home." + section + "." + audience + "." + (fullPath | join(".")) %}
+
+{% if node.reveal == "none" %}
+  <div class="home-demo-split" data-leaf-id="{{ node.id }}" data-reveal="none">
+    <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner home-demo-split__text">
+      {% if node.text.teaser %}<div class="home-leaf__teaser" data-i18n="{{ leafKeyBase }}.teaser">{{ node.id }}</div>{% endif %}
+      {% if node.text.short %}<p class="home-leaf__short" data-i18n="{{ leafKeyBase }}.short">{{ node.id }}</p>{% endif %}
+      {% if node.text.full %}
+        <button type="button" class="home-leaf__spoiler-btn" data-spoiler-trigger aria-expanded="false" data-i18n="ui.read_more">Read more</button>
+        <div class="home-leaf__spoiler-content" data-spoiler-content hidden>
+          <p class="home-leaf__full" data-i18n="{{ leafKeyBase }}.full">{{ node.id }}</p>
+        </div>
+      {% endif %}
+    </div></div></div>
+
+    <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner fly-inner--static home-demo-split__demo">
+      {{ renderDemoWidget(node, leafKeyBase) }}
+    </div></div></div>
+  </div>
+
+{% elif skipFlyWrap %}
+  <div class="home-leaf home-leaf--{{ node.reveal }}"
+    data-leaf-id="{{ node.id }}"
+    data-reveal="{{ node.reveal }}"
+    {% if commandLabel %}data-command="{{ commandLabel }}"{% endif %}>
+    {{ renderLeafInner(node, section, audience, fullPath) }}
+  </div>
+{% else %}
+  <div class="fly-anchor">
+  <div class="fly-reveal">
+  <div class="fly-inner home-leaf home-leaf--{{ node.reveal }}{% if addHoverClass %} card-hover{% endif %}{% if forceStatic %} fly-inner--static{% endif %}"
+    data-leaf-id="{{ node.id }}"
+    data-reveal="{{ node.reveal }}"
+    {% if commandLabel %}data-command="{{ commandLabel }}"{% endif %}>
+    {{ renderLeafInner(node, section, audience, fullPath) }}
+  </div>
+  </div>
+  </div>
+{% endif %}
+{% endmacro %}

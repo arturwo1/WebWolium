@@ -1,0 +1,71 @@
+{% macro renderProfileCard(interactive, prefill) %}
+<article class="card profile-card{% if interactive %} loading{% endif %}"{% if interactive %} id="profileCard"{% endif %}>
+  <div class="profile-top">
+    <div class="pfp-wrap">
+      <img class="pfp{% if interactive %} skeleton{% endif %}" data-field="pfp" alt="" data-i18n-attr="alt: profile.avatar_alt"{% if prefill and prefill.user_avatar %} src="{{ prefill.user_avatar }}"{% endif %}/>
+
+      <div class="presence-badge" data-field="presence-badge" tabindex="0" aria-label=""{% if not (prefill and prefill.status) %} hidden{% endif %}>
+        <svg class="icon" aria-hidden="true" viewBox="0 0 24 24">
+          <use data-field="presence-use" href="{% if prefill and prefill.status %}#{{ prefill.status }}{% endif %}"></use>
+        </svg>
+      </div>
+
+      <div class="tooltip presence-tooltip" data-field="presence-tooltip" role="tooltip" aria-hidden="true" hidden></div>
+    </div>
+
+    <div class="user-lines">
+      <div class="name{% if interactive %} skeleton{% endif %}" data-field="name">{{ prefill.display_name if prefill else "—" }}</div>
+      <div class="tag{% if interactive %} skeleton{% endif %}" data-field="tag">{{ prefill.user_name if prefill else "—" }}</div>
+    </div>
+
+    <div class="level{% if interactive %} skeleton{% endif %}" data-field="level">{% if prefill %}Level {{ prefill.lvl }}{% else %}— LvL{% endif %}</div>
+  </div>
+
+  <div class="bar{% if interactive %} skeleton{% endif %}" data-field="xp-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="XP progress" data-i18n-attr="aria-label: profile.xp_progress">
+    <div data-field="xp-bar" style="width:{% if prefill %}{{ ((prefill.xp_now / prefill.xp_need) * 100) | round(0) }}{% else %}0{% endif %}%"></div>
+  </div>
+
+  <div style="display: flex; justify-content: space-between;">
+    <div class="badge-row" data-field="badges" aria-label="Quick icons" data-i18n-attr="aria-label: profile.quick_icons" hidden></div>
+    <div class="xp-line{% if interactive %} skeleton{% endif %}" data-field="xp-line">—</div>
+  </div>
+</article>
+
+<div class="card section stats{% if interactive %} loading{% endif %}"{% if interactive %} id="profileStats"{% endif %}>
+  {% set statTag = "button" if interactive else "div" %}
+  <{{ statTag }} class="stat stat--link"{% if interactive %} data-chart="messages" type="button"{% endif %}>
+    <div class="stat__label" data-i18n="profile.messages">Messages</div>
+    <div class="stat__value{% if interactive %} skeleton{% endif %}" data-field="stat-messages">{{ prefill.messages if prefill else "—" }}</div>
+  </{{ statTag }}>
+
+  <{{ statTag }} class="stat stat--link"{% if interactive %} data-chart="voice" type="button"{% endif %}>
+    <div class="stat__label" data-i18n="profile.voice">Voice</div>
+    <div class="stat__value{% if interactive %} skeleton{% endif %}" data-field="stat-voice">{{ prefill.voice_time if prefill else "—" }}</div>
+  </{{ statTag }}>
+
+  <{{ statTag }} class="stat stat--link"{% if interactive %} data-chart="activities" type="button"{% endif %}>
+    <div class="stat__label" data-i18n="profile.activities">Activity</div>
+    <div class="stat__value{% if interactive %} skeleton{% endif %}" data-field="stat-activities">{{ prefill.activity_seconds if prefill else "—" }}</div>
+  </{{ statTag }}>
+
+  <div class="stat">
+    <div class="stat__label" data-i18n="profile.balance.total">Total Balance</div>
+    <div class="stat__value{% if interactive %} skeleton{% endif %}" data-field="stat-money-total">{{ prefill.total_balance if prefill else "—" }}</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat__label" data-i18n="profile.balance.bank">Bank Balance</div>
+    <div class="stat__value{% if interactive %} skeleton{% endif %}" data-field="stat-money-bank">{{ prefill.bank_balance if prefill else "—" }}</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat__label" data-i18n="profile.balance">Cash Balance</div>
+    <div class="stat__value{% if interactive %} skeleton{% endif %}" data-field="stat-money-cash">{{ prefill.balance if prefill else "—" }}</div>
+  </div>
+
+  <{{ statTag }} class="stat stat--link"{% if interactive %} data-chart="commands" type="button"{% endif %}>
+    <div class="stat__label" data-i18n="profile.commands">Commands</div>
+    <div class="stat__value{% if interactive %} skeleton{% endif %}" data-field="stat-commands">{{ prefill.user_commands if prefill else "—" }}</div>
+  </{{ statTag }}>
+</div>
+{% endmacro %}
