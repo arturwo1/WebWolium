@@ -573,6 +573,10 @@ export async function fetchGuildConfig(client, guildId) {
       gs.ai_message_ttl,
       gs.ai_long_message_ttl,
       gs.ai_message_delete,
+      gs.aibot_blacklist_channels,
+      gs.aibot_whitelist_channels,
+      gs.moderation_blacklist_channels,
+      gs.moderation_whitelist_channels,
       gsp.save_messages,
       gsp.save_voice,
       gsp.save_activity
@@ -614,6 +618,10 @@ export async function handleSaveGuildConfig(client, auth, payload) {
     important_channel,
     critical_channel,
     ttl_channel,
+    aibot_blacklist_channels,
+    aibot_whitelist_channels,
+    moderation_blacklist_channels,
+    moderation_whitelist_channels,
     save_messages,
     save_voice,
     save_activity,
@@ -673,12 +681,13 @@ export async function handleSaveGuildConfig(client, auth, payload) {
         guild_id, mod_log_channel, moderation, moderation_type, rules, aibot, ai_message_delete,
         ai_message_ttl, ai_long_message_ttl, word_channel, words, filter,
         number_channel, news, news_channel, important, important_channel,
-        critical_channel, ttl_channel
+        critical_channel, ttl_channel, aibot_blacklist_channels, aibot_whitelist_channels,
+        moderation_blacklist_channels, moderation_whitelist_channels
       ) values (
         $1::bigint, $2::bigint, $3, $4, $5, $6, $7,
         $8, $9, $10::bigint, $11::jsonb, $12,
         $13::bigint, $14, $15::bigint, $16, $17::bigint,
-        $18::bigint, $19::jsonb
+        $18::bigint, $19::jsonb, $20::jsonb, $21::jsonb, $22::jsonb, $23::jsonb
       )
       on conflict (guild_id) do update set
         mod_log_channel = excluded.mod_log_channel,
@@ -698,7 +707,11 @@ export async function handleSaveGuildConfig(client, auth, payload) {
         important = excluded.important,
         important_channel = excluded.important_channel,
         critical_channel = excluded.critical_channel,
-        ttl_channel = excluded.ttl_channel
+        ttl_channel = excluded.ttl_channel,
+        aibot_blacklist_channels = excluded.aibot_blacklist_channels,
+        aibot_whitelist_channels = excluded.aibot_whitelist_channels,
+        moderation_blacklist_channels = excluded.moderation_blacklist_channels,
+        moderation_whitelist_channels = excluded.moderation_whitelist_channels
     `, [
       guildId,
       mod_log_channel ?? null,
@@ -719,6 +732,10 @@ export async function handleSaveGuildConfig(client, auth, payload) {
       important_channel ?? null,
       critical_channel ?? null,
       ttl_channel ?? null,
+      aibot_blacklist_channels ? JSON.stringify(aibot_blacklist_channels) : null,
+      aibot_whitelist_channels ? JSON.stringify(aibot_whitelist_channels) : null,
+      moderation_blacklist_channels ? JSON.stringify(moderation_blacklist_channels) : null,
+      moderation_whitelist_channels ? JSON.stringify(moderation_whitelist_channels) : null
     ]);
 
     await client.query(`

@@ -4507,6 +4507,45 @@ legend.news-filter-group__title,
   }
 }
 
+.multi-channel-input {
+  width: 100%;
+}
+
+.multi-channel-summary {
+  width: 100%;
+  text-align: left;
+}
+
+.multi-channel-list {
+  display: none;
+  max-height: 260px;
+  overflow-y: auto;
+  margin-top: 8px;
+  padding: 8px;
+  border: var(--line);
+  border-radius: var(--r-md);
+  background: var(--c-panel2);
+  gap: 4px;
+}
+
+.multi-channel-input.is-open .multi-channel-list {
+  display: grid;
+}
+
+.multi-channel-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+  padding: 6px 8px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+}
+
+.multi-channel-option:hover {
+  background: var(--c-soft);
+}
+
 .page-content,
 .topbar,
 .sidebar,

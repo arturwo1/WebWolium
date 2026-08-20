@@ -8,10 +8,14 @@ export const CONFIG_SCHEMA = {
   mod_log_channel: { type: "channel", channelType: "message_channels", label: "server.flag_mod_log_channel", tooltip: "server.tooltip_mod_log_channel" },
 
   moderation: { type: "boolean", label: "server.flag_moderation", tooltip: "server.tooltip_moderation" },
+  moderation_whitelist_channels: { type: "multi_channel", channelType: "message_channels", label: "server.flag_moderation_whitelist_channels", tooltip: "server.tooltip_moderation_whitelist_channels" },
+  moderation_blacklist_channels: { type: "multi_channel", channelType: "message_channels", label: "server.flag_moderation_blacklist_channels", tooltip: "server.tooltip_moderation_blacklist_channels" },
   moderation_type: { type: "select", label: "server.flag_moderation_type", tooltip: "server.tooltip_moderation_type", options: [{ v: "normal", t: FLAGS_OPTIONS.normal }, { v: "AI", t: FLAGS_OPTIONS.ai }] },
   rules: { type: "textarea", label: "server.flag_rules", tooltip: "server.tooltip_rules" },
 
   aibot: { type: "boolean", label: "server.flag_aibot", tooltip: "server.tooltip_aibot" },
+  aibot_whitelist_channels: { type: "multi_channel", channelType: "message_channels", label: "server.flag_aibot_whitelist_channels", tooltip: "server.tooltip_aibot_whitelist_channels" },
+  aibot_blacklist_channels: { type: "multi_channel", channelType: "message_channels", label: "server.flag_aibot_blacklist_channels", tooltip: "server.tooltip_aibot_blacklist_channels" },
   ai_message_delete: { type: "boolean", label: "server.flag_ai_message_delete", tooltip: "server.tooltip_ai_message_delete" },
   ai_message_ttl: { type: "number", label: "server.flag_ai_message_ttl", tooltip: "server.tooltip_ai_message_ttl" },
   ai_long_message_ttl: { type: "number", label: "server.flag_ai_long_message_ttl", tooltip: "server.tooltip_ai_long_message_ttl" },
@@ -49,8 +53,8 @@ export const SECTION_LABELS = {
 
 export const SECTION_FLAGS = {
   log_channels: ["mod_log_channel"],
-  auto_moderation: ["moderation", "moderation_type", "rules"],
-  ai: ["aibot", "ai_message_delete", "ai_message_ttl", "ai_long_message_ttl"],
+  auto_moderation: ["moderation", "moderation_whitelist_channels", "moderation_blacklist_channels", "moderation_type", "rules"],
+  ai: ["aibot", "aibot_whitelist_channels", "aibot_blacklist_channels", "ai_message_delete", "ai_message_ttl", "ai_long_message_ttl"],
   games: ["word_channel", "words", "filter", "number_channel"],
   notifications: ["news", "news_channel", "important", "important_channel", "critical", "critical_channel"],
   ttl: ["ttl_channel"],
@@ -259,6 +263,54 @@ export function createInputField(key, schema, val, labelText, idsChannels, trans
     return select;
   }
 
+  if (schema.type === "multi_channel") {
+    const wrapper = document.createElement("div");
+    wrapper.className = "multi-channel-input";
+
+    const channels = idsChannels?.[schema.channelType] || {};
+
+    let selected = Array.isArray(val) ? val.map(String) : [];
+
+    const summary = document.createElement("button");
+    summary.type = "button";
+    summary.className = "multi-channel-summary";
+
+    const list = document.createElement("div");
+    list.className = "multi-channel-list";
+
+    const updateSummary = () => {
+      summary.textContent = translate("server.multi_channel_selected", { count: list.querySelectorAll("input:checked").length });
+    };
+
+    for (const [chId, chProps] of Object.entries(channels)) {
+      const label = document.createElement("label");
+      label.className = "multi-channel-option";
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.name = key;
+      checkbox.value = chId;
+      checkbox.checked = selected.includes(String(chId));
+
+      checkbox.addEventListener("change", updateSummary);
+
+      const text = document.createElement("span");
+      text.textContent = chProps?.name || chId;
+
+      label.append(checkbox, text);
+      list.appendChild(label);
+    }
+
+    summary.addEventListener("click", () => {
+      wrapper.classList.toggle("is-open");
+    });
+
+    wrapper.append(summary, list);
+    updateSummary();
+
+    return wrapper;
+  }
+
   if (schema.type === "channel") {
     const select = document.createElement("select");
     select.className = "input";
@@ -390,9 +442,9 @@ export function collectFormPayload(containerEl, formEl) {
   const payload = {};
 
   for (const [key, schema] of Object.entries(CONFIG_SCHEMA)) {
-    if (schema.forcedValue !== undefined) {
-      payload[key] = schema.forcedValue;
-      continue;
+    if (schema.forcedValue !== undefined) { 
+      payload[key] = schema.forcedValue; 
+      continue; 
     }
 
     if (schema.type === "boolean") {
@@ -407,6 +459,8 @@ export function collectFormPayload(containerEl, formEl) {
     } else if (schema.type === "ttl_map") {
       const ttlEditor = containerEl.querySelector(".ttl-editor");
       payload[key] = ttlEditor?._getTtlValue?.() ?? "{}";
+    } else if (schema.type === "multi_channel") {
+      payload[key] = formData.getAll(key);
     } else {
       payload[key] = formData.get(key) || null;
     }
