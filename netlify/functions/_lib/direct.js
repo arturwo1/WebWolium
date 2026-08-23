@@ -530,37 +530,7 @@ export async function handleGuildMemberSeries(client, auth, payload) {
   });
 }
 
-export async function handleGetGuildConfig(client, auth, payload) {
-  const guildId = payload.guild_id;
-  const discordToken = payload.discord_token;
-  if (!guildId) throw new Error("NO_GUILD_ID");
-  if (!discordToken) throw new Error("NO_DISCORD_TOKEN");
-
-  const url = "https://discord.com/api/v10/users/@me/guilds";
-
-  const headers = new Headers({});
-  headers.set("Authorization", `Bearer ${discordToken}`);
-
-  const guildsResponse = await fetch(url, { headers });
-  if (!guildsResponse.ok) throw new Error("DISCORD_API_ERROR");
-
-  const guilds = await guildsResponse.json();
-  const guild = guilds.find(guild => guild?.id === guildId);
-  if (!guild) throw new Error("INVALID_GUILD_ID");
-
-  const guildPermissions = guild?.permissions;
-  if (!guildPermissions) throw new Error("NO_PERMISSIONS");
-  if (!guild?.owner && (BigInt(guildPermissions) & (1n << 3n)) === 0n) throw new Error("NO_PERMISSIONS");
-
-  const res = await client.query("select guild_id, mod_log_channel, events, moderation, aibot, moderation_type, rules, word_channel, words, number_channel, filter, news_channel, important_channel, critical_channel, news, important, ttl_channel, ttl_messages, ai_message_ttl, ai_long_message_ttl, ai_message_delete from guild_settings where guild_id=$1::bigint;", [guildId]);
-
-  if (res.rows[0]) return res.rows[0];
-  return {};
-}
-
-export async function handleSaveGuildConfig(client, auth, payload) {
-  const guildId = payload.guild_id;
-  const discordToken = payload.discord_token;
+export async function assertGuildAdmin(guildId, discordToken) {
   if (!guildId) throw new Error("NO_GUILD_ID");
   if (!discordToken) throw new Error("NO_DISCORD_TOKEN");
 
@@ -572,11 +542,62 @@ export async function handleSaveGuildConfig(client, auth, payload) {
 
   const guilds = await guildsResponse.json();
   const guild = guilds.find(g => g?.id === guildId);
-  if (!guild) throw new Error("GUILD_NOT_FOUND");
+  if (!guild) throw new Error("INVALID_GUILD_ID");
 
   const perms = guild?.permissions;
   if (!perms) throw new Error("NO_PERMISSIONS");
-  if (!guild?.owner && (BigInt(perms) & (1n << 3n)) === 0n) throw new Error("ADMIN_REQUIRED");
+  if (!guild?.owner && (BigInt(perms) & (1n << 3n)) === 0n) throw new Error("NO_PERMISSIONS");
+}
+
+export async function fetchGuildConfig(client, guildId) {
+  const res = await client.query(`
+    select
+      gs.guild_id,
+      gs.mod_log_channel,
+      gs.events,
+      gs.moderation,
+      gs.aibot,
+      gs.moderation_type,
+      gs.rules,
+      gs.word_channel,
+      gs.words,
+      gs.number_channel,
+      gs.filter,
+      gs.news_channel,
+      gs.important_channel,
+      gs.critical_channel,
+      gs.news,
+      gs.important,
+      gs.ttl_channel,
+      gs.ttl_messages,
+      gs.ai_message_ttl,
+      gs.ai_long_message_ttl,
+      gs.ai_message_delete,
+      gs.aibot_blacklist_channels,
+      gs.aibot_whitelist_channels,
+      gs.moderation_blacklist_channels,
+      gs.moderation_whitelist_channels,
+      gsp.save_messages,
+      gsp.save_voice,
+      gsp.save_activity
+    from guild_settings gs
+    left join guild_settings_privacy gsp
+      on gsp.guild_id = gs.guild_id
+    where gs.guild_id = $1::bigint;
+  `, [guildId]);
+
+  return res.rows[0] || {};
+}
+
+export async function handleGetGuildConfig(client, auth, payload) {
+  await assertGuildAdmin(payload.guild_id, payload.discord_token);
+  return await fetchGuildConfig(client, payload.guild_id);
+}
+
+export async function handleSaveGuildConfig(client, auth, payload) {
+  const guildId = payload.guild_id;
+  const discordToken = payload.discord_token;
+  await assertGuildAdmin(guildId, discordToken);
 
   const {
     mod_log_channel,
@@ -597,6 +618,13 @@ export async function handleSaveGuildConfig(client, auth, payload) {
     important_channel,
     critical_channel,
     ttl_channel,
+    aibot_blacklist_channels,
+    aibot_whitelist_channels,
+    moderation_blacklist_channels,
+    moderation_whitelist_channels,
+    save_messages,
+    save_voice,
+    save_activity,
   } = payload;
 
   if (moderation_type !== undefined && !["AI", "normal"].includes(moderation_type))
@@ -646,60 +674,93 @@ export async function handleSaveGuildConfig(client, auth, payload) {
     }
   }
 
-  await client.query(`
-    insert into guild_settings (
-      guild_id, mod_log_channel, moderation, moderation_type, rules, aibot, ai_message_delete,
-      ai_message_ttl, ai_long_message_ttl, word_channel, words, filter,
-      number_channel, news, news_channel, important, important_channel,
-      critical_channel, ttl_channel
-    ) values (
-      $1::bigint, $2::bigint, $3, $4, $5, $6, $7,
-      $8, $9, $10::bigint, $11::jsonb, $12,
-      $13::bigint, $14, $15::bigint, $16, $17::bigint,
-      $18::bigint, $19::jsonb
-    )
-    on conflict (guild_id) do update set
-      mod_log_channel = excluded.mod_log_channel,
-      moderation = excluded.moderation,
-      moderation_type = excluded.moderation_type,
-      rules = excluded.rules,
-      aibot = excluded.aibot,
-      ai_message_delete = excluded.ai_message_delete,
-      ai_message_ttl = excluded.ai_message_ttl,
-      ai_long_message_ttl = excluded.ai_long_message_ttl,
-      word_channel = excluded.word_channel,
-      words = excluded.words,
-      filter = excluded.filter,
-      number_channel = excluded.number_channel,
-      news = excluded.news,
-      news_channel = excluded.news_channel,
-      important = excluded.important,
-      important_channel = excluded.important_channel,
-      critical_channel = excluded.critical_channel,
-      ttl_channel = excluded.ttl_channel
-  `, [
-    guildId,
-    mod_log_channel ?? null,
-    moderation ?? null,
-    moderation_type ?? null,
-    rules ?? null,
-    aibot ?? null,
-    ai_message_delete ?? null,
-    ai_message_ttl ?? null,
-    ai_long_message_ttl ?? null,
-    word_channel ?? null,
-    words ?? null,
-    filter ?? null,
-    number_channel ?? null,
-    news ?? null,
-    news_channel ?? null,
-    important ?? null,
-    important_channel ?? null,
-    critical_channel ?? null,
-    ttl_channel ?? null,
-  ]);
+  await client.query('BEGIN');
+  try {
+    await client.query(`
+      insert into guild_settings (
+        guild_id, mod_log_channel, moderation, moderation_type, rules, aibot, ai_message_delete,
+        ai_message_ttl, ai_long_message_ttl, word_channel, words, filter,
+        number_channel, news, news_channel, important, important_channel,
+        critical_channel, ttl_channel, aibot_blacklist_channels, aibot_whitelist_channels,
+        moderation_blacklist_channels, moderation_whitelist_channels
+      ) values (
+        $1::bigint, $2::bigint, $3, $4, $5, $6, $7,
+        $8, $9, $10::bigint, $11::jsonb, $12,
+        $13::bigint, $14, $15::bigint, $16, $17::bigint,
+        $18::bigint, $19::jsonb, $20::jsonb, $21::jsonb, $22::jsonb, $23::jsonb
+      )
+      on conflict (guild_id) do update set
+        mod_log_channel = excluded.mod_log_channel,
+        moderation = excluded.moderation,
+        moderation_type = excluded.moderation_type,
+        rules = excluded.rules,
+        aibot = excluded.aibot,
+        ai_message_delete = excluded.ai_message_delete,
+        ai_message_ttl = excluded.ai_message_ttl,
+        ai_long_message_ttl = excluded.ai_long_message_ttl,
+        word_channel = excluded.word_channel,
+        words = excluded.words,
+        filter = excluded.filter,
+        number_channel = excluded.number_channel,
+        news = excluded.news,
+        news_channel = excluded.news_channel,
+        important = excluded.important,
+        important_channel = excluded.important_channel,
+        critical_channel = excluded.critical_channel,
+        ttl_channel = excluded.ttl_channel,
+        aibot_blacklist_channels = excluded.aibot_blacklist_channels,
+        aibot_whitelist_channels = excluded.aibot_whitelist_channels,
+        moderation_blacklist_channels = excluded.moderation_blacklist_channels,
+        moderation_whitelist_channels = excluded.moderation_whitelist_channels
+    `, [
+      guildId,
+      mod_log_channel ?? null,
+      moderation ?? null,
+      moderation_type ?? null,
+      rules ?? null,
+      aibot ?? null,
+      ai_message_delete ?? null,
+      ai_message_ttl ?? null,
+      ai_long_message_ttl ?? null,
+      word_channel ?? null,
+      words ?? null,
+      filter ?? null,
+      number_channel ?? null,
+      news ?? null,
+      news_channel ?? null,
+      important ?? null,
+      important_channel ?? null,
+      critical_channel ?? null,
+      ttl_channel ?? null,
+      aibot_blacklist_channels ? JSON.stringify(aibot_blacklist_channels) : null,
+      aibot_whitelist_channels ? JSON.stringify(aibot_whitelist_channels) : null,
+      moderation_blacklist_channels ? JSON.stringify(moderation_blacklist_channels) : null,
+      moderation_whitelist_channels ? JSON.stringify(moderation_whitelist_channels) : null
+    ]);
 
-  return { success: true };
+    await client.query(`
+      insert into guild_settings_privacy (
+        guild_id, save_messages, save_voice, save_activity
+      ) values (
+        $1::bigint, $2, $3, $4
+      )
+      on conflict (guild_id) do update set
+        save_messages = excluded.save_messages,
+        save_voice = excluded.save_voice,
+        save_activity = excluded.save_activity
+    `, [
+      guildId,
+      save_messages ?? null,
+      save_voice ?? null,
+      save_activity ?? null
+    ]);
+
+    await client.query('COMMIT');
+    return { success: true };
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  }
 }
 
 export async function handleDirectKind(client, auth, kind, payload) {

@@ -144,6 +144,11 @@
 
   {% include "partials/gate.njk" %}
 
+  {% if pageId == "home" %}
+    <div class="void-bg" id="voidBg"><canvas id="voidDots"></canvas></div>
+    {% include "partials/homeStickyTabs.njk" %}
+  {% endif %}
+
   <div class="app" id="appShell" hidden>
     {% include "partials/topbar.njk" %}
     {% include "partials/sidebar.njk" %}
@@ -157,6 +162,8 @@
     <div class="overlay" id="overlay"></div>
   </div>
 
-  {% include "partials/modals.njk" %}
+  {% if pageId in ["home", "profile", "server"] %}
+    {% include "partials/modals.njk" %}
+  {% endif %}
 </body>
 </html>

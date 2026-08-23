@@ -219,6 +219,7 @@ async function boot() {
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       document.documentElement.classList.add("pt-ready");
+      window.dispatchEvent(new Event("app:page-ready"));
     });
   });
 

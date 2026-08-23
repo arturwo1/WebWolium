@@ -1,0 +1,85 @@
+{% macro renderAccountSettingsPage(interactive, prefill) %}
+<article class="card section">
+  <h2 class="section-title" data-i18n="settings.display">Display</h2>
+
+  <div class="kv" style="gap:10px">
+    <label class="k"{% if interactive %} for="lang"{% endif %} data-i18n="language">Language</label>
+    <select class="input" data-field="lang-select"{% if interactive %} id="lang" data-lang-select{% else %} disabled{% endif %}>
+      {% for code in i18n_locales %}
+        <option value="{{ code }}"{% if not interactive and prefill and code == prefill.lang %} selected{% endif %}>{{ code }}</option>
+      {% endfor %}
+    </select>
+
+    <label class="k"{% if interactive %} for="variation"{% endif %} data-i18n="settings.number_format">Number Format</label>
+    <select class="input" data-field="variation-select"{% if interactive %} id="variation" data-variation-select{% else %} disabled{% endif %}>
+      <option value="normal" data-i18n="settings.format_normal">Normal (1.23K)</option>
+      <option value="none" data-i18n="settings.format_none">Nothing (1,234)</option>
+      <option value="scientific" data-i18n="settings.format_scientific">Scientific (1.23e3)</option>
+    </select>
+  </div>
+</article>
+
+<article class="card section">
+  <h2 class="section-title" data-i18n="settings.consent">Consent</h2>
+
+  <div class="kv" style="gap:10px">
+    <label class="input">
+      <input type="checkbox" data-field="cookie-consent"{% if interactive %} id="cookie-consent"{% else %} disabled{% endif %}{% if not interactive and prefill and prefill.cookieConsent %} checked{% endif %}>
+      <span data-i18n="cookie.details">I accept the use of cookies</span>
+    </label>
+  </div>
+</article>
+
+<article class="card section{% if interactive %} loading{% endif %}" data-field="privacy-card"{% if interactive %} id="privacySettings"{% endif %}>
+  <h2 class="section-title" data-i18n="privacy.section">Privacy</h2>
+
+  <div class="privacy-presets" style="margin-bottom: 16px;">
+    <div style="margin-bottom: 10px; font-weight: 800; font-size: 13px; color: var(--c-muted); text-transform: uppercase; letter-spacing: 0.05em;" data-i18n="privacy.presets">Presets</div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <button class="btn-preset" data-preset="private" type="button" data-field="preset" data-i18n="privacy.preset_private">Private</button>
+      <button class="btn-preset" data-preset="balanced" type="button" data-field="preset" data-i18n="privacy.preset_balanced">Balanced</button>
+      <button class="btn-preset" data-preset="analytics" type="button" data-field="preset" data-i18n="privacy.preset_analytics">Full Analytics</button>
+    </div>
+  </div>
+
+  <div class="privacy-divider"></div>
+
+  <div class="privacy-sections" data-field="sections"{% if interactive %} id="privacySections"{% endif %}>
+    {% if not interactive %}
+      {% for sectionKey in ["messages", "activity", "diagnostics", "visibility"] %}
+      <div class="privacy-section">
+        <h3 class="privacy-section__title" data-i18n="privacy.section_{{ sectionKey }}"></h3>
+        <div class="privacy-flags">
+          {% for flag in prefill.sections[sectionKey] %}
+          <label class="privacy-flag">
+            <input type="checkbox" class="privacy-flag__input" data-flag="{{ flag.key }}"{% if flag.value %} checked{% endif %}>
+            <span class="privacy-flag__label" data-i18n="{{ flag.labelKey }}"></span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+</article>
+
+<article class="card section">
+  <h2 class="section-title" data-i18n="settings.data_management">Data Management</h2>
+
+  <div style="display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+    <button class="btn-danger-secondary" type="button" data-field="delete-messages"{% if interactive %} id="btnDeleteMessages"{% else %} disabled{% endif %} data-i18n="settings.delete_messages">Delete Messages</button>
+    <button class="btn-danger-secondary" type="button" data-field="delete-voice"{% if interactive %} id="btnDeleteVoice"{% else %} disabled{% endif %} data-i18n="settings.delete_voice">Delete Voice Data</button>
+    <button class="btn-danger-secondary" type="button" data-field="delete-activities"{% if interactive %} id="btnDeleteActivities"{% else %} disabled{% endif %} data-i18n="settings.delete_activities">Delete Activities</button>
+    <button class="btn-danger-secondary" type="button" data-field="delete-economy"{% if interactive %} id="btnDeleteEconomy"{% else %} disabled{% endif %} data-i18n="settings.delete_economy">Delete Economy Data</button>
+    <button class="btn-danger-secondary" type="button" data-field="delete-analytics"{% if interactive %} id="btnDeleteAnalytics"{% else %} disabled{% endif %} data-i18n="settings.delete_analytics">Delete Analytics</button>
+  </div>
+</article>
+
+<article class="card section section--danger">
+  <h2 class="section-title section-title--danger" data-i18n="settings.danger_zone">Danger Zone</h2>
+
+  <p style="color: var(--c-muted); margin: 0 0 12px; font-weight: 700; font-size: 14px;" data-i18n="settings.danger_desc">This action cannot be undone. All your data will be permanently deleted from our servers.</p>
+
+  <button class="btn-danger" type="button" data-field="delete-all"{% if interactive %} id="btnDeleteAllData"{% else %} disabled{% endif %} data-i18n="settings.delete_all_data">Delete All Data</button>
+</article>
+{% endmacro %}

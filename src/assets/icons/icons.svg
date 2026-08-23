@@ -49,12 +49,12 @@
   </symbol>
 
   <symbol id="web" viewBox="0 0 24 24">
-    <circle style="fill:rgb(var(--rgb-primary))" cx="12" cy="12" r="12" id="circle1"/>
-    <circle style="fill:rgb(var(--rgb-bg))" cx="12" cy="12" r="10" id="circle2"/>
-    <ellipse style="fill:none;stroke:rgb(var(--rgb-primary));stroke-width:2" cx="12" cy="12" rx="4" ry="11" id="ellipse2"/>
-    <rect style="fill:rgb(var(--rgb-primary))" width="24" height="2" y="11" rx="2" ry="2" id="rect2"/>
-    <rect style="fill:rgb(var(--rgb-primary))" width="4" height="2" x="5.2" y="2.5" id="rect3"/>
-    <path style="fill:none;stroke:rgb(var(--rgb-primary));stroke-width:2" d="M 12 1 A 6 11 0 0 0 9.7 1.8 L 9.7 1.8 L 8.1 10 L 8.1 12.8 L 6 12.8 A 6 11 0 0 0 12 23 A 6 11 0 0 0 14.4 22.1 L 14.4 22.1 L 16.1 12.6 L 16.1 11.7 L 16.2 11.7 L 16.5 10.4 L 18 10.7 A 6 11 0 0 0 12 1 z" id="path3"/>
+    <circle style="fill:rgb(var(--rgb-primary))" cx="12" cy="12" r="12"/>
+    <circle style="fill:rgb(var(--rgb-bg))" cx="12" cy="12" r="10"/>
+    <ellipse style="fill:none;stroke:rgb(var(--rgb-primary));stroke-width:2" cx="12" cy="12" rx="4" ry="11"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="24" height="2" y="11" rx="2" ry="2"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="4" height="2" x="5.2" y="2.5"/>
+    <path style="fill:none;stroke:rgb(var(--rgb-primary));stroke-width:2" d="M 12 1 A 6 11 0 0 0 9.7 1.8 L 9.7 1.8 L 8.1 10 L 8.1 12.8 L 6 12.8 A 6 11 0 0 0 12 23 A 6 11 0 0 0 14.4 22.1 L 14.4 22.1 L 16.1 12.6 L 16.1 11.7 L 16.2 11.7 L 16.5 10.4 L 18 10.7 A 6 11 0 0 0 12 1 z"/>
   </symbol>
 
   <symbol id="profile" viewBox="0 0 24 24">
@@ -92,11 +92,11 @@
   </symbol>
 
   <symbol id="news" viewBox="0 0 24 24">
-    <rect style="fill:rgb(var(--rgb-primary))" width="24" height="24" rx="2" ry="2" id="rect1"/>
-    <rect style="fill:rgb(var(--rgb-bg))" width="20" height="20" x="2" y="2" rx="2" ry="2" id="rect2"/>
-    <rect style="fill:rgb(var(--rgb-primary))" width="8" height="2" x="4" y="7" rx="1" ry="1" id="rect3"/>
-    <rect style="fill:rgb(var(--rgb-primary))" width="14" height="2" x="4" y="11" rx="1" ry="1" id="rect4"/>
-    <rect style="fill:rgb(var(--rgb-primary))" width="16" height="2" x="4" y="15" rx="1" ry="1" id="rect5"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="24" height="24" rx="2" ry="2"/>
+    <rect style="fill:rgb(var(--rgb-bg))" width="20" height="20" x="2" y="2" rx="2" ry="2"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="8" height="2" x="4" y="7" rx="1" ry="1"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="14" height="2" x="4" y="11" rx="1" ry="1"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="16" height="2" x="4" y="15" rx="1" ry="1"/>
   </symbol>
 
   <symbol id="settings" viewBox="0 0 24 24">
@@ -115,6 +115,15 @@
     <rect style="fill:rgb(var(--rgb-bg))" width="20" height="2" rx="1" ry="1" x="2" y="20"/>
   </symbol>
 
+  <symbol id="more" viewBox="0 0 24 24">
+    <circle style="fill:rgb(var(--rgb-primary))" cx="3.7" cy="12" r="3.7"/>
+    <circle style="fill:rgb(var(--rgb-bg))" cx="3.7" cy="12" r="3"/>
+    <circle style="fill:rgb(var(--rgb-primary))" cx="12" cy="12" r="3.7"/>
+    <circle style="fill:rgb(var(--rgb-bg))" cx="12" cy="12" r="3"/>
+    <circle style="fill:rgb(var(--rgb-primary))" cx="20.3" cy="12" r="3.7"/>
+    <circle style="fill:rgb(var(--rgb-bg))" cx="20.3" cy="12" r="3"/>
+  </symbol>
+
   <symbol id="close" viewBox="0 0 24 24">
     <rect style="fill:currentColor" width="29.023211" height="7.2558026" x="2.4589589" y="-3.6279013" rx="2" ry="2" transform="rotate(45)"/>
     <rect style="fill:currentColor" width="29.023211" height="7.2558026" x="-14.511605" y="13.342663" rx="2" ry="2" transform="rotate(-45)"/>
@@ -122,7 +131,7 @@
     <rect style="fill:rgb(var(--rgb-bg))" width="3.8784232" height="25.209755" x="-1.9392078" y="4.3657022" rx="1" ry="1" transform="rotate(-45)"/>
   </symbol>
 
-  <symbol id="left" viewbox="0 0 24 24">
+  <symbol id="left" viewBox="0 0 24 24">
     <rect style="fill:rgb(var(--rgb-primary))" width="16" height="6" rx="2" ry="2" x="9" y="-10" transform="matrix(0.70711397,0.70709959,0.70711397,-0.70709959,0,0)"/>
     <rect style="fill:rgb(var(--rgb-primary))" width="16" height="6" rx="2" ry="2" x="-8" y="6.8807583" transform="matrix(0.70711397,-0.70709959,0.70711397,0.70709959,0,0)"/>
     <rect style="fill:rgb(var(--rgb-primary))" width="24" height="6" rx="2" ry="2" y="9"/>
@@ -131,13 +140,40 @@
     <rect style="fill:rgb(var(--rgb-bg))" width="13" height="2" rx="1" ry="1" x="10" y="-8" transform="matrix(0.70711397,0.70709959,0.70711397,-0.70709959,0,0)"/>
   </symbol>
 
-  <symbol id="right" viewbox="0 0 24 24">
+  <symbol id="right" viewBox="0 0 24 24">
     <rect style="fill:rgb(var(--rgb-primary))" width="16" height="6" rx="2" ry="2" x="-7.9703903" y="-26.97039" transform="matrix(-0.70711397,0.70709959,-0.70711397,-0.70709959,0,0)"/>
     <rect style="fill:rgb(var(--rgb-primary))" width="16" height="6" rx="2" ry="2" x="-24.97039" y="-10.089632" transform="matrix(-0.70711397,-0.70709959,-0.70711397,0.70709959,0,0)"/>
     <rect style="fill:rgb(var(--rgb-primary))" width="24" height="6" rx="2" ry="2" y="9" x="-24" transform="scale(-1,1)"/>
     <rect style="fill:rgb(var(--rgb-bg))" width="20.5" height="2" rx="1" ry="1" x="-22.5" y="11" transform="scale(-1,1)"/>
     <rect style="fill:rgb(var(--rgb-bg))" width="13" height="2" rx="1" ry="1" x="-23.97039" y="-7.9703903" transform="matrix(-0.70711397,-0.70709959,-0.70711397,0.70709959,0,0)"/>
     <rect style="fill:rgb(var(--rgb-bg))" width="13" height="2" rx="1" ry="1" x="-6.9703903" y="-24.97039" transform="matrix(-0.70711397,0.70709959,-0.70711397,-0.70709959,0,0)"/>
+  </symbol>
+
+  <symbol id="top" viewBox="0 0 24 24">
+    <rect style="fill:rgb(var(--rgb-primary))" width="16" height="6" rx="2" ry="2" x="9" y="-10" transform="matrix(0.70877052,0.70543912,-0.70877052,0.70543912,0,0)"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="16" height="6" rx="2" ry="2" x="-8" y="6.8" transform="matrix(-0.70877052,0.70543912,0.70877052,0.70543912,0,0)"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="24" height="6" rx="2" ry="2" x="0" y="9" transform="matrix(0,1,1,0,0,0)"/>
+    <rect style="fill:rgb(var(--rgb-bg))" width="20.5" height="2" rx="1" ry="1" x="1.5" y="11" transform="matrix(0,1,1,0,0,0)"/>
+    <rect style="fill:rgb(var(--rgb-bg))" width="13" height="2" rx="1" ry="1" x="-7" y="9" transform="matrix(-0.70877052,0.70543912,0.70877052,0.70543912,0,0)"/>
+    <rect style="fill:rgb(var(--rgb-bg))" width="13" height="2" rx="1" ry="1" x="10" y="-8" transform="matrix(0.70877052,0.70543912,-0.70877052,0.70543912,0,0)"/>
+  </symbol>
+
+  <symbol id="down" viewBox="0 0 24 24">
+    <rect style="fill:rgb(var(--rgb-primary))" width="16" height="6" rx="2" ry="2" x="-24.9" y="-10.1" transform="matrix(-0.70909165,-0.70511633,0.70909165,-0.70511633,0,0)"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="16" height="6" rx="2" ry="2" x="-8.1" y="-27.1" transform="matrix(0.70909165,-0.70511633,-0.70909165,-0.70511633,0,0)"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="24" height="6" rx="2" ry="2" x="-24" y="-15" transform="matrix(0,-1,-1,0,0,0)"/>
+    <rect style="fill:rgb(var(--rgb-bg))" width="20.5" height="2" rx="1" ry="1" x="-22.5" y="-13" transform="matrix(0,-1,-1,0,0,0)"/>
+    <rect style="fill:rgb(var(--rgb-bg))" width="13" height="2" rx="1" ry="1" x="-7" y="-24.9" transform="matrix(0.70909165,-0.70511633,-0.70909165,-0.70511633,0,0)"/>
+    <rect style="fill:rgb(var(--rgb-bg))" width="13" height="2" rx="1" ry="1" x="-23.9" y="-8" transform="matrix(-0.70909165,-0.70511633,0.70909165,-0.70511633,0,0)"/>
+  </symbol>
+
+  <symbol id="info" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="12" fill="rgb(var(--rgb-primary))"/>
+    <circle cx="12" cy="12" r="10" fill="rgb(var(--rgb-bg))"/>
+    <circle cx="12" cy="6" r="2" fill="rgb(var(--rgb-primary))"/>
+    <circle cx="12" cy="6" r="1" fill="rgb(var(--rgb-bg))"/>
+    <rect x="10" y="10" width="4" height="10" rx=".6" ry=".8" fill="rgb(var(--rgb-primary))"/>
+    <rect x="11" y="11" width="2" height="8" rx=".6" ry=".6" fill="rgb(var(--rgb-bg))"/>
   </symbol>
 
   <symbol id="messages" viewBox="0 0 24 24">
@@ -154,11 +190,11 @@
   </symbol>
 
   <symbol id="microphone" viewBox="0 0 24 24">
-    <rect style="fill:rgb(var(--rgb-primary))" width="9.5" height="2" x="7.25" y="22" rx="1" ry="1" id="rect1"/>
-    <rect style="fill:rgb(var(--rgb-primary))" width="2" height="6" x="11" y="17" id="rect2"/>
-    <path style="fill:rgb(var(--rgb-primary))" d="M 5,11.1 C 5.2,13.5 6.5,15.8 8.5,17 c 2.2,1.3 4.8,1.3 7,0 2,-1.2 3.3,-3.5 3.5,-5.9 C 19,10.8 18.8,10.6 18.5,10.6 c -1.4,0 0.3,1.8 -2,4.4 C 15.4,16.2 13.8,17 12,17 6.4,17 6.4,11.3 5.5,10.6 c -0.3,0 -0.5,0.2 -0.5,0.5 z" transform="matrix(1.1506607,0,0,1.1438093,-1.8033035,-2.5881874)" id="path2"/>
-    <rect style="fill:rgb(var(--rgb-primary))" width="11" height="15.5" x="6.5" rx="5" ry="5" id="rect3"/>
-    <rect style="fill:rgb(var(--rgb-bg))" width="7" height="12" x="8.5" y="2" rx="3" ry="3" id="rect4"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="9.5" height="2" x="7.25" y="22" rx="1" ry="1"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="2" height="6" x="11" y="17"/>
+    <path style="fill:rgb(var(--rgb-primary))" d="M 5,11.1 C 5.2,13.5 6.5,15.8 8.5,17 c 2.2,1.3 4.8,1.3 7,0 2,-1.2 3.3,-3.5 3.5,-5.9 C 19,10.8 18.8,10.6 18.5,10.6 c -1.4,0 0.3,1.8 -2,4.4 C 15.4,16.2 13.8,17 12,17 6.4,17 6.4,11.3 5.5,10.6 c -0.3,0 -0.5,0.2 -0.5,0.5 z" transform="matrix(1.1506607,0,0,1.1438093,-1.8033035,-2.5881874)"/>
+    <rect style="fill:rgb(var(--rgb-primary))" width="11" height="15.5" x="6.5" rx="5" ry="5"/>
+    <rect style="fill:rgb(var(--rgb-bg))" width="7" height="12" x="8.5" y="2" rx="3" ry="3"/>
   </symbol>
 
   <symbol id="activity" viewBox="0 0 24 24">
@@ -199,8 +235,8 @@
   <symbol id="wolium" viewBox="0 0 24 24">
     <defs>
       <linearGradient id="gradient" x1="7.4" y1="5.6" x2="7" y2="0.3">
-        <stop style="stop-color:rgb(var(--rgb-primary))" offset="0.6" id="stop1"/>
-        <stop style="stop-color:rgb(var(--rgb-white));stop-opacity:0.8" offset="1" id="stop2"/>
+        <stop style="stop-color:rgb(var(--rgb-primary))" offset="0.6"/>
+        <stop style="stop-color:rgb(var(--rgb-white));stop-opacity:0.8" offset="1"/>
       </linearGradient>
       <linearGradient href="#gradient" x1="12" y1="0" x2="12" y2="24" id="linearGradient15" gradientUnits="userSpaceOnUse"/>
     </defs>
@@ -223,26 +259,26 @@
       <path d="M 3.8 30.7 C 3.9 25.9 4.3 21.1 5.0 17.3 C 5.7 13.9 6.4 10.8 7.3 7.9 C 7.8 6.0 8.3 4.6 8.9 3.6 C 9.2 2.8 9.4 2.0 9.4 -3.8"
         fill="none" stroke="url(#grad)" stroke-width="0.95" stroke-linecap="round"
         stroke-dasharray="35.2 105.6" stroke-dashoffset="35.2">
-        <animate id="s1_in" attributeName="stroke-dashoffset" values="35.2;0"   dur="0.45s" begin="0.10s;s1_in.begin+2.5s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1"/>
-        <animate           attributeName="stroke-dashoffset" values="0;-35.2"  dur="0.45s" begin="s1_in.begin+1.4s"         fill="freeze" calcMode="spline" keySplines="0.4 0 0.6 1"/>
+        <animate id="s1_in" attributeName="stroke-dashoffset" values="35.2;0" dur="0.45s" begin="0.10s;s1_in.begin+2.5s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1"/>
+        <animate attributeName="stroke-dashoffset" values="0;-35.2" dur="0.45s" begin="s1_in.begin+1.4s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.6 1"/>
       </path>
       <path d="M 8.9 -3.8 C 9.1 -0.5 9.6 2.6 10.3 5.5 C 10.9 8.2 11.6 10.5 12.2 12.6 C 12.6 14.0 12.8 15.1 12.9 15.9 C 13.0 17.3 13.0 20.1 12.9 30.7"
         fill="none" stroke="url(#grad)" stroke-width="0.95" stroke-linecap="round"
         stroke-dasharray="34.95 104.85" stroke-dashoffset="34.95">
-        <animate id="s2_in" attributeName="stroke-dashoffset" values="34.95;0"  dur="0.45s" begin="0.18s;s2_in.begin+2.5s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1"/>
-        <animate           attributeName="stroke-dashoffset" values="0;-34.95" dur="0.45s" begin="s2_in.begin+1.4s"         fill="freeze" calcMode="spline" keySplines="0.4 0 0.6 1"/>
+        <animate id="s2_in" attributeName="stroke-dashoffset" values="34.95;0" dur="0.45s" begin="0.18s;s2_in.begin+2.5s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1"/>
+        <animate attributeName="stroke-dashoffset" values="0;-34.95" dur="0.45s" begin="s2_in.begin+1.4s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.6 1"/>
       </path>
       <path d="M 12.9 30.7 C 12.9 26.9 13.1 23.1 13.4 19.7 C 13.8 16.6 14.4 13.8 15.2 11.4 C 15.8 9.0 16.6 7.2 17.4 5.7 C 17.9 4.6 18.2 3.6 18.6 -3.8"
         fill="none" stroke="url(#grad)" stroke-width="0.95" stroke-linecap="round"
         stroke-dasharray="35.26 105.78" stroke-dashoffset="35.26">
-        <animate id="s3_in" attributeName="stroke-dashoffset" values="35.26;0"  dur="0.45s" begin="0.14s;s3_in.begin+2.5s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1"/>
-        <animate           attributeName="stroke-dashoffset" values="0;-35.26" dur="0.45s" begin="s3_in.begin+1.4s"         fill="freeze" calcMode="spline" keySplines="0.4 0 0.6 1"/>
+        <animate id="s3_in" attributeName="stroke-dashoffset" values="35.26;0" dur="0.45s" begin="0.14s;s3_in.begin+2.5s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1"/>
+        <animate attributeName="stroke-dashoffset" values="0;-35.26" dur="0.45s" begin="s3_in.begin+1.4s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.6 1"/>
       </path>
       <path d="M 18.6 -3.8 C 18.8 -0.3 19.2 3.1 19.8 6.5 C 20.4 9.4 20.8 12.6 21.1 15.3 C 21.4 17.4 21.4 19.2 21.5 30.7"
         fill="none" stroke="url(#grad)" stroke-width="0.95" stroke-linecap="round"
         stroke-dasharray="34.69 104.07" stroke-dashoffset="34.69">
-        <animate id="s4_in" attributeName="stroke-dashoffset" values="34.69;0"  dur="0.45s" begin="0.22s;s4_in.begin+2.5s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1"/>
-        <animate           attributeName="stroke-dashoffset" values="0;-34.69" dur="0.45s" begin="s4_in.begin+1.4s"         fill="freeze" calcMode="spline" keySplines="0.4 0 0.6 1"/>
+        <animate id="s4_in" attributeName="stroke-dashoffset" values="34.69;0" dur="0.45s" begin="0.22s;s4_in.begin+2.5s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1"/>
+        <animate attributeName="stroke-dashoffset" values="0;-34.69" dur="0.45s" begin="s4_in.begin+1.4s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.6 1"/>
       </path>
     </g>
   </symbol>

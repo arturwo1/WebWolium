@@ -28,24 +28,23 @@ noindex: true
   <article class="card profile-card loading" id="profileCard">
     <div class="profile-top">
       <div class="pfp-wrap">
-        <img class="pfp skeleton" id="profilePfp" alt="Server icon" data-i18n-attr="alt: server.icon_alt"/>
+        <img class="pfp skeleton" id="profilePfp" data-field="pfp" alt="Server icon" data-i18n-attr="alt: server.icon_alt"/>
       </div>
 
       <div class="user-lines">
-        <div class="name skeleton" id="profileName">—</div>
+        <div class="name skeleton" id="profileName" data-field="name">—</div>
       </div>
 
-      <div class="level skeleton" id="profileLevel">— LvL</div>
+      <div class="level skeleton" id="profileLevel" data-field="level">— LvL</div>
     </div>
 
-    <div class="bar skeleton" id="profileXpBarContainer" aria-describedby="profileXpLine" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="XP progress" data-i18n-attr="aria-label: server.xp_progress">
-      <div id="profileXpBar" style="width:0%"></div>
+    <div class="bar skeleton" id="profileXpBarContainer" data-field="xp-bar-container" aria-describedby="profileXpLine" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="XP progress" data-i18n-attr="aria-label: server.xp_progress">
+      <div id="profileXpBar" data-field="xp-bar" style="width:0%"></div>
     </div>
 
     <div style="display: flex; justify-content: space-between;">
-      <div class="badge-row" id="profileBadges" aria-label="Quick icons" data-i18n-attr="aria-label: profile.quick_icons" hidden></div>
-
-      <div class="xp-line skeleton" id="profileXpLine">—</div>
+      <div class="badge-row" id="profileBadges" data-field="badges" aria-label="Quick icons" data-i18n-attr="aria-label: profile.quick_icons" hidden></div>
+      <div class="xp-line skeleton" id="profileXpLine" data-field="xp-line">—</div>
     </div>
   </article>
 
@@ -58,37 +57,37 @@ noindex: true
     <div class="card section stats loading" id="profileStats">
       <button class="stat stat--link" data-chart="messages" type="button">
         <div class="stat__label" data-i18n="profile.messages">Messages</div>
-        <div class="stat__value skeleton" id="statMessages">—</div>
+        <div class="stat__value skeleton" id="statMessages" data-field="stat-messages">—</div>
       </button>
 
       <button class="stat stat--link" data-chart="voice" type="button">
         <div class="stat__label" data-i18n="profile.voice">Voice</div>
-        <div class="stat__value skeleton" id="statVoice">—</div>
+        <div class="stat__value skeleton" id="statVoice" data-field="stat-voice">—</div>
       </button>
 
       <button class="stat stat--link" data-chart="activities" type="button">
         <div class="stat__label" data-i18n="profile.activities">Activity</div>
-        <div class="stat__value skeleton" id="statActivities">—</div>
+        <div class="stat__value skeleton" id="statActivities" data-field="stat-activities">—</div>
       </button>
 
       <div class="stat">
         <div class="stat__label" data-i18n="profile.balance.total">Total Balance</div>
-        <div class="stat__value skeleton" id="statMoneyTotal">—</div>
+        <div class="stat__value skeleton" id="statMoneyTotal" data-field="stat-money-total">—</div>
       </div>
 
       <div class="stat">
         <div class="stat__label" data-i18n="profile.balance.bank">Bank Balance</div>
-        <div class="stat__value skeleton" id="statMoneyBank">—</div>
+        <div class="stat__value skeleton" id="statMoneyBank" data-field="stat-money-bank">—</div>
       </div>
 
       <div class="stat">
         <div class="stat__label" data-i18n="profile.balance">Cash Balance</div>
-        <div class="stat__value skeleton" id="statMoneyCash">—</div>
+        <div class="stat__value skeleton" id="statMoneyCash" data-field="stat-money-cash">—</div>
       </div>
 
       <button class="stat stat--link" data-chart="members" type="button">
         <div class="stat__label" data-i18n="server.analytics.members">Members</div>
-        <div class="stat__value skeleton" id="statMembers">—</div>
+        <div class="stat__value skeleton" id="statMembers" data-field="stat-members">—</div>
       </button>
     </div>
   </section>
@@ -103,24 +102,7 @@ noindex: true
         <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
           <button class="btn-preset" type="submit" id="btnSaveServerSettings" data-i18n="save">Save</button>
         </div>
-    </form>
+      </form>
     </div>
   </section>
 </div>
-
-<template id="serverSectionTemplate">
-  <div class="privacy-section">
-    <h3 class="privacy-section__title" data-i18n=""></h3>
-
-    <div class="privacy-flags">
-    </div>
-  </div>
-</template>
-
-<template id="serverFlagTemplate">
-  <div class="server-control-row" style="display: flex; flex-direction: column; gap: 4px;">
-    <label class="server-control-label" style="font-weight: 600; font-size: 14px;"></label>
-    <div class="server-control-field">
-      </div>
-  </div>
-</template>

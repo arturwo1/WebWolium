@@ -5,242 +5,280 @@ description: Track your Discord server activity with charts, profiles, leaderboa
 pageId: home
 permalink: /
 ---
+{% import "partials/nodeRenderer.njk" as nodeRenderer %}
 
-<div class="home">
-  <article class="card section" data-i18n-attr="aria-label: home.hero.aria">
+<div class="home home-v2" id="homeRoot">
+
+  <article class="card section fly-void" data-i18n-attr="aria-label: home.hero.aria">
     <div class="home-hero__grid">
       <div>
-        <h1 class="home-hero__title" data-i18n="home.hero.title">Server activity — finally readable.</h1>
-        <div class="home-hero__subtitle" data-i18n="home.hero.subtitle">
-          Profiles, graphs, leaderboards, economy and privacy — in one bot. No corporate tone. Just useful stuff.
-        </div>
+        <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner fly-frame">
+          <h1 class="home-hero__title" data-i18n="home.hero.title">Server activity — finally readable.</h1>
+          <div class="home-hero__subtitle" style="margin-top:10px" data-i18n="home.hero.subtitle">Profiles, graphs, leaderboards, economy and privacy — in one bot. No corporate tone. Just useful stuff.</div>
+        </div></div></div>
+
+        <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner fly-frame">
+          <ul class="home-hero__bullets">
+            <li><span class="home-dot"></span><span data-i18n="home.hero.b1">Charts for messages + voice, any period</span></li>
+            <li><span class="home-dot"></span><span data-i18n="home.hero.b2">Profiles with level/XP/balance + server info</span></li>
+            <li><span class="home-dot"></span><span data-i18n="home.hero.b3">Leaderboards: global, server, top servers</span></li>
+          </ul>
+        </div></div></div>
 
         <div class="home-hero__actions">
-          <a class="btn btn--primary" href="https://discord.com/oauth2/authorize?client_id=1051105900116574250" target="_blank" rel="noopener"
-             data-i18n="home.hero.cta.add">
-            Add bot to server
-          </a>
-          <a class="btn" href="/profile/" data-i18n="home.hero.cta.dashboard">Open dashboard</a>
-          <a class="btn" href="https://discord.gg/MXupeAApza" target="_blank" rel="noopener"
-             data-i18n="home.cta.support">
-            Support server
-          </a>
+          <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner">
+            <a class="btn btn--primary" href="https://discord.com/oauth2/authorize?client_id=1051105900116574250" target="_blank" rel="noopener" data-i18n="home.hero.cta.add">Add bot to server</a>
+          </div></div></div>
+
+          <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner">
+            <a class="btn" href="https://discord.gg/DhtQr4PGYM" target="_blank" rel="noopener" data-i18n="home.cta.support">Support server</a>
+          </div></div></div>
         </div>
-
-        <ul class="home-hero__bullets">
-          <li>
-            <span class="home-dot" aria-hidden="true"></span>
-            <span data-i18n="home.hero.b1">Charts for messages + voice, any period</span>
-          </li>
-          <li>
-            <span class="home-dot" aria-hidden="true"></span>
-            <span data-i18n="home.hero.b2">Profiles with level/XP/balance + server info</span>
-          </li>
-          <li>
-            <span class="home-dot" aria-hidden="true"></span>
-            <span data-i18n="home.hero.b3">Leaderboards: global, server, top servers</span>
-          </li>
-        </ul>
-      </div>
-
-      <div class="home-shot">
-        <img src="https://i.imgur.com/c8h6FIX.png" alt="Dashboard preview" loading="lazy" data-i18n-attr="alt: home.img.hero_alt"/>
       </div>
     </div>
   </article>
 
-  <div class="card section loading" id="cardSection">
+  <div class="card section loading fly-void" id="cardSection">
     <div class="home-kpis">
-      <div class="stat home-kpi card-hover">
-        <div class="stat__label" data-i18n="home.kpi.bot_langs">Bot languages</div>
-        <div class="stat__value skeleton">25</div>
-      </div>
+      <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner">
+        <div class="stat home-kpi card-hover">
+          <div class="stat__label" data-i18n="home.kpi.bot_langs">Bot languages</div>
+          <div class="stat__value skeleton">25</div>
+        </div>
+      </div></div></div>
 
-      <div class="stat home-kpi card-hover">
-        <div class="stat__label" data-i18n="home.kpi.bot_users">Bot users</div>
-        <div class="stat__value skeleton" data-stat="users">16</div>
-      </div>
+      <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner">
+        <div class="stat home-kpi card-hover">
+          <div class="stat__label" data-i18n="home.kpi.bot_users">Bot users</div>
+          <div class="stat__value skeleton" data-stat="users">{% if siteStats.users != null %}{{ siteStats.users }}{% else %}—{% endif %}</div>
+        </div>
+      </div></div></div>
 
-      <div class="stat home-kpi card-hover">
-        <div class="stat__label" data-i18n="home.kpi.dev_years">Development</div>
-        <div class="stat__value skeleton" data-stat="years">2023–2027</div>
-      </div>
+      <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner">
+        <div class="stat home-kpi card-hover">
+          <div class="stat__label" data-i18n="home.kpi.dev_years">Development</div>
+          <div class="stat__value skeleton" data-stat="years">{{ siteStats.years }}</div>
+        </div>
+      </div></div></div>
 
-      <div class="stat home-kpi card-hover">
-        <div class="stat__label" data-i18n="home.kpi.servers">Servers now</div>
-        <div class="stat__value skeleton" data-stat="servers">19</div>
-        <div class="home-kpi-note skeleton" data-i18n="home.kpi.servers_note">early access / small community</div>
-      </div>
+      <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner">
+        <div class="stat home-kpi card-hover">
+          <div class="stat__label" data-i18n="home.kpi.servers">Servers now</div>
+          <div class="stat__value skeleton" data-stat="servers">{% if siteStats.servers != null %}{{ siteStats.servers }}{% else %}—{% endif %}</div>
+          <div class="home-kpi-note skeleton" data-i18n="home.kpi.servers_note">early access / small community</div>
+        </div>
+      </div></div></div>
     </div>
   </div>
 
-  <article class="card section">
-    <div class="section-title" data-i18n="home.features.title">What Wolium can do</div>
-    <div class="home-hero__subtitle" style="margin:0 0 12px" data-i18n="home.features.subtitle">
-      I’m not trying to look “huge”. I’m trying to look useful. Here’s the stuff you’ll actually feel in daily usage.
+  <article class="card section home-main-tabs fly-void" id="homeMainTabs">
+
+    <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner fly-frame fly-frame--minor">
+      <div class="home-tabbar-lead" data-i18n="home.tabs.lead">Wolium is the Discord bot itself. WebWolium is the website that goes with it — dashboards, charts, and account settings in your browser.</div>
+    </div></div></div>
+
+    <div class="home-tabbar" role="tablist" data-i18n-attr="aria-label: home.tabs.aria" aria-label="Wolium / WebWolium">
+      <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner">
+        <button class="home-tab is-active" type="button" role="tab" aria-selected="true" data-target="wolium" data-i18n="home.tabs.wolium">Wolium</button>
+      </div></div></div>
+      <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner">
+        <button class="home-tab" type="button" role="tab" aria-selected="false" data-target="webwolium" data-i18n="home.tabs.webwolium">WebWolium</button>
+      </div></div></div>
     </div>
 
-    <div class="home-features">
-      <div class="home-feature">
-        <div>
-          <h3 data-i18n="home.feature.profile.title">User profiles that actually tell something</h3>
-          <p data-i18n="home.feature.profile.text">
-            Avatar, status, level, XP, money, messages, voice time — plus server details if available.
-          </p>
-          <ul class="home-mini">
-            <li><span class="home-dot" aria-hidden="true"></span><span data-i18n="home.feature.profile.b1">View your profile or someone else’s</span></li>
-            <li><span class="home-dot" aria-hidden="true"></span><span data-i18n="home.feature.profile.b2">Everything in one place (no guessing)</span></li>
-          </ul>
-        </div>
-        <div class="home-shot">
-          <img src="https://i.imgur.com/syXYoP3.png" alt="Profile preview" loading="lazy" data-i18n-attr="alt: home.img.profile_alt" />
+    <div class="home-slide-track" id="mainSlideTrack">
+
+    <div class="home-panel is-active" data-panel="wolium">
+
+      <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner">
+        <div class="home-panel-lead" data-i18n="home.wolium.lead">Everything below runs as Discord slash commands, right inside your server.</div>
+      </div></div></div>
+
+      <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner fly-frame fly-frame--minor">
+        <div class="home-subtabbar-lead" data-i18n="home.wolium.subtabs_lead">Pick Admin or User to see the commands relevant to your role.</div>
+      </div></div></div>
+
+      <div class="home-subtabbar" role="tablist" data-i18n-attr="aria-label: home.subtabs.aria" aria-label="Admin / User">
+        <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner">
+          <button class="home-subtab is-active" type="button" role="tab" aria-selected="true" data-target="wolium-admin" data-i18n="home.subtabs.admin">Admin</button>
+        </div></div></div>
+        <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner">
+          <button class="home-subtab" type="button" role="tab" aria-selected="false" data-target="wolium-user" data-i18n="home.subtabs.user">User</button>
+        </div></div></div>
+      </div>
+
+      <div class="home-slide-track" data-subtrack="wolium">
+
+      <div class="home-subpanel is-active" data-subpanel="wolium-admin">
+        <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner fly-frame fly-frame--minor">
+          <div class="home-hero__subtitle" data-i18n="home.wolium.admin.intro">Full moderation toolkit, analytics, and server controls — for people who run the server.</div>
+        </div></div></div>
+
+        <div class="home-features">
+          {% for node in homeFeatures.wolium %}
+            {{ nodeRenderer.renderNode(node, "wolium", "admin", []) }}
+          {% endfor %}
         </div>
       </div>
 
-      <div class="home-feature home-feature--reverse">
-        <div class="home-shot">
-          <img src="https://i.imgur.com/OJnJeCb.png" alt="Charts preview"  loading="lazy" data-i18n-attr="alt: home.img.charts_alt" />
-        </div>
-        <div>
-          <h3 data-i18n="home.feature.charts.title">Charts with message preview</h3>
-          <p data-i18n="home.feature.charts.text">
-            Pick any time range. Tooltip shows a message preview, click opens it in Discord.
-          </p>
-          <ul class="home-mini">
-            <li><span class="home-dot" aria-hidden="true"></span><span data-i18n="home.feature.charts.b1">Messages / voice / activity</span></li>
-            <li><span class="home-dot" aria-hidden="true"></span><span data-i18n="home.feature.charts.b2">Flexible period + clean UI</span></li>
-          </ul>
+      <div class="home-subpanel" data-subpanel="wolium-user">
+        <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner fly-frame fly-frame--minor">
+          <div class="home-hero__subtitle" data-i18n="home.wolium.user.intro">Commands anyone on the server can use: profile, economy, tools, and fun. Servers running Wolium can also enable moderation, so please follow the rules.</div>
+        </div></div></div>
+
+        <div class="home-features">
+          {% for node in homeFeatures.wolium %}
+            {{ nodeRenderer.renderNode(node, "wolium", "user", []) }}
+          {% endfor %}
         </div>
       </div>
 
-      <div class="home-feature">
-        <div>
-          <h3 data-i18n="home.feature.leaderboard.title">Leaderboards for literally everything</h3>
-          <p data-i18n="home.feature.leaderboard.text">
-            Total money, bank, cash, XP, level, messages, voice time, votes, vote streak — global or server.
-          </p>
-          <ul class="home-mini">
-            <li><span class="home-dot" aria-hidden="true"></span><span data-i18n="home.feature.leaderboard.b1">Global / server / top servers</span></li>
-            <li><span class="home-dot" aria-hidden="true"></span><span data-i18n="home.feature.leaderboard.b2">Economy: work + transactions</span></li>
-          </ul>
-        </div>
-        <div class="home-shot">
-          <img src="https://i.imgur.com/WAFn9FO.png" alt="Leaderboard preview" loading="lazy" data-i18n-attr="alt: home.img.leaderboard_alt" />
-        </div>
       </div>
 
-      <div class="home-feature home-feature--reverse">
-        {# <div class="home-shot">
-          <img src="/images/Wolium.png" alt="Tools preview" loading="lazy" data-i18n-attr="alt: home.img.tools_alt" />
-        </div> #}
-        <div>
-          <h3 data-i18n="home.feature.tools.title">Tools (not only “fun commands”)</h3>
-          <p data-i18n="home.feature.tools.text">
-            Message translation, link redirect tree, number formatting, holidays, reports, channel TTL auto-delete.
-          </p>
-          <ul class="home-mini">
-            <li><span class="home-dot" aria-hidden="true"></span><span data-i18n="home.feature.tools.b1">/translate via command or right-click</span></li>
-            <li><span class="home-dot" aria-hidden="true"></span><span data-i18n="home.feature.tools.b2">Moderation helpers + server settings</span></li>
-          </ul>
-        </div>
-      </div>
+      <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner">
+        <div class="home-panel-lead" data-i18n="home.wolium.outro">More commands are added regularly — this list keeps growing.</div>
+      </div></div></div>
 
-      <div class="home-feature">
-        <div>
-          <h3 data-i18n="home.feature.privacy.title">Privacy controls baked in</h3>
-          <p data-i18n="home.feature.privacy.text">
-            You control what is stored. /delete_data removes saved messages and voice activity permanently.
-          </p>
-          <ul class="home-mini">
-            <li><span class="home-dot" aria-hidden="true"></span><span data-i18n="home.feature.privacy.b1">Granular privacy settings</span></li>
-            <li><span class="home-dot" aria-hidden="true"></span><span data-i18n="home.feature.privacy.b2">Transparent behavior (no “mystery logging”)</span></li>
-          </ul>
-        </div>
-        <div class="home-shot">
-          <img src="https://i.imgur.com/XMmg92m.png" alt="Privacy preview" loading="lazy" data-i18n-attr="alt: home.img.privacy_alt" />
-        </div>
-      </div>
-
-      <div class="home-feature home-feature--reverse">
-        {# <div class="home-shot">
-          <img src="/images/Wolium.png" alt="AI preview" loading="lazy" data-i18n-attr="alt: home.img.ai_alt" />
-        </div> #}
-        <div>
-          <h3>
-            <span data-i18n="home.feature.ai.title">AI tools</span>
-            <span class="home-badge" data-i18n="home.badge.beta">BETA</span>
-          </h3>
-          <p data-i18n="home.feature.ai.text">
-            AI moderation/automation exists, but it’s still evolving. I’m improving it step by step — without overpromising.
-          </p>
-          <ul class="home-mini">
-            <li><span class="home-dot" aria-hidden="true"></span><span data-i18n="home.feature.ai.b1">AI automod rules (customizable)</span></li>
-            <li><span class="home-dot" aria-hidden="true"></span><span data-i18n="home.feature.ai.b2">Future: natural-language control for bot actions</span></li>
-          </ul>
-        </div>
-      </div>
     </div>
+
+    <div class="home-panel" data-panel="webwolium">
+
+      <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner">
+        <div class="home-panel-lead" data-i18n="home.webwolium.lead">The dashboard for Wolium — log in with Discord and see your server or your profile in the browser.</div>
+      </div></div></div>
+
+      <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner fly-frame fly-frame--minor">
+        <div class="home-subtabbar-lead" data-i18n="home.webwolium.subtabs_lead">Pick Admin or User to see the dashboard pages relevant to your role.</div>
+      </div></div></div>
+
+      <div class="home-subtabbar" role="tablist" aria-label="Admin / User">
+        <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner">
+          <button class="home-subtab is-active" type="button" role="tab" aria-selected="true" data-target="webwolium-admin" data-i18n="home.subtabs.admin">Admin</button>
+        </div></div></div>
+        <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner">
+          <button class="home-subtab" type="button" role="tab" aria-selected="false" data-target="webwolium-user" data-i18n="home.subtabs.user">User</button>
+        </div></div></div>
+      </div>
+
+      <div class="home-slide-track" data-subtrack="webwolium">
+
+      <div class="home-subpanel is-active" data-subpanel="webwolium-admin">
+        <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner fly-frame fly-frame--minor">
+          <div class="home-hero__subtitle" data-i18n="home.webwolium.admin.intro">Server-wide settings, plus a quick look at what members see on their side.</div>
+        </div></div></div>
+
+        <div class="home-features">
+          {% for node in homeFeatures.webwolium %}
+            {{ nodeRenderer.renderNode(node, "webwolium", "admin", []) }}
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="home-subpanel" data-subpanel="webwolium-user">
+        <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner fly-frame fly-frame--minor">
+          <div class="home-hero__subtitle" data-i18n="home.webwolium.user.intro">Everything you can do on the site: profile, charts, leaderboards, server list, news, and your own privacy settings.</div>
+        </div></div></div>
+
+        <div class="home-features">
+          {% for node in homeFeatures.webwolium %}
+            {{ nodeRenderer.renderNode(node, "webwolium", "user", []) }}
+          {% endfor %}
+        </div>
+      </div>
+
+      </div>
+
+      <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner">
+        <div class="home-panel-lead" data-i18n="home.webwolium.outro">Log in with Discord to unlock the full dashboard.</div>
+      </div></div></div>
+
+    </div>
+
+    </div>
+
   </article>
 
-  <article class="card section">
-    <div class="section-title" data-i18n="home.why.title">Why this bot</div>
-    <div class="home-hero__subtitle" style="margin:0 0 12px" data-i18n="home.why.subtitle">
-      A bot can have 200 commands and still be useless. Wolium is built around “daily value”.
-    </div>
+  <article class="card section fly-void">
+    <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner fly-frame fly-frame--tight">
+      <div class="section-title" data-i18n="home.why.title">Why this bot</div>
+      <div class="home-hero__subtitle" style="margin:8px 0 0" data-i18n="home.why.subtitle">A bot can have 200 commands and still be useless. Wolium is built around "daily value".</div>
+    </div></div></div>
 
     <div class="home-why">
-      <div class="card card-hover">
-        <h4 data-i18n="home.why.i1.title">Dashboard, not a spreadsheet</h4>
-        <p data-i18n="home.why.i1.text">UI is part of the product: charts, profiles, tooltips, quick navigation.</p>
-      </div>
-
-      <div class="card card-hover">
-        <h4 data-i18n="home.why.i2.title">Updates without pain</h4>
-        <p data-i18n="home.why.i2.text">New features show up fast (often without a bot restart).</p>
-      </div>
-
-      <div class="card card-hover">
-        <h4 data-i18n="home.why.i3.title">Community-first</h4>
-        <p data-i18n="home.why.i3.text">Ideas from users aren’t “noted”, they actually get implemented.</p>
-      </div>
-
-      <div class="card card-hover">
-        <h4 data-i18n="home.why.i4.title">Localization</h4>
-        <p data-i18n="home.why.i4.text">Bot supports 25 languages. Site supports RU/EN/ES/UA (you can contribute!).</p>
-      </div>
-
-      <div class="card card-hover">
-        <h4 data-i18n="home.why.i5.title">Privacy by design</h4>
-        <p data-i18n="home.why.i5.text">You decide what data is stored. You can delete it.</p>
-      </div>
-
-      <div class="card card-hover">
-        <h4 data-i18n="home.why.i6.title">Made by one dev since 2023</h4>
-        <p data-i18n="home.why.i6.text">No “corporate bot”. Just a long-running project that keeps improving.</p>
-      </div>
+      <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner">
+        <div class="card card-hover">
+          <h4 data-i18n="home.why.i1.title">Dashboard, not a spreadsheet</h4>
+          <p data-i18n="home.why.i1.text">UI is part of the product: charts, profiles, tooltips, quick navigation.</p>
+        </div>
+      </div></div></div>
+      <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner">
+        <div class="card card-hover">
+          <h4 data-i18n="home.why.i2.title">Updates without pain</h4>
+          <p data-i18n="home.why.i2.text">New features show up fast (often without a bot restart).</p>
+        </div>
+      </div></div></div>
+      <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner">
+        <div class="card card-hover">
+          <h4 data-i18n="home.why.i3.title">Community-first</h4>
+          <p data-i18n="home.why.i3.text">Ideas from users aren't "noted", they actually get implemented.</p>
+        </div>
+      </div></div></div>
+      <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner">
+        <div class="card card-hover">
+          <h4 data-i18n="home.why.i4.title">Localization</h4>
+          <p data-i18n="home.why.i4.text">Bot supports 25 languages. Site supports RU/EN/ES/UA (you can contribute!).</p>
+        </div>
+      </div></div></div>
+      <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner">
+        <div class="card card-hover">
+          <h4 data-i18n="home.why.i5.title">Privacy by design</h4>
+          <p data-i18n="home.why.i5.text">You decide what data is stored. You can delete it.</p>
+        </div>
+      </div></div></div>
+      <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner">
+        <div class="card card-hover">
+          <h4 data-i18n="home.why.i6.title">Made by one dev since 2023</h4>
+          <p data-i18n="home.why.i6.text">No "corporate bot". Just a long-running project that keeps improving.</p>
+        </div>
+      </div></div></div>
     </div>
   </article>
 
-  <article class="card section">
+  <article class="card section fly-void">
     <div class="home-cta">
-      <div>
-        <div class="section-title" style="margin:0 0 6px" data-i18n="home.cta.title">
-          Ready to try it on your server?
-        </div>
-        <div class="home-hero__subtitle" style="margin:0" data-i18n="home.cta.text">
-          Add Wolium, play with profiles and charts, and tell me what to improve next.
-        </div>
-      </div>
+      <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner fly-frame">
+        <div class="section-title" style="margin:0 0 6px" data-i18n="home.cta.title">Ready to try it on your server?</div>
+        <div class="home-hero__subtitle" style="margin:0" data-i18n="home.cta.text">Add Wolium, play with profiles and charts, and tell me what to improve next.</div>
+      </div></div></div>
 
       <div class="home-cta__actions">
-        <a class="btn btn--primary" href="https://discord.com/oauth2/authorize?client_id=1051105900116574250" target="_blank" rel="noopener" data-i18n="home.cta.add">
-          Add bot
-        </a>
-        <a class="btn" href="https://discord.gg/MXupeAApza" target="_blank" rel="noopener" data-i18n="home.cta.support">
-          Support server
-        </a>
-        <a class="btn" href="/rules/" data-i18n="home.cta.docs">Rules / docs</a>
+        <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner">
+          <a class="btn btn--primary" href="https://discord.com/oauth2/authorize?client_id=1051105900116574250" target="_blank" rel="noopener" data-i18n="home.cta.add">Add Wolium</a>
+        </div></div></div>
+
+        <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner">
+          <a class="btn" href="https://discord.gg/DhtQr4PGYM" target="_blank" rel="noopener" data-i18n="home.cta.support">Support server</a>
+        </div></div></div>
+
+        <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner">
+          <a class="btn" href="/rules/" data-i18n="home.cta.docs">Rules / docs</a>
+        </div></div></div>
       </div>
     </div>
   </article>
+
+  <div class="modal" id="homeModal" aria-hidden="true">
+    <div class="fly-anchor"><div class="fly-reveal fly-visible"><div class="fly-inner home-modal__fly">
+      <div class="modal__panel" style="max-width: 640px; margin: auto;">
+        <div class="modal__head home-modal__head">
+          <div class="modal__title home-modal__title" id="homeModalTitle"></div>
+          <button type="button" class="icon-btn home-modal__close" id="homeModalClose" aria-label="Close" data-i18n-attr="aria-label: ui.close">
+            <svg class="icon"><use href="#close"></use></svg>
+          </button>
+        </div>
+        <div style="padding: var(--pad); overflow-y: auto;" id="homeModalBody"></div>
+      </div>
+    </div></div></div>
+  </div>
+
 </div>

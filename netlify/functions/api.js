@@ -2,10 +2,24 @@ import { withClient } from "./_lib/db.js";
 import { requireAuth, requireLinkedUser } from "./_lib/auth.js";
 import { cleanupLimits, rateLimit } from "./_lib/limits.js";
 import { errorJson, json, method, readJson, clientIp, publicHeaders } from "./_lib/http.js";
-import { handleDirectKind, assertLeaderboardPayload } from "./_lib/direct.js";
+import { handleDirectKind, assertLeaderboardPayload, assertGuildAdmin, fetchGuildConfig } from "./_lib/direct.js";
 import { createAndMaybeWaitQueuedRequest, readQueuedRequest } from "./_lib/queue.js";
 import { assertKnownKind, assertPayloadSize, BOT_KINDS, DIRECT_KINDS, normalizePayload } from "./_lib/validation.js";
 import { intEnv } from "./_lib/env.js";
+import { cacheGet, cacheSet, cacheKey, statusKey, ttlSecondsFor, withCache } from "./_lib/cache.js";
+
+function guildIdentity(payload) {
+  const gid = payload.guild_id || payload.guildId || "unknown";
+  return `guild:${gid}`;
+}
+
+function identityFor(kind, auth, payload) {
+  if (kind === "public_stats") return "public";
+  if (kind === "leaderboard" && payload.scope === "server" && payload.guild_id) return guildIdentity(payload);
+  if (kind === "leaderboard") return "public";
+  if (kind.startsWith("guild_") || kind === "get_guild_config" || kind === "save_guild_config") return guildIdentity(payload);
+  return `user:${auth.authUserId}`;
+}
 
 async function handleStatus(client, req, body) {
   const auth = await requireAuth(req, client);
@@ -16,24 +30,33 @@ async function handleStatus(client, req, body) {
     limit: 60
   });
 
-  const row = await readQueuedRequest(client, auth, String(body.id || ""));
+  const id = String(body.id || "");
+  const sKey = statusKey(id);
+  const cached = await cacheGet(sKey);
+  if (cached) return json(cached);
+
+  const row = await readQueuedRequest(client, auth, id);
 
   if (row.status === "done") {
-    return json({
+    const payload = {
       ok: true,
       status: "done",
       id: row.id,
       result: row.result ?? null
-    });
+    };
+    await cacheSet(sKey, payload, intEnv("CACHE_TERMINAL_TTL_S", 3600, 30, 86_400));
+    return json(payload);
   }
 
   if (row.status === "error") {
-    return json({
+    const payload = {
       ok: true,
       status: "error",
       id: row.id,
       error: row.error || "BOT_ERROR"
-    });
+    };
+    await cacheSet(sKey, payload, intEnv("CACHE_TERMINAL_TTL_S", 3600, 30, 86_400));
+    return json(payload);
   }
 
   return json({
@@ -58,7 +81,9 @@ async function handleRequest(client, req, body) {
       limit: 40
     });
 
-    const result = await handleDirectKind(client, null, kind, payload);
+    const { value: result } = await withCache("public", kind, payload, () =>
+      handleDirectKind(client, null, kind, payload)
+    );
 
     return json({
       ok: true,
@@ -79,8 +104,26 @@ async function handleRequest(client, req, body) {
     assertLeaderboardPayload(payload);
   }
 
+  const identity = identityFor(kind, auth, payload);
+
   if (DIRECT_KINDS.has(kind)) {
-    const result = await handleDirectKind(client, auth, kind, payload);
+    if (kind === "get_guild_config") {
+      await assertGuildAdmin(payload.guild_id, payload.discord_token);
+
+      const { value: result } = await withCache(identity, kind, payload, () =>
+        fetchGuildConfig(client, payload.guild_id)
+      );
+
+      return json({
+        ok: true,
+        status: "done",
+        result
+      });
+    }
+
+    const { value: result } = await withCache(identity, kind, payload, () =>
+      handleDirectKind(client, auth, kind, payload)
+    );
 
     return json({
       ok: true,
@@ -95,7 +138,22 @@ async function handleRequest(client, req, body) {
       Math.max(1_000, Number(body.timeoutMs || 15_000) || 15_000)
     );
 
+    const key = cacheKey(identity, kind, payload);
+    const cached = await cacheGet(key);
+
+    if (cached) return json(cached);
+
     const data = await createAndMaybeWaitQueuedRequest(client, auth, kind, payload, timeoutMs);
+
+    if (data.status === "done" || data.status === "error") {
+      const ttl = ttlSecondsFor(kind, payload);
+      await cacheSet(key, data, ttl);
+
+      if (data.id) {
+        await cacheSet(statusKey(data.id), data, intEnv("CACHE_TERMINAL_TTL_S", 3600, 30, 86_400));
+      }
+    }
+
     return json(data);
   }
 

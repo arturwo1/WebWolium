@@ -6,44 +6,48 @@ import { attachInteractions } from "./chart-interaction.js";
 import { resolveType, normalizeType, TYPE_REGISTRY } from "./chart-types.js";
 
 export function initChart(queueRequest, opts = {}) {
-  const canvas = $("#chartCanvas");
-  const chartFrom = $("#chartFrom");
-  const chartTo = $("#chartTo");
-  const chartSum = $("#chartSum");
-  const chartPreset = $("#chartPreset");
-  const chartModal = $("#chartModal");
+  const root = opts.root ?? document;
+  const find = (sel) => $(sel, root);
+
+  const canvas = find("#chartCanvas");
+  const chartFrom = find("#chartFrom");
+  const chartTo = find("#chartTo");
+  const chartSum = find("#chartSum");
+  const chartPreset = find("#chartPreset");
+  const chartModal = find("#chartModal");
 
   const els = {
-    chartGuildId: $("#chartGuildId"),
-    chartChannelId: $("#chartChannelId"),
-    chartRoleId: $("#chartRoleId"),
-    chartContext: $("#chartContext"),
-    chartCommandName: $("#chartCommandName"),
-    chartVoiceMinDuration: $("#chartVoiceMinDuration"),
-    chartVoiceMaxDuration: $("#chartVoiceMaxDuration"),
-    chartActivityName: $("#chartActivityName"),
-    chartActivityStatus: $("#chartActivityStatus"),
-    chartActivityMinDuration: $("#chartActivityMinDuration"),
-    chartActivityMaxDuration: $("#chartActivityMaxDuration"),
-    chartActivityMore: $("#chartActivityMore"),
-    chartActivityTrack: $("#chartActivityTrack"),
-    chartActivityAlbum: $("#chartActivityAlbum"),
-    chartActivityArtist: $("#chartActivityArtist")
+    chartGuildId: find("#chartGuildId"),
+    chartChannelId: find("#chartChannelId"),
+    chartRoleId: find("#chartRoleId"),
+    chartContext: find("#chartContext"),
+    chartCommandName: find("#chartCommandName"),
+    chartVoiceMinDuration: find("#chartVoiceMinDuration"),
+    chartVoiceMaxDuration: find("#chartVoiceMaxDuration"),
+    chartActivityName: find("#chartActivityName"),
+    chartActivityStatus: find("#chartActivityStatus"),
+    chartActivityMinDuration: find("#chartActivityMinDuration"),
+    chartActivityMaxDuration: find("#chartActivityMaxDuration"),
+    chartActivityMore: find("#chartActivityMore"),
+    chartActivityTrack: find("#chartActivityTrack"),
+    chartActivityAlbum: find("#chartActivityAlbum"),
+    chartActivityArtist: find("#chartActivityArtist")
   };
 
   const optionEls = {
-    average: $("#chartOptionsAverage"),
-    compare: $("#chartOptionsCompare"),
-    delta: $("#chartOptionsDelta")
+    average: find("#chartOptionsAverage"),
+    compare: find("#chartOptionsCompare"),
+    delta: find("#chartOptionsDelta")
   };
 
-  const tip = $("#chartTooltip");
-  const tipTime = $("#tipTime");
-  const tipVal = $("#tipVal");
-  const tipPreview = $("#tipPreview");
+  const tip = find("#chartTooltip");
+  const tipTime = find("#tipTime");
+  const tipVal = find("#tipVal");
+  const tipPreview = find("#tipPreview");
 
   if (!canvas || !chartFrom || !chartTo) return null;
 
+  const alwaysVisible = !!opts.alwaysVisible;
   const debug = !!opts.debug;
   const guildId = String(opts.guildId ?? "").trim();
   const defaultDays = Number(opts.defaultDays ?? 30);
@@ -104,7 +108,7 @@ export function initChart(queueRequest, opts = {}) {
     const activeIds = new Set(resolveType(state.type).filterIds ?? []);
 
     for (const id of allFilterIds) {
-      const el = els[id] ?? $("#" + id);
+      const el = els[id] ?? find("#" + id);
       if (!el) continue;
 
       if (id === "chartActivityTrack" || id === "chartActivityAlbum" || id === "chartActivityArtist") {
@@ -166,7 +170,7 @@ export function initChart(queueRequest, opts = {}) {
   }
 
   async function refreshChartDataAndRender() {
-    chartModal.classList.add("loading");
+    chartModal?.classList.add("loading");
     const mySeq = ++reqSeq;
 
     const vFrom = parseLocalInput(chartFrom.value);
@@ -246,7 +250,7 @@ export function initChart(queueRequest, opts = {}) {
     drawer.renderWhenVisible();
 
     if (chartSum) chartSum.textContent = summaryText();
-    chartModal.classList.remove("loading");
+    chartModal?.classList.remove("loading");
   }
 
   function setRangeMs(fromMs, toMs) {
@@ -365,17 +369,17 @@ export function initChart(queueRequest, opts = {}) {
   });
 
   on(window, "resize", () => {
-    if (!chartModal || chartModal.classList.contains("is-open")) drawer.renderWhenVisible();
+    if (!chartModal || alwaysVisible || chartModal.classList.contains("is-open")) drawer.renderWhenVisible();
   });
 
-  if (chartModal) {
+  if (chartModal && !alwaysVisible) {
     const obs = new MutationObserver(() => {
       if (chartModal.classList.contains("is-open")) drawer.renderWhenVisible();
     });
     obs.observe(chartModal, { attributes: true, attributeFilter: ["class"] });
   }
 
-  document.querySelectorAll("[data-chart-type]").forEach((el) => {
+  root.querySelectorAll("[data-chart-type]").forEach((el) => {
     on(el, "click", (e) => {
       e.stopPropagation();
       applyType(String(el.getAttribute("data-chart-type") || ""));
