@@ -116,7 +116,7 @@ permalink: /
 
         <div class="home-features">
           {% for node in homeFeatures.wolium %}
-            {{ nodeRenderer.renderNode(node, "wolium", "admin", []) }}
+            {{ nodeRenderer.renderNode(node, "wolium", "admin", [], locales=i18n_locales) }}
           {% endfor %}
         </div>
       </div>
@@ -128,7 +128,7 @@ permalink: /
 
         <div class="home-features">
           {% for node in homeFeatures.wolium %}
-            {{ nodeRenderer.renderNode(node, "wolium", "user", []) }}
+            {{ nodeRenderer.renderNode(node, "wolium", "user", [], locales=i18n_locales) }}
           {% endfor %}
         </div>
       </div>
@@ -169,7 +169,7 @@ permalink: /
 
         <div class="home-features">
           {% for node in homeFeatures.webwolium %}
-            {{ nodeRenderer.renderNode(node, "webwolium", "admin", []) }}
+            {{ nodeRenderer.renderNode(node, "webwolium", "admin", [], locales=i18n_locales) }}
           {% endfor %}
         </div>
       </div>
@@ -181,7 +181,7 @@ permalink: /
 
         <div class="home-features">
           {% for node in homeFeatures.webwolium %}
-            {{ nodeRenderer.renderNode(node, "webwolium", "user", []) }}
+            {{ nodeRenderer.renderNode(node, "webwolium", "user", [], locales=i18n_locales) }}
           {% endfor %}
         </div>
       </div>

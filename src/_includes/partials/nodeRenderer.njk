@@ -2,27 +2,28 @@
 
 {% macro i18nKey(section, audience, fullPath, field) %}{{ fullPath | i18nKeyFilter(section, audience, field) }}{% endmacro %}
 
-{% macro renderNode(node, section, audience, idPath, addHoverClass, skipFlyWrap, forceStatic) %}
+{% macro renderNode(node, section, audience, idPath, addHoverClass, skipFlyWrap, forceStatic, locales) %}
   {% if audience in node.audience %}
   {% set fullPath = idPath | concat(node.id) %}
   {% set nodeKeyBase = "home." + section + "." + audience + "." + (fullPath | join(".")) %}
+  {% set titleKey = nodeKeyBase + ".title" %}
 
   {% if node.display == "leaf" %}
-    {{ leafRenderer.renderLeaf(node, section, audience, fullPath, addHoverClass, skipFlyWrap, forceStatic) }}
+    {{ leafRenderer.renderLeaf(node, section, audience, fullPath, addHoverClass, skipFlyWrap, forceStatic, locales) }}
 
   {% elif node.display == "carousel" %}
     <div class="home-node home-carousel" data-node-id="{{ node.id }}" data-node-display="carousel"
       {% if node.meta.infinite %}data-carousel-infinite{% endif %}>
       {% if node.title %}
         <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner fly-frame fly-frame--tight">
-          <div class="home-node__title" data-i18n="{{ nodeKeyBase }}.title">{{ node.id }}</div>
+          <div class="home-node__title" data-i18n="{{ titleKey }}">{{ titleKey | t }}</div>
         </div></div></div>
       {% endif %}
       <div class="home-carousel__track" data-carousel-track>
         {% for child in node.children %}
           {% if audience in child.audience %}
           <div class="home-carousel__slide" data-carousel-slide>
-            {{ renderNode(child, section, audience, fullPath, false, false, false) }}
+            {{ renderNode(child, section, audience, fullPath, false, false, false, locales) }}
           </div>
           {% endif %}
         {% endfor %}
@@ -33,22 +34,23 @@
     <div class="home-node home-accordion" data-node-id="{{ node.id }}" data-node-display="accordion">
       {% if node.title %}
         <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner fly-frame fly-frame--tight">
-          <div class="home-node__title" data-i18n="{{ nodeKeyBase }}.title">{{ node.id }}</div>
+          <div class="home-node__title" data-i18n="{{ titleKey }}">{{ titleKey | t }}</div>
         </div></div></div>
       {% endif %}
       {% for child in node.children %}
         {% if audience in child.audience %}
+        {% set childTeaserKey = i18nKey(section, audience, fullPath | concat(child.id), 'teaser') %}
         <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner{% if forceStatic %} fly-inner--static{% endif %}">
           <div class="home-accordion__item" data-accordion-item>
             <button type="button" class="home-accordion__trigger" data-accordion-trigger aria-expanded="false">
-              <span class="home-accordion__label" data-i18n="{{ i18nKey(section, audience, fullPath | concat(child.id), 'teaser') }}">{{ child.id }}</span>
+              <span class="home-accordion__label" data-i18n="{{ childTeaserKey }}">{{ childTeaserKey | t }}</span>
               <span class="home-accordion__chevron" aria-hidden="true">
                 <svg class="icon home-accordion__chevron-down"><use href="#down"></use></svg>
                 <svg class="icon home-accordion__chevron-up"><use href="#top"></use></svg>
               </span>
             </button>
             <div class="home-accordion__panel" data-accordion-panel hidden>
-              {{ renderNode(child, section, audience, fullPath, false, true, forceStatic) }}
+              {{ renderNode(child, section, audience, fullPath, false, true, forceStatic, locales) }}
             </div>
           </div>
         </div></div></div>
@@ -60,14 +62,14 @@
     <div class="home-node home-grid" data-node-id="{{ node.id }}" data-node-display="grid">
       {% if node.title %}
         <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner fly-frame fly-frame--tight">
-          <div class="home-node__title" data-i18n="{{ nodeKeyBase }}.title">{{ node.id }}</div>
+          <div class="home-node__title" data-i18n="{{ titleKey }}">{{ titleKey | t }}</div>
         </div></div></div>
       {% endif %}
       <div class="home-grid__cells">
         {% for child in node.children %}
           {% if audience in child.audience %}
           <div class="home-grid__cell">
-            {{ renderNode(child, section, audience, fullPath, true, false, forceStatic) }}
+            {{ renderNode(child, section, audience, fullPath, true, false, forceStatic, locales) }}
           </div>
           {% endif %}
         {% endfor %}
@@ -79,8 +81,9 @@
       <div class="home-node-tabs__bar" data-node-tabs-bar>
         {% for child in node.children %}
           {% if audience in child.audience %}
+          {% set childTeaserKey = i18nKey(section, audience, fullPath | concat(child.id), 'teaser') %}
           <button type="button" class="home-node-tabs__btn{% if loop.first %} is-active{% endif %}" data-node-tabs-btn data-target="{{ child.id }}">
-            <span data-i18n="{{ i18nKey(section, audience, fullPath | concat(child.id), 'teaser') }}">{{ child.id }}</span>
+            <span data-i18n="{{ childTeaserKey }}">{{ childTeaserKey | t }}</span>
           </button>
           {% endif %}
         {% endfor %}
@@ -89,7 +92,7 @@
         {% for child in node.children %}
           {% if audience in child.audience %}
           <div class="home-node-tabs__panel{% if loop.first %} is-active{% endif %}" data-node-tabs-panel="{{ child.id }}">
-            {{ renderNode(child, section, audience, fullPath, false, false, forceStatic) }}
+            {{ renderNode(child, section, audience, fullPath, false, false, forceStatic, locales) }}
           </div>
           {% endif %}
         {% endfor %}
@@ -100,14 +103,14 @@
     <div class="home-node home-bento" data-node-id="{{ node.id }}" data-node-display="bento">
       {% if node.title %}
         <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner fly-frame fly-frame--tight">
-          <div class="home-node__title" data-i18n="{{ nodeKeyBase }}.title">{{ node.id }}</div>
+          <div class="home-node__title" data-i18n="{{ titleKey }}">{{ titleKey | t }}</div>
         </div></div></div>
       {% endif %}
       <div class="home-bento__cells">
         {% for child in node.children %}
           {% if audience in child.audience %}
           <div class="home-bento__cell" data-bento-size="{{ child.meta.bentoSize | default('1x1') }}">
-            {{ renderNode(child, section, audience, fullPath, false, false, forceStatic) }}
+            {{ renderNode(child, section, audience, fullPath, false, false, forceStatic, locales) }}
           </div>
           {% endif %}
         {% endfor %}
@@ -118,7 +121,7 @@
     <div class="home-node home-timeline" data-node-id="{{ node.id }}" data-node-display="timeline">
       {% if node.title %}
         <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner fly-frame fly-frame--tight">
-          <div class="home-node__title" data-i18n="{{ nodeKeyBase }}.title">{{ node.id }}</div>
+          <div class="home-node__title" data-i18n="{{ titleKey }}">{{ titleKey | t }}</div>
         </div></div></div>
       {% endif %}
       <div class="home-timeline__track">
@@ -127,7 +130,7 @@
           <div class="home-timeline__step">
             <div class="home-timeline__dot" aria-hidden="true"></div>
             <div class="home-timeline__content">
-              {{ renderNode(child, section, audience, fullPath, false, false, forceStatic) }}
+              {{ renderNode(child, section, audience, fullPath, false, false, forceStatic, locales) }}
             </div>
           </div>
           {% endif %}

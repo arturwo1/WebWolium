@@ -87,7 +87,7 @@ export async function initServerPage(sb) {
 
   let discordToken = null;
   try {
-    discordToken = await getDiscordProviderToken(sb);
+    discordToken = await getDiscordProviderToken(sb, { forceRefresh: false });
   } catch (error) {
     hud.error(error);
     return logout(error);
