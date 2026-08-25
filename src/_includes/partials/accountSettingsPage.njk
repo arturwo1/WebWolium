@@ -1,11 +1,11 @@
-{% macro renderAccountSettingsPage(interactive, prefill) %}
+{% macro renderAccountSettingsPage(interactive, prefill, locales) %}
 <article class="card section">
   <h2 class="section-title" data-i18n="settings.display">Display</h2>
 
   <div class="kv" style="gap:10px">
     <label class="k"{% if interactive %} for="lang"{% endif %} data-i18n="language">Language</label>
     <select class="input" data-field="lang-select"{% if interactive %} id="lang" data-lang-select{% else %} disabled{% endif %}>
-      {% for code in i18n_locales %}
+      {% for code in locales %}
         <option value="{{ code }}"{% if not interactive and prefill and code == prefill.lang %} selected{% endif %}>{{ code }}</option>
       {% endfor %}
     </select>

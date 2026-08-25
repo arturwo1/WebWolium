@@ -2,14 +2,14 @@
 
 {% macro i18nKey(section, audience, fullPath, field) %}{{ fullPath | i18nKeyFilter(section, audience, field) }}{% endmacro %}
 
-{% macro renderNode(node, section, audience, idPath, addHoverClass, skipFlyWrap, forceStatic) %}
+{% macro renderNode(node, section, audience, idPath, addHoverClass, skipFlyWrap, forceStatic, locales) %}
   {% if audience in node.audience %}
   {% set fullPath = idPath | concat(node.id) %}
   {% set nodeKeyBase = "home." + section + "." + audience + "." + (fullPath | join(".")) %}
   {% set titleKey = nodeKeyBase + ".title" %}
 
   {% if node.display == "leaf" %}
-    {{ leafRenderer.renderLeaf(node, section, audience, fullPath, addHoverClass, skipFlyWrap, forceStatic) }}
+    {{ leafRenderer.renderLeaf(node, section, audience, fullPath, addHoverClass, skipFlyWrap, forceStatic, locales) }}
 
   {% elif node.display == "carousel" %}
     <div class="home-node home-carousel" data-node-id="{{ node.id }}" data-node-display="carousel"
@@ -23,7 +23,7 @@
         {% for child in node.children %}
           {% if audience in child.audience %}
           <div class="home-carousel__slide" data-carousel-slide>
-            {{ renderNode(child, section, audience, fullPath, false, false, false) }}
+            {{ renderNode(child, section, audience, fullPath, false, false, false, locales) }}
           </div>
           {% endif %}
         {% endfor %}
@@ -50,7 +50,7 @@
               </span>
             </button>
             <div class="home-accordion__panel" data-accordion-panel hidden>
-              {{ renderNode(child, section, audience, fullPath, false, true, forceStatic) }}
+              {{ renderNode(child, section, audience, fullPath, false, true, forceStatic, locales) }}
             </div>
           </div>
         </div></div></div>
@@ -69,7 +69,7 @@
         {% for child in node.children %}
           {% if audience in child.audience %}
           <div class="home-grid__cell">
-            {{ renderNode(child, section, audience, fullPath, true, false, forceStatic) }}
+            {{ renderNode(child, section, audience, fullPath, true, false, forceStatic, locales) }}
           </div>
           {% endif %}
         {% endfor %}
@@ -92,7 +92,7 @@
         {% for child in node.children %}
           {% if audience in child.audience %}
           <div class="home-node-tabs__panel{% if loop.first %} is-active{% endif %}" data-node-tabs-panel="{{ child.id }}">
-            {{ renderNode(child, section, audience, fullPath, false, false, forceStatic) }}
+            {{ renderNode(child, section, audience, fullPath, false, false, forceStatic, locales) }}
           </div>
           {% endif %}
         {% endfor %}
@@ -110,7 +110,7 @@
         {% for child in node.children %}
           {% if audience in child.audience %}
           <div class="home-bento__cell" data-bento-size="{{ child.meta.bentoSize | default('1x1') }}">
-            {{ renderNode(child, section, audience, fullPath, false, false, forceStatic) }}
+            {{ renderNode(child, section, audience, fullPath, false, false, forceStatic, locales) }}
           </div>
           {% endif %}
         {% endfor %}
@@ -130,7 +130,7 @@
           <div class="home-timeline__step">
             <div class="home-timeline__dot" aria-hidden="true"></div>
             <div class="home-timeline__content">
-              {{ renderNode(child, section, audience, fullPath, false, false, forceStatic) }}
+              {{ renderNode(child, section, audience, fullPath, false, false, forceStatic, locales) }}
             </div>
           </div>
           {% endif %}

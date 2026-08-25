@@ -5,6 +5,7 @@
 {% import "partials/leaderboardDemo.njk" as leaderboardDemo %}
 {% import "partials/chartWidget.njk" as chartWidget %}
 
+{% macro renderDemoWidget(node, leafKeyBase, locales) %}
   {% set teaserKey = leafKeyBase + ".teaser" %}
   {% if node.meta.widget == "profile-demo" %}
     <div class="home-shot home-shot--profile-demo" data-widget="profile-demo">
@@ -27,7 +28,7 @@
     </div>
   {% elif node.meta.widget == "settings-account-demo" %}
     <div class="home-shot home-shot--settings-account-demo" data-widget="settings-account-demo">
-      {{ accountSettingsPage.renderAccountSettingsPage(false, demoAccountSettingsSeed) }}
+      {{ accountSettingsPage.renderAccountSettingsPage(false, demoAccountSettingsSeed, locales) }}
     </div>
   {% elif node.meta.widget == "chart-demo" %}
     <div class="home-shot home-shot--chart-demo">
@@ -108,7 +109,7 @@
 {% endif %}
 {% endmacro %}
 
-{% macro renderLeaf(node, section, audience, fullPath, addHoverClass, skipFlyWrap, forceStatic) %}
+{% macro renderLeaf(node, section, audience, fullPath, addHoverClass, skipFlyWrap, forceStatic, locales) %}
 {% set commandLabel = node.meta.command %}
 {% set leafKeyBase = "home." + section + "." + audience + "." + (fullPath | join(".")) %}
 {% set teaserKey = leafKeyBase + ".teaser" %}
@@ -129,7 +130,7 @@
     </div></div></div>
 
     <div class="fly-anchor"><div class="fly-reveal"><div class="fly-inner fly-inner--static home-demo-split__demo">
-      {{ renderDemoWidget(node, leafKeyBase) }}
+      {{ renderDemoWidget(node, leafKeyBase, locales) }}
     </div></div></div>
   </div>
 
