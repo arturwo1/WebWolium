@@ -102,16 +102,8 @@ async function refreshDiscordToken(sb, providerRefreshToken) {
 }
 
 export async function initDiscordAuth(sb) {
-  const session = await getSession(sb);
-
-  if (!session) return;
-
-  const refreshToken = cachedRefreshToken || session.provider_refresh_token;
-
-  if (!refreshToken) return;
-
   try {
-    return await refreshDiscordToken(sb, refreshToken);
+    return await getDiscordProviderToken(sb, { forceRefresh: true });
   } catch (err) {
     maybeEmitDiscordAuthLost(err);
     throw err;
@@ -145,33 +137,22 @@ export async function initDiscordTokenCache(sb) {
   }
 }
 
-export async function getDiscordProviderToken(sb) {
-  if (isCachedTokenValid()) return cachedAccessToken;
+export async function getDiscordProviderToken(sb, { forceRefresh = false } = {}) {
+  if (!forceRefresh && isCachedTokenValid()) return cachedAccessToken;
 
   const session = await getSession(sb);
 
-  if (session.provider_token) {
+  if (!forceRefresh && session.provider_token) {
     cachedAccessToken = session.provider_token;
     cachedRefreshToken = session.provider_refresh_token || cachedRefreshToken;
     cachedExpiresAt = Date.now() + 3600 * 1000;
-
     return cachedAccessToken;
   }
 
   const refreshToken = cachedRefreshToken || session.provider_refresh_token;
+  if (!refreshToken) throw authError("NO_REFRESH_TOKEN", "NO_REFRESH_TOKEN");
 
-  if (!refreshToken) {
-    const err = authError("NO_REFRESH_TOKEN", "NO_REFRESH_TOKEN");
-    maybeEmitDiscordAuthLost(err);
-    throw err;
-  }
-
-  try {
-    return await refreshDiscordToken(sb, refreshToken);
-  } catch (err) {
-    maybeEmitDiscordAuthLost(err);
-    throw err;
-  }
+  return refreshDiscordToken(sb, refreshToken);
 }
 
 export async function discordApiFetch(sb, path, options = {}) {
@@ -179,7 +160,7 @@ export async function discordApiFetch(sb, path, options = {}) {
     ? path
     : `${DISCORD_API_BASE}${path}`;
 
-  let token = await getDiscordProviderToken(sb);
+  let token = await getDiscordProviderToken(sb, { forceRefresh: false });
 
   let res = await fetch(url, {
     ...options,
@@ -192,7 +173,7 @@ export async function discordApiFetch(sb, path, options = {}) {
   if (res.status === 401) {
     clearDiscordTokenCache();
 
-    token = await getDiscordProviderToken(sb);
+    token = await getDiscordProviderToken(sb, { forceRefresh: true });
 
     res = await fetch(url, {
       ...options,

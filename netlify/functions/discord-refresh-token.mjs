@@ -54,6 +54,19 @@ export async function handler(event) {
 
   const user = data.user;
 
+  const lockKey = user.id;
+
+  if (refreshLocks.has(lockKey)) {
+    await refreshLocks.get(lockKey);
+  }
+
+  let resolveLock;
+  const lockPromise = new Promise(resolve => {
+    resolveLock = resolve;
+  });
+
+  refreshLocks.set(lockKey, lockPromise);
+
   const basic = Buffer.from(
     `${getEnv("DISCORD_CLIENT_ID")}:${getEnv("DISCORD_CLIENT_SECRET")}`
   ).toString("base64");
@@ -62,46 +75,52 @@ export async function handler(event) {
   form.set("grant_type", "refresh_token");
   form.set("refresh_token", refreshToken);
 
-  const res = await fetch("https://discord.com/api/v10/oauth2/token", {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${basic}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: form,
-  });
-
-  const token = await res.json().catch(() => null);
-
-  if (!res.ok || !token?.access_token || !token?.refresh_token) {
-    return json(500, {
-      error: "DISCORD_REFRESH_FAILED",
-      code: "DISCORD_REFRESH_FAILED",
-      discord_status: res.status,
-      discord_body: token,
-    });
-  }
-
-  const { error: upsertError } = await supabase
-    .from("discord_tokens")
-    .upsert(
-      {
-        user_id: user.id,
-        refresh_token: token.refresh_token,
+  try {
+    const res = await fetch("https://discord.com/api/v10/oauth2/token", {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${basic}`,
+        "Content-Type": "application/x-www-form-urlencoded",
       },
-      { onConflict: "user_id" }
-    );
-
-  if (upsertError) {
-    return json(500, {
-      error: "SUPABASE_WRITE_FAILED",
-      code: "SUPABASE_WRITE_FAILED",
+      body: form,
     });
-  }
 
-  return json(200, {
-    access_token: token.access_token,
-    refresh_token: token.refresh_token,
-    expires_in: token.expires_in,
-  });
+    const token = await res.json().catch(() => null);
+
+    if (!res.ok || !token?.access_token || !token?.refresh_token) {
+      return json(500, {
+        error: "DISCORD_REFRESH_FAILED",
+        code: "DISCORD_REFRESH_FAILED",
+        discord_status: res.status,
+        discord_body: token,
+      });
+    }
+
+    const { error: upsertError } = await supabase
+      .from("discord_tokens")
+      .upsert(
+        {
+          user_id: user.id,
+          refresh_token: token.refresh_token,
+        },
+        { onConflict: "user_id" }
+      );
+
+    if (upsertError) {
+      return json(500, {
+        error: "SUPABASE_WRITE_FAILED",
+        code: "SUPABASE_WRITE_FAILED",
+      });
+    }
+
+    return json(200, {
+      access_token: token.access_token,
+      refresh_token: token.refresh_token,
+      expires_in: token.expires_in,
+    });
+
+  } finally {
+    resolveLock();
+    refreshLocks.delete(lockKey);
+  }
 }
