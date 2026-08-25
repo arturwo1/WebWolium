@@ -1,4 +1,4 @@
-const localeModules = import.meta.glob("../../locales/*.json");
+const localeModules = import.meta.glob("@/locales/*.json");
 
 const STORAGE_KEY = "lang";
 const FALLBACK = "en";

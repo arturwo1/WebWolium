@@ -8,6 +8,7 @@ import EleventyVitePlugin from "@11ty/eleventy-plugin-vite";
 import { eleventyImageTransformPlugin } from "@11ty/eleventy-img";
 import { DateTime } from "luxon";
 import { i18nKey } from "./src/_data/i18nKeyBuilder.js";
+import { t } from "./src/_data/i18nText.js";
 
 export default function (eleventyConfig) {
   eleventyConfig.setUseGitIgnore(false);
@@ -27,6 +28,8 @@ export default function (eleventyConfig) {
   eleventyConfig.addFilter("i18nKeyFilter", (fullPath, section, audience, field) => {
     return i18nKey(section, audience, fullPath, field);
   });
+
+  eleventyConfig.addFilter("t", (key) => t(key));
 
   eleventyConfig.addFilter("stripSlash", (str) => {
     return typeof str === "string" ? str.replace(/^\//, "") : str;
