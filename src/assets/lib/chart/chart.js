@@ -24,6 +24,8 @@ export function initChart(queueRequest, opts = {}) {
     chartCommandName: find("#chartCommandName"),
     chartVoiceMinDuration: find("#chartVoiceMinDuration"),
     chartVoiceMaxDuration: find("#chartVoiceMaxDuration"),
+    chartJumpBox: find("#chartJumpBox"),
+    chartJump: find("#chartJump"),
     chartActivityName: find("#chartActivityName"),
     chartActivityStatus: find("#chartActivityStatus"),
     chartActivityMinDuration: find("#chartActivityMinDuration"),
@@ -328,6 +330,8 @@ export function initChart(queueRequest, opts = {}) {
   on(els.chartVoiceMaxDuration, "input", () => scheduleRefresh(300));
   on(els.chartVoiceMinDuration, "change", onManualRangeEdit);
   on(els.chartVoiceMaxDuration, "change", onManualRangeEdit);
+
+  on(els.chartJumpBox, "change", onManualRangeEdit);
 
   on(els.chartActivityName, "input", () => scheduleRefresh(300));
   on(els.chartActivityName, "change", onManualRangeEdit);
