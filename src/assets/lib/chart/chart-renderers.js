@@ -311,14 +311,60 @@ export function renderUserMessagePreview(p, viewer) {
 
 export function renderUserVoicePreview(p) {
   const meta = p?.meta ?? {};
-  const { guildName, channelName } = resolveGuildChannel(meta, { guild: t("common.server"), channel: t("common.channel") });
+
+  const guildName = firstNonEmpty(meta.guild_name, meta.guild_id) || t("common.server");
+
+  const beforeChannelName = firstNonEmpty(meta.before_channel_name, meta.before_channel_id);
+  const afterChannelName = firstNonEmpty(meta.after_channel_name, meta.after_channel_id);
+
+  const bucketCount = p?.count ?? meta?.total_bucket_count ?? 1;
+  const isBucket = bucketCount > 1;
+
+  const distinctChannels = meta?.distinct_channels_in_bucket ?? null;
+  const jumps = meta?.jumps_in_bucket ?? 0;
+
+  let channelName;
+  let badgeLabel = null;
+
+  if (isBucket && distinctChannels > 1) {
+    channelName = t("chart.preview.channels_count", { count: distinctChannels });
+    if (jumps > 0) badgeLabel = t("chart.preview.jumps_count", { count: jumps });
+  } else if (!isBucket && afterChannelName && afterChannelName !== beforeChannelName) {
+    channelName = `${beforeChannelName} → ${afterChannelName}`;
+  } else {
+    channelName = beforeChannelName || afterChannelName || t("common.channel");
+  }
+
+  const start = isBucket
+    ? (p?.bucket?.start ?? null)
+    : (meta.started_at_ms ?? p?.bucket?.start ?? null);
+  const end = isBucket
+    ? (p?.bucket?.end ?? null)
+    : (meta.ended_at_ms ?? p?.bucket?.end ?? null);
+  const duration = isBucket
+    ? (p?.y ?? meta.total_bucket_duration ?? null)
+    : (meta.duration_seconds ?? p?.y ?? null);
+
+  const channelUrl = firstNonEmpty(meta.after_channel_url, meta.before_channel_url);
 
   return `
     ${renderSourceBar(guildName, channelName)}
-    ${renderTimingFooter({
-    start: p?.bucket?.start ?? null,
-    end: p?.bucket?.end ?? null
-  })}
+    ${renderTimingFooter({ start, end, count: bucketCount, duration, badgeLabel })}
+
+    ${channelUrl && !isBucket ? `
+      <div class="msg-preview__hint">
+        <span class="kbd js-preview-click">${t("chart.preview.click")}</span>
+        <span class="msg-preview__hintText">${t("chart.preview.discord")}</span>
+      </div>
+    ` : channelUrl ? `
+      <div class="msg-preview__hint">
+        <span class="kbd">${t("chart.preview.scroll")}</span>
+        <span class="msg-preview__hintText">${t("chart.preview.scroll_down")}</span>
+      </div>
+    ` : `
+      <div class="msg-preview__hint">
+        <span class="msg-preview__hintText">${t("chart.preview.unavailable")}</span>
+      </div>`}
   `;
 }
 
@@ -505,7 +551,62 @@ export function renderGuildMessagePreview(p) {
 }
 
 export function renderGuildVoicePreview(p) {
-  return renderGuildBucketStat(p);
+  const meta = p?.meta ?? {};
+
+  const guildName = firstNonEmpty(meta.guild_name, meta.guild_id) || t("common.server");
+
+  const beforeChannelName = firstNonEmpty(meta.before_channel_name, meta.before_channel_id);
+  const afterChannelName = firstNonEmpty(meta.after_channel_name, meta.after_channel_id);
+
+  const bucketCount = p?.count ?? meta?.total_bucket_count ?? 1;
+  const isBucket = bucketCount > 1;
+
+  const distinctChannels = meta?.distinct_channels_in_bucket ?? null;
+  const jumps = meta?.jumps_in_bucket ?? 0;
+
+  let channelName;
+  let badgeLabel = null;
+
+  if (isBucket && distinctChannels > 1) {
+    channelName = t("chart.preview.channels_count", { count: distinctChannels });
+    if (jumps > 0) badgeLabel = t("chart.preview.jumps_count", { count: jumps });
+  } else if (!isBucket && afterChannelName && afterChannelName !== beforeChannelName) {
+    channelName = `${beforeChannelName} → ${afterChannelName}`;
+  } else {
+    channelName = beforeChannelName || afterChannelName || t("common.channel");
+  }
+
+  const start = isBucket
+    ? (p?.bucket?.start ?? null)
+    : (meta.started_at_ms ?? p?.bucket?.start ?? null);
+  const end = isBucket
+    ? (p?.bucket?.end ?? null)
+    : (meta.ended_at_ms ?? p?.bucket?.end ?? null);
+  const duration = isBucket
+    ? (p?.y ?? meta.total_bucket_duration ?? null)
+    : (meta.duration_seconds ?? p?.y ?? null);
+
+  const channelUrl = firstNonEmpty(meta.after_channel_url, meta.before_channel_url);
+
+  return `
+    ${renderSourceBar(guildName, channelName)}
+    ${renderTimingFooter({ start, end, count: bucketCount, duration, badgeLabel })}
+
+    ${channelUrl && !isBucket ? `
+      <div class="msg-preview__hint">
+        <span class="kbd js-preview-click">${t("chart.preview.click")}</span>
+        <span class="msg-preview__hintText">${t("chart.preview.discord")}</span>
+      </div>
+    ` : channelUrl ? `
+      <div class="msg-preview__hint">
+        <span class="kbd">${t("chart.preview.scroll")}</span>
+        <span class="msg-preview__hintText">${t("chart.preview.scroll_down")}</span>
+      </div>
+    ` : `
+      <div class="msg-preview__hint">
+        <span class="msg-preview__hintText">${t("chart.preview.unavailable")}</span>
+      </div>`}
+  `;
 }
 
 export function renderGuildActivityPreview(p) {

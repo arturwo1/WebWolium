@@ -56,7 +56,7 @@ export const TYPE_REGISTRY = {
   user_voice: {
     kind: "user_voice_series",
 
-    filterIds: ["chartGuildId", "chartChannelId", "chartVoiceMinDuration", "chartVoiceMaxDuration"],
+    filterIds: ["chartGuildId", "chartChannelId", "chartVoiceMinDuration", "chartVoiceMaxDuration", "chartJumpBox"],
 
     buildPayload({ from, to, bucketMs, limit }, els) {
       return {
@@ -67,7 +67,8 @@ export const TYPE_REGISTRY = {
         guild_id: els.chartGuildId?.value || "",
         channel_id: els.chartChannelId?.value || "",
         min_duration_seconds: readPositiveInt(els.chartVoiceMinDuration),
-        max_duration_seconds: readPositiveInt(els.chartVoiceMaxDuration)
+        max_duration_seconds: readPositiveInt(els.chartVoiceMaxDuration),
+        only_jumps: els.chartJump?.checked || false
       };
     },
 
@@ -85,7 +86,13 @@ export const TYPE_REGISTRY = {
       return t("chart.summary.time", { value: formatDuration(sum) });
     },
 
-    onPointClick() { }
+    onPointClick(point) {
+      if (Math.round(point?.count ?? point?.meta?.total_bucket_count) !== 1) return;
+      const url = point?.meta?.after_channel_url || point?.meta?.before_channel_url;
+      if (url && typeof url === "string" && (url.startsWith("http://") || url.startsWith("https://"))) {
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
+    }
   },
 
   user_activities: {
@@ -212,7 +219,7 @@ export const TYPE_REGISTRY = {
   guild_voice: {
     kind: "guild_voice_series",
 
-    filterIds: ["chartChannelId", "chartRoleId", "chartVoiceMinDuration", "chartVoiceMaxDuration"],
+    filterIds: ["chartChannelId", "chartRoleId", "chartVoiceMinDuration", "chartVoiceMaxDuration", "chartJumpBox"],
 
     buildPayload({ from, to, bucketMs, limit, guildId }, els) {
       return {
@@ -224,7 +231,8 @@ export const TYPE_REGISTRY = {
         channel_id: els.chartChannelId?.value || "",
         role_id: els.chartRoleId?.value || "",
         min_duration_seconds: readPositiveInt(els.chartVoiceMinDuration),
-        max_duration_seconds: readPositiveInt(els.chartVoiceMaxDuration)
+        max_duration_seconds: readPositiveInt(els.chartVoiceMaxDuration),
+        only_jumps: els.chartJump?.checked || false
       };
     },
 
@@ -242,7 +250,13 @@ export const TYPE_REGISTRY = {
       return t("chart.summary.time", { value: formatDuration(sum) });
     },
 
-    onPointClick() { }
+    onPointClick(point) {
+      if (Math.round(point?.count ?? point?.meta?.total_bucket_count) !== 1) return;
+      const url = point?.meta?.after_channel_url || point?.meta?.before_channel_url;
+      if (url && typeof url === "string" && (url.startsWith("http://") || url.startsWith("https://"))) {
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
+    }
   },
 
   guild_activities: {
