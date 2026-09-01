@@ -7,6 +7,8 @@ export function setLoggedInUI(session, cachedIdentity) {
   const form = $("#userSearch");
   const search = $("#searchUser");
 
+  if (!btnLogin || !userBox || !avatarImg || !form || !search) return;
+
   const meta = session?.user?.user_metadata || {};
   const url = meta.avatar_url || meta.picture || cachedIdentity?.avatar || null;
 

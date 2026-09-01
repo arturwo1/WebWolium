@@ -96,7 +96,12 @@ async function syncAuthUI(sb) {
 async function initCurrentPage(sb, session) {
   const pid = pageId();
 
-  if (pid === "profile") {
+  if (pid === "login") {
+    if (started.has("login")) return;
+    started.add("login");
+    await showGate();
+    return;
+  } else if (pid === "profile") {
     if (!session) return;
     if (started.has("profile")) return;
     started.add("profile");

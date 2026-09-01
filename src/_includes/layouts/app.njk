@@ -144,23 +144,25 @@
 
   {% include "partials/gate.njk" %}
 
-  {% if pageId == "home" %}
+  {% if pageId in ["home"] %}
     <div class="void-bg" id="voidBg"><canvas id="voidDots"></canvas></div>
     {% include "partials/homeStickyTabs.njk" %}
   {% endif %}
 
-  <div class="app" id="appShell" hidden>
-    {% include "partials/topbar.njk" %}
-    {% include "partials/sidebar.njk" %}
+  {% if pageId not in ["login"] %}
+    <div class="app" id="appShell" hidden>
+      {% include "partials/topbar.njk" %}
+      {% include "partials/sidebar.njk" %}
 
-    <main class="main" id="pageRoot">
-      <div class="page-content" id="pageContent">
-        {{ content | safe }}
-      </div>
-    </main>
+      <main class="main" id="pageRoot">
+        <div class="page-content" id="pageContent">
+          {{ content | safe }}
+        </div>
+      </main>
 
-    <div class="overlay" id="overlay"></div>
-  </div>
+      <div class="overlay" id="overlay"></div>
+    </div>
+  {% endif %}
 
   {% if pageId in ["home", "profile", "server"] %}
     {% include "partials/modals.njk" %}
