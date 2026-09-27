@@ -464,7 +464,7 @@
   "home.wolium.user.tools.translate.short": "Right-click any message, or use the command, and I'll translate it instantly.",
   "home.wolium.user.fun.teaser": "Say anything through me",
   "home.wolium.user.fun.short": "Give me any text, I'll post it as my own message. 50 Sparks (₩).",
-  "home.wolium.user.fun.full": "Type any message — to a specific channel if you want, as a reply if you want — and I'll post it like it's my own words. Costs 50 Sparks (₩). Try to sneak in @here or @everyone and you'll eat a penalty instead: 125 Sparks (₩) from your bank and 125 in cash, 250 total — and the message never sends. Nice try. And go easy on me — whatever you type, I have to say it, so please don't make me the reason someone's feelings get hurt.",
+  "home.wolium.user.fun.full": "Type any message — to a specific channel if you want, as a reply if you want — and I'll post it like it's my own words. Costs 50 Sparks (₩). And go easy on me — whatever you type, I have to say it, so please don't make me the reason someone's feelings get hurt.",
   "home.wolium.user.profile-user-view.teaser": "Your Discord profile",
   "home.wolium.user.profile-user-view.short": "Avatar, level, XP, balance, messages, voice time — one card. Keep it private or flex it in the channel.",
   "home.wolium.user.profile-user-view.full": "Everything I track about you in one card: level and XP progress, currency, message and voice activity, basic server info. You can check someone else's too — but only if your privacy is public, and theirs is too. No exceptions, don't ask.",
