@@ -1,6 +1,6 @@
 export async function startOAuthLogin(sb, {
   provider = "discord",
-  redirectPath = "/profile/"
+  redirectPath = window.location.pathname + window.location.search
 } = {}) {
   if (!sb) throw new Error("SUPABASE_NOT_CONFIGURED");
 
