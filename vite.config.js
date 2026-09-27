@@ -11,12 +11,12 @@ export default defineConfig({
           if (req.url.includes('.') || req.url.startsWith('/@')) {
             return next();
           }
-          const cleanUrl = req.url.split('?')[0]; 
+          const cleanUrl = req.url.split('?')[0];
           const absolutePath = path.resolve(process.cwd(), '_site', cleanUrl.substring(1));
           if (fs.existsSync(absolutePath) && fs.statSync(absolutePath).isDirectory()) {
             req.url = cleanUrl + '/index.html' + (req.url.includes('?') ? '?' + req.url.split('?')[1] : '');
           }
-          
+
           next();
         });
       }

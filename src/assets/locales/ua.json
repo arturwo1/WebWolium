@@ -1,5 +1,6 @@
 {
   "app.supabase_not_configured": "Supabase не налаштований",
+  "app.login_failed": "Не вдалося увійти. Спробуйте ще раз.",
   "chart.demo.scope_profile": "Мій профіль",
   "chart.demo.scope_server": "Сервер",
   "chart.no_data": "Нема данних за обраний період",

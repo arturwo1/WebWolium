@@ -1,5 +1,6 @@
 {
   "app.supabase_not_configured": "Supabase nesukonfigūruotas",
+  "app.login_failed": "Prisijungti nepavyko. Bandykite dar kartą.",
   "chart.demo.scope_profile": "Mano profilis",
   "chart.demo.scope_server": "Serveris",
   "chart.no_data": "Nėra duomenų pasirinktam laikotarpiui",

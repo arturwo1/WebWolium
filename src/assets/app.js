@@ -2,6 +2,7 @@ import CFG from "./config.js";
 
 import {
   bindHeadImages,
+  isDiscord,
   createSupabaseClient,
   initDrawer,
   initDropdown,
@@ -12,6 +13,7 @@ import {
   setLoggedInUI,
   showGate,
   showShell,
+  loginViaDiscordActivity,
   startOAuthLogin,
   highlightNav,
   initConsent,
@@ -35,6 +37,41 @@ import { initServerPage } from "./pages/server.js";
 import { initPageTransitions } from "@/lib/ui/pageTransitions.js";
 
 import "highlight.js/styles/github-dark.css";
+
+import { DiscordSDK } from "@discord/embedded-app-sdk";
+
+const DISCORD_PARAM_KEYS = ["frame_id", "instance_id", "platform"];
+
+const params = new URLSearchParams(window.location.search);
+const isOnDiscordHost = window.location.host.includes("discordsays.com");
+
+if (params.has("frame_id")) {
+  for (const key of DISCORD_PARAM_KEYS) {
+    if (params.has(key)) sessionStorage.setItem(`discord_${key}`, params.get(key));
+  }
+} else if (isOnDiscordHost) {
+  let changed = false;
+  for (const key of DISCORD_PARAM_KEYS) {
+    const cached = sessionStorage.getItem(`discord_${key}`);
+    if (cached && !params.has(key)) {
+      params.set(key, cached);
+      changed = true;
+    }
+  }
+  if (changed) {
+    const newUrl = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
+    history.replaceState(null, "", newUrl);
+  }
+}
+
+let discordSdk = null;
+if (params.has("frame_id") && params.has("instance_id")) {
+  try {
+    discordSdk = new DiscordSDK("1051105900116574250");
+  } catch (e) {
+    console.warn("[app] DiscordSDK init skipped:", e);
+  }
+}
 
 await initI18n();
 initConsent();
@@ -153,13 +190,17 @@ async function boot() {
 
   initPageTransitions();
 
-  registerServiceWorker();
+  if (!isDiscord) {
+    registerServiceWorker();
+  }
+
   // bindHeadImages();
 
   highlightNav();
   initDrawer();
 
   const sb = createSupabaseClient(CFG);
+  window.sb = sb;
   if (!sb) console.error("[app] Supabase client not configured.");
 
   let authLostHandling = false;
@@ -202,8 +243,28 @@ async function boot() {
   });
 
   const onLogin = async () => {
+    if (isDiscord) {
+      if (!discordSdk || !sb) {
+        alert(t("app.supabase_not_configured"));
+        return;
+      }
+      try {
+        const session = await Promise.race([
+          loginViaDiscordActivity(sb, discordSdk, { silent: false }),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Login timed out")), 15000)
+          ),
+        ]);
+        if (session) await syncAuthUI(sb);
+      } catch (e) {
+        console.error("[app] Discord Activity login failed:", e);
+        alert(t("app.login_failed"));
+      }
+      return;
+    }
+
     try {
-      await startOAuthLogin(sb, { provider: "discord", redirectPath: "/profile/" });
+      await startOAuthLogin(sb, { provider: "discord" });
     } catch {
       alert(t("app.supabase_not_configured"));
     }
@@ -212,11 +273,30 @@ async function boot() {
   $("#btnLogin")?.addEventListener("click", onLogin);
   $("#btnLoginCenter")?.addEventListener("click", onLogin);
 
-  const session = await syncAuthUI(sb);
+  let session = await syncAuthUI(sb);
+
+  if (!session && isDiscord && discordSdk && sb) {
+    try {
+      await Promise.race([
+        discordSdk.ready(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("discordSdk.ready() timed out after 2000ms")), 2000)
+        ),
+      ]);
+      await loginViaDiscordActivity(sb, discordSdk);
+      session = await syncAuthUI(sb);
+    } catch (e) {
+      console.warn("[app] Silent Discord Activity login skipped:", e.message);
+    }
+  }
 
   if (session) {
-    await initDiscordTokenCache(sb);
-    await initDiscordAuth(sb);
+    try {
+      await initDiscordTokenCache(sb);
+      await initDiscordAuth(sb);
+    } catch (e) {
+      console.warn("[app] Discord token refresh error:", e);
+    }
   }
 
   await initCurrentPage(sb, session);
@@ -244,6 +324,31 @@ async function boot() {
 
       showShell();
       await initCurrentPage(sb, newSession);
+    });
+  }
+
+  function activitySearch(search) {
+    const src = new URLSearchParams(search);
+    const kept = new URLSearchParams();
+    for (const k of DISCORD_PARAM_KEYS) if (src.has(k)) kept.set(k, src.get(k));
+    const s = kept.toString();
+    return s ? `?${s}` : "";
+  }
+
+  if (isDiscord) {
+    document.addEventListener("click", (e) => {
+      const link = e.target.closest("a");
+      if (link && link.href && link.origin === window.location.origin) {
+        const url = new URL(link.href);
+        if (!url.search) {
+          const s = activitySearch(window.location.search);
+          if (s) {
+            e.preventDefault();
+            url.search = s;
+            window.location.href = url.toString();
+          }
+        }
+      }
     });
   }
 

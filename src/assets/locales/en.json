@@ -1,5 +1,6 @@
 {
   "app.supabase_not_configured": "Supabase is not configured",
+  "app.login_failed": "Login failed. Please try again.",
   "chart.demo.scope_profile": "My profile",
   "chart.demo.scope_server": "A server",
   "chart.no_data": "No data for the selected range",
