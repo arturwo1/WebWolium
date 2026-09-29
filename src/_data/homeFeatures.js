@@ -121,6 +121,7 @@ export default function () {
         title: true,
         children: [
           { id: "translate", display: "leaf", audience: ["admin", "user"], reveal: "tooltip", text: { teaser: true, short: true }, meta: { command: "/translate" } },
+          { id: "sstv", display: "leaf", audience: ["admin", "user"], reveal: "modal", text: { teaser: true, short: true, full: true }, meta: { command: "/sstv" } },
           { id: "link", display: "leaf", audience: ["admin", "user"], reveal: "modal", text: { teaser: true, short: true }, meta: { command: "/link" } },
           { id: "format-numbers", display: "leaf", audience: ["admin", "user"], reveal: "tooltip", text: { teaser: true, short: true, full: true }, meta: { command: "/format_numbers" } },
           { id: "holiday", display: "leaf", audience: ["admin", "user"], reveal: "modal", text: { teaser: true, short: true, full: true }, meta: { command: "/holiday" } },
