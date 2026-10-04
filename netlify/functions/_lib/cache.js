@@ -37,6 +37,7 @@ export function statusKey(id) {
 const LIVE_WINDOW_MS = 5 * 60 * 1000;
 
 const TTL_SECONDS = {
+  get_activity_redirect: 0,
   public_stats: 60,
   user_privacy: 30,
   get_guild_config: 30,

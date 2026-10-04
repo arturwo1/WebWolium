@@ -3,6 +3,7 @@ import { hud as defaultHud, t, lsGet, lsSet, lsDel, ttlGet, ttlSet, nowMs, sleep
 const API_URL = "/.netlify/functions/api";
 
 const DEFAULT_ALLOWED_KINDS = new Set([
+  "get_activity_redirect",
   "public_stats",
   "user_privacy",
   "set_privacy",

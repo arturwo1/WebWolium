@@ -1,3 +1,5 @@
+import { ttlDrop } from "@/lib/index.js";
+
 const KEY = "wolium:page-transition";
 
 function isModifiedEvent(e) {
@@ -68,6 +70,7 @@ export function initPageTransitions() {
     const content = document.getElementById("pageContent");
 
     const go = () => {
+      ttlDrop('last_activity_path');
       window.location.href = url.href;
     };
 

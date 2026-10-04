@@ -18,11 +18,15 @@ import {
   highlightNav,
   initConsent,
   lsDel,
+  ttlGet,
+  ttlSet,
   $,
   initI18n,
   applyDomI18n,
   t
 } from "@/lib/index.js";
+
+import { createWebRequestService } from "@/services/index.js";
 
 import { DISCORD_AUTH_LOST_EVENT, clearDiscordTokenCache, initDiscordTokenCache, initDiscordAuth } from "@/lib/auth/discordProviderToken.js";
 
@@ -287,6 +291,44 @@ async function boot() {
       session = await syncAuthUI(sb);
     } catch (e) {
       console.warn("[app] Silent Discord Activity login skipped:", e.message);
+    }
+  }
+
+  if (session && isDiscord && sb) {
+    try {
+      const wr = createWebRequestService(sb, {
+        defaultCacheTtlMs: 0,
+        defaultCooldownMs: 0,
+        defaultTimeoutMs: 3_000
+      });
+
+      const res = await wr.queue("get_activity_redirect", {}, { timeoutMs: 3_000 });
+
+      const createRedirectUrl = (path) => {
+        const targetUrl = new URL(path, window.location.origin);
+        const currentParams = new URLSearchParams(window.location.search);
+        for (const key of DISCORD_PARAM_KEYS) {
+          if (currentParams.has(key)) {
+            targetUrl.searchParams.set(key, currentParams.get(key));
+          }
+        }
+        return targetUrl.toString();
+      };
+
+      if (res?.target_path) {
+        ttlSet('last_activity_path', res.target_path, 5 * 60 * 1000);
+        window.location.href = createRedirectUrl(res.target_path);
+        return;
+      }
+
+      const savedPath = ttlGet('last_activity_path');
+      if (savedPath && window.location.pathname === '/') {
+        window.location.href = createRedirectUrl(savedPath);
+        return;
+      }
+
+    } catch (e) {
+      console.warn("[app] Activity redirect fetch failed:", e);
     }
   }
 

@@ -1,4 +1,5 @@
 export const DIRECT_KINDS = new Set([
+  "get_activity_redirect",
   "public_stats",
   "user_privacy",
   "set_privacy",

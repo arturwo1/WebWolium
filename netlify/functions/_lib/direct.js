@@ -76,6 +76,27 @@ function qIdent(name) {
   return `"${name.replaceAll('"', '""')}"`;
 }
 
+export async function handleGetActivityRedirect(client, auth) {
+  if (!auth?.discordId) return { target_path: null };
+
+  const res = await client.query(
+    `
+    delete from activity_redirects
+    where user_id = $1::bigint
+    returning target_path, (created_at >= now() - interval '5 minutes') as is_valid
+    `,
+    [auth.discordId]
+  );
+
+  const row = res.rows[0];
+
+  if (row && row.is_valid) {
+    return { target_path: row.target_path };
+  }
+
+  return { target_path: null };
+}
+
 export async function handlePublicStats(client) {
   const res = await client.query("select key, value from public_stats");
   const result = {};
@@ -764,6 +785,7 @@ export async function handleSaveGuildConfig(client, auth, payload) {
 }
 
 export async function handleDirectKind(client, auth, kind, payload) {
+  if (kind === "get_activity_redirect") return await handleGetActivityRedirect(client, auth);
   if (kind === "public_stats") return await handlePublicStats(client);
   if (kind === "user_privacy") return await handleUserPrivacy(client, auth);
   if (kind === "set_privacy") return await handleSetPrivacy(client, auth, payload);
