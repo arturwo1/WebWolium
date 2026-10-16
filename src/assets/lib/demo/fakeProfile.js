@@ -49,5 +49,6 @@ export function generateFakeProfileData(seed, deviceKey) {
     xp_need: xpNeed,
     xp,
     lvl,
+    bunker_sessions: Math.floor(rng() * 40),
   };
 }

@@ -67,5 +67,10 @@
     <div class="stat__label" data-i18n="profile.commands">Commands</div>
     <div class="stat__value{% if interactive %} skeleton{% endif %}" data-field="stat-commands">{{ prefill.user_commands if prefill else "—" }}</div>
   </{{ statTag }}>
+
+  <{{ statTag }} class="stat stat--link"{% if interactive %} data-chart="bunker" type="button"{% endif %}>
+    <div class="stat__label" data-i18n="profile.bunker">Bunker</div>
+    <div class="stat__value{% if interactive %} skeleton{% endif %}" data-field="stat-bunker">—</div>
+  </{{ statTag }}>
 </div>
 {% endmacro %}

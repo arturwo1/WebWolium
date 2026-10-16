@@ -1,6 +1,14 @@
-import { $, lsJSONGet, lsJSONSet, lsCleanExpired, readIdentity, escapeHtml, t, onLangChange, hud, formatNumber, on } from "@/lib/index.js";
+import { $, lsJSONGet, lsJSONSet, lsCleanExpired, readIdentity, escapeHtml, t, onLangChange, hud, formatNumber, createModalController } from "@/lib/index.js";
 import { createWebRequestService } from "@/services/index.js";
 import { initChart } from "@/lib/chart/chart.js";
+import { CHART_PARAM_KEYS, collectChartParams, readChartParams, applyChartParams, snapshotChartSelects, restoreChartSelects } from "@/lib/chart/chartUrlState.js";
+import { createEntityResolver } from "@/lib/discord/entities.js";
+import { setEntityResolver } from "@/lib/discord/entityService.js";
+import { createUserFetcher } from "@/lib/discord/fetchers.js";
+import { createBunkerGamesStore } from "@/lib/bunker/bunkerGames.js";
+import { createBunkerPanel } from "@/lib/bunker/bunkerPanel.js";
+import { discordIdOf } from "@/lib/bunker/bunkerModel.js";
+import { BUNKER_PARAM_KEYS, readBunkerParams } from "@/lib/bunker/bunkerUrlState.js";
 
 function setText(el, value) {
   if (el) el.textContent = String(value ?? "");
@@ -49,19 +57,6 @@ function formatMoney(n) {
   return `${formatNumber(n)}₩`;
 }
 
-function setModalOpen(modal, open) {
-  if (!modal) return;
-  modal.classList.toggle("is-open", open);
-  modal.setAttribute("aria-hidden", open ? "false" : "true");
-}
-
-function chartTitle(type) {
-  if (type === "user_messages") return t("profile.messages");
-  if (type === "user_voice") return t("profile.voice");
-  if (type === "user_activities") return t("profile.activities");
-  return t("chart.title");
-}
-
 function field(root, name) {
   return root.querySelector(`[data-field="${name}"]`);
 }
@@ -92,6 +87,7 @@ export function computeProfileDisplayData(res) {
     bank: formatMoney(res?.bank_balance),
     cash: formatMoney(res?.balance),
     commands: formatNumber(res?.user_commands),
+    bunker: res?.bunker_sessions == null ? "—" : formatNumber(res.bunker_sessions),
   };
 }
 
@@ -216,6 +212,7 @@ export function applyProfileDisplayData(root, res, { interactive = false } = {})
   setText(field(root, "stat-money-bank"), display.bank);
   setText(field(root, "stat-money-cash"), display.cash);
   setText(field(root, "stat-commands"), display.commands);
+  setText(field(root, "stat-bunker"), display.bunker);
 
   setText(field(root, "xp-line"), display.xpLineText);
   setText(field(root, "level"), display.levelText);
@@ -248,14 +245,12 @@ function getParam(key) {
 export async function initProfilePage(sb) {
   const profileCard = $("#profileCard");
   const profileStats = $("#profileStats");
-  const chartModal = $("#chartModal");
-  const chartClose = $("#chartClose");
-  const chartTitleEl = $("#chartTitle");
+  const chartModal = $("#appModal");
   const chartTabs = Array.from(document.querySelectorAll("[data-chart-type]"));
   const chartGuildId = $("#chartGuildId");
   const chartChannelId = $("#chartChannelId");
 
-  if (!profileCard || !profileStats || !chartModal || !chartClose || !chartTitleEl || !chartGuildId || !chartChannelId) {
+  if (!profileCard || !profileStats || !chartModal || !chartGuildId || !chartChannelId) {
     return null;
   }
 
@@ -270,6 +265,7 @@ export async function initProfilePage(sb) {
   const Ids = { guilds: {} };
   let lastProfileResponse = null;
   let chart = null;
+  let modalCtl = null;
 
   for (const tab of chartTabs) {
     if (!String(tab.dataset.chartType || "").startsWith("user_")) {
@@ -283,23 +279,25 @@ export async function initProfilePage(sb) {
     defaultTimeoutMs: 15_000
   });
 
+  const entityWr = createWebRequestService(sb, {
+    defaultCacheTtlMs: 0,
+    defaultCooldownMs: 0,
+    defaultTimeoutMs: 8_000,
+    hud: { loading: () => () => { }, error: () => { } }
+  });
+
+  setEntityResolver(createEntityResolver({
+    fetchers: { user: createUserFetcher((kind, payload, opts) => entityWr.queue(kind, payload, opts)) },
+    storage: { get: lsJSONGet, set: lsJSONSet }
+  }));
+
   const queueChart = wr.makeLatestDebouncedQueue({
     debounceMs: 200,
     kinds: new Set(["user_messages_series", "user_voice_series", "user_activities_series", "user_commands_series"]),
   });
 
-  function syncChartUi(type) {
-    const normalizedType = normalizeChartType(type);
-
-    chartModal.dataset.chartType = normalizedType;
-    setText(chartTitleEl, chartTitle(normalizedType));
-
-    for (const tab of chartTabs) {
-      const isActive = normalizeChartType(tab.dataset.chartType) === normalizedType;
-      tab.classList.toggle("is-active", isActive);
-      tab.setAttribute("aria-selected", isActive ? "true" : "false");
-      tab.setAttribute("tabindex", isActive ? "0" : "-1");
-    }
+  function currentChartType() {
+    return normalizeChartType(modalCtl?.current()?.chartType || "user_messages");
   }
 
   function renderChannelOptions(guildId = "", type = "") {
@@ -421,7 +419,7 @@ export async function initProfilePage(sb) {
 
       if (userDiscordId) return res;
       Ids.guilds = res?.guilds ?? {};
-      renderGuildOptions(normalizeChartType(chartModal?.dataset?.chartType || "user_messages"));
+      renderGuildOptions(currentChartType());
 
       return res;
     } catch (e) {
@@ -430,7 +428,7 @@ export async function initProfilePage(sb) {
         renderStats(saved.res);
         if (userDiscordId) return saved.res;
         Ids.guilds = saved.res?.guilds ?? {};
-        renderGuildOptions(normalizeChartType(chartModal?.dataset?.chartType || "user_messages"));
+        renderGuildOptions(currentChartType());
         return saved.res;
       }
       throw e;
@@ -448,28 +446,68 @@ export async function initProfilePage(sb) {
       viewer: {
         name: profileName?.textContent || profileTag?.textContent || t("common.user"),
         avatar: profilePfp?.src || null
-      },
-      onTypeChange: syncChartUi
+      }
     });
 
     return chart;
   }
 
-  function openChart(type) {
-    const normalizedType = normalizeChartType(type);
+  const bunkerPanel = createBunkerPanel({
+    root: $("#bunkerPanel"),
+    getGuildName: (id) => Ids.guilds?.[id]?.name ?? null,
+    onStateChange: () => modalCtl?.refreshUrl(),
+    createStore: async () => {
+      const { data } = await sb.auth.getSession();
+      const user = data?.session?.user;
+      if (!user?.id) return null;
+      return {
+        store: createBunkerGamesStore({ queue: (kind, payload, opts) => wr.queue(kind, payload, opts), userId: user.id }),
+        meId: discordIdOf(user)
+      };
+    }
+  });
 
-    syncChartUi(normalizedType);
-    renderGuildOptions(normalizedType);
-    chartChannelId.value = "";
-    setModalOpen(chartModal, true);
-
-    const c = ensureChart();
-    c?.setType(normalizedType);
+  function showBunker(info) {
+    const params = info?.fromUrl ? readBunkerParams(new URLSearchParams(window.location.search)) : {};
+    bunkerPanel?.show(params).catch((e) => console.warn("[profile] bunker failed:", e));
   }
 
-  function closeChart() {
-    setModalOpen(chartModal, false);
-  }
+  modalCtl = createModalController(chartModal, {
+    param: userDiscordId ? null : "modal",
+    extraKeys: [...CHART_PARAM_KEYS, ...BUNKER_PARAM_KEYS],
+    getParams: () => {
+      const panel = modalCtl?.current()?.panel;
+      if (panel === "chart") return collectChartParams(chartModal);
+      if (panel === "bunker") return bunkerPanel?.getParams() ?? {};
+      return {};
+    },
+    onOpen: (tab, info) => {
+      if (tab?.panel === "bunker") {
+        showBunker(info);
+        return;
+      }
+      const type = normalizeChartType(tab.chartType);
+      const kept = snapshotChartSelects(chartModal);
+      renderGuildOptions(type);
+      restoreChartSelects(chartModal, kept);
+      const params = info?.fromUrl ? readChartParams(new URLSearchParams(window.location.search)) : null;
+      const applyParams = (notify) => applyChartParams(chartModal, params, { onGuild: (id) => renderChannelOptions(id, type), notify });
+      if (params) applyParams(false);
+      ensureChart()?.setType(type);
+      if (params) applyParams(true);
+    },
+    onTab: (tab, info) => {
+      if (tab?.panel === "bunker") {
+        showBunker(info);
+        return;
+      }
+      const type = normalizeChartType(tab.chartType);
+      const kept = snapshotChartSelects(chartModal);
+      ensureChart()?.setType(type);
+      renderChannelOptions(chartGuildId.value, type);
+      restoreChartSelects(chartModal, kept);
+    }
+  });
 
   await fillIdentity();
 
@@ -481,22 +519,12 @@ export async function initProfilePage(sb) {
   }
 
   chartGuildId.addEventListener("change", () => {
-    const type = normalizeChartType(chartModal?.dataset?.chartType || "user_messages");
-    renderChannelOptions(chartGuildId.value, type);
-  });
-
-  document.querySelectorAll("[data-chart-type]").forEach((el) => {
-    on(el, "click", (e) => {
-      e.stopPropagation();
-      setTimeout(() => {
-        const type = normalizeChartType(chartModal?.dataset?.chartType || "user_messages");
-        renderChannelOptions(chartGuildId.value, type);
-      }, 0);
-    });
+    renderChannelOptions(chartGuildId.value, currentChartType());
   });
 
   try {
     await loadStats();
+    modalCtl.syncFromUrl();
   } catch (e) {
     console.warn("[profile] init failed:", e);
   }
@@ -506,24 +534,14 @@ export async function initProfilePage(sb) {
     const type = btn?.dataset?.chart;
     if (!type) return;
 
-    openChart(type);
+    modalCtl.open(type);
   });
-
-  chartClose.addEventListener("click", closeChart);
-  chartModal.addEventListener("click", (e) => {
-    if (e.target === chartModal) closeChart();
-  });
-
-  syncChartUi("user_messages");
 
   onLangChange(() => {
-    const currentType = chartModal?.dataset?.chartType || "user_messages";
-
-    if (chartModal?.classList.contains("is-open")) {
-      syncChartUi(currentType);
-      renderGuildOptions(currentType);
-    } else {
-      setText(chartTitleEl, t("chart.title"));
+    if (modalCtl.isOpen()) {
+      const kept = snapshotChartSelects(chartModal);
+      renderGuildOptions(currentChartType());
+      restoreChartSelects(chartModal, kept);
     }
 
     if (lastProfileResponse) {

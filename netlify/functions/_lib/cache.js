@@ -60,7 +60,8 @@ const TTL_SECONDS = {
   guild_messages_series_historic: intEnv("CACHE_HISTORIC_TTL_S", 21_600, 60, 604_800),
   guild_voice_series_live: 20,
   guild_voice_series_historic: intEnv("CACHE_HISTORIC_TTL_S", 21_600, 60, 604_800),
-  user_guilds: 30
+  user_guilds: 30,
+  get_bunker_user_games: 21_600
 };
 
 export const UNCACHEABLE_KINDS = new Set([
@@ -78,6 +79,8 @@ export function ttlSecondsFor(kind, payload) {
     const bucket = Date.now() - toMs <= LIVE_WINDOW_MS ? "live" : "historic";
     return TTL_SECONDS[`${kind}_${bucket}`] ?? TTL_SECONDS[kind] ?? 20;
   }
+
+  if (kind === "get_bunker_user_games") return payload?.before ? 604_800 : 60;
 
   return TTL_SECONDS[kind] ?? 20;
 }

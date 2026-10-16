@@ -9,7 +9,8 @@ export const DIRECT_KINDS = new Set([
   "guild_activities_series",
   "guild_members_series",
   "get_guild_config",
-  "save_guild_config"
+  "save_guild_config",
+  "get_bunker_user_games"
 ]);
 
 export const BOT_KINDS = new Set([
