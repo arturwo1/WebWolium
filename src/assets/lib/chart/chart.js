@@ -14,7 +14,7 @@ export function initChart(queueRequest, opts = {}) {
   const chartTo = find("#chartTo");
   const chartSum = find("#chartSum");
   const chartPreset = find("#chartPreset");
-  const chartModal = find("#chartModal");
+  const chartModal = find("#chartModal") ?? find("#appModal");
 
   const els = {
     chartGuildId: find("#chartGuildId"),
