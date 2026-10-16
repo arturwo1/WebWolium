@@ -784,6 +784,73 @@ export async function handleSaveGuildConfig(client, auth, payload) {
   }
 }
 
+const BUNKER_PAGE_SIZE = 3;
+const BUNKER_CURSOR_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\|[A-Za-z0-9_-]{1,64}$/;
+const BUNKER_SORT_EXPR = "date_trunc('milliseconds', coalesce(bg.finished_at, bg.created_at))";
+
+function bunkerCursorOf(row) {
+  const stamp = new Date(row.finished_at ?? row.created_at).toISOString();
+  return `${stamp}|${row.id}`;
+}
+
+export async function handleBunkerUserGames(client, auth, payload) {
+  const userId = auth?.discordId;
+  if (!userId) return { games: [], has_more: false, next_cursor: null };
+
+  const before = payload?.before == null || payload.before === "" ? null : String(payload.before);
+  if (before !== null && !BUNKER_CURSOR_RE.test(before)) throw new Error("INVALID_CURSOR");
+
+  const params = [userId, BUNKER_PAGE_SIZE + 1];
+  let cursorFilter = "";
+
+  if (before !== null) {
+    const [cursorStamp, cursorId] = before.split("|");
+    params.push(cursorStamp, cursorId);
+    cursorFilter = `and (${BUNKER_SORT_EXPR}, bg.id::text) < ($3::timestamptz, $4::text)`;
+  }
+
+  const res = await client.query(
+    `
+    select
+      bg.id,
+      bg.guild_id,
+      bg.creator_id,
+      bg.status,
+      bg.created_at,
+      bg.finished_at,
+      bgp.won,
+      encode(bg.payload, 'base64') as payload_b64
+    from bunker_game_players bgp
+    join bunker_games bg on bg.id = bgp.game_id
+    where bgp.user_id = $1::bigint
+      and bg.status in (1, 2, 3)
+      ${cursorFilter}
+    order by ${BUNKER_SORT_EXPR} desc, bg.id::text desc
+    limit $2::int
+    `,
+    params
+  );
+
+  const hasMore = res.rows.length > BUNKER_PAGE_SIZE;
+  const items = hasMore ? res.rows.slice(0, BUNKER_PAGE_SIZE) : res.rows;
+  const last = items[items.length - 1];
+
+  return {
+    games: items.map(row => ({
+      id: row.id,
+      guild_id: row.guild_id,
+      creator_id: row.creator_id,
+      status: row.status,
+      created_at: row.created_at,
+      finished_at: row.finished_at,
+      won: Boolean(row.won),
+      payload_b64: row.payload_b64
+    })),
+    has_more: hasMore,
+    next_cursor: hasMore && last ? bunkerCursorOf(last) : null
+  };
+}
+
 export async function handleDirectKind(client, auth, kind, payload) {
   if (kind === "get_activity_redirect") return await handleGetActivityRedirect(client, auth);
   if (kind === "public_stats") return await handlePublicStats(client);
@@ -796,6 +863,7 @@ export async function handleDirectKind(client, auth, kind, payload) {
   if (kind === "guild_members_series") return await handleGuildMemberSeries(client, auth, payload);
   if (kind === "get_guild_config") return await handleGetGuildConfig(client, auth, payload);
   if (kind === "save_guild_config") return await handleSaveGuildConfig(client, auth, payload);
+  if (kind === "get_bunker_user_games") return await handleBunkerUserGames(client, auth, payload);
 
   const err = new Error("NOT_DIRECT_KIND");
   err.status = 400;
