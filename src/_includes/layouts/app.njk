@@ -139,6 +139,8 @@
   <script type="module" src="/assets/app.js"></script>
 </head>
 
+{% import "partials/modals.njk" as modals %}
+
 <body data-page="{{ pageId or '' }}">
   {{ icons | safe }}
 
@@ -164,8 +166,14 @@
     </div>
   {% endif %}
 
+  {% if pageId == "profile" %}
+    {{ modals.appModal("user") }}
+  {% elif pageId == "server" %}
+    {{ modals.appModal("guild") }}
+  {% endif %}
+
   {% if pageId in ["home", "profile", "server"] %}
-    {% include "partials/modals.njk" %}
+    {{ modals.toast() }}
   {% endif %}
 </body>
 </html>

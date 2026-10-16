@@ -31,6 +31,7 @@ export * from "./ui/drawer.js";
 export * from "./ui/headImages.js";
 export * from "./ui/hud.js";
 export * from "./ui/collapsible.js";
+export * from "./ui/modalController.js";
 export * from "./ui/customSelect.js";
 export * from "./sw/register.js";
 export * from "./consent/index.js";

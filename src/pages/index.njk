@@ -6,6 +6,7 @@ pageId: home
 permalink: /
 ---
 {% import "partials/nodeRenderer.njk" as nodeRenderer %}
+{% import "partials/modals.njk" as modals %}
 
 <div class="home home-v2" id="homeRoot">
 
@@ -267,18 +268,6 @@ permalink: /
     </div>
   </article>
 
-  <div class="modal" id="homeModal" aria-hidden="true">
-    <div class="fly-anchor"><div class="fly-reveal fly-visible"><div class="fly-inner home-modal__fly">
-      <div class="modal__panel" style="max-width: 640px; margin: auto;">
-        <div class="modal__head home-modal__head">
-          <div class="modal__title home-modal__title" id="homeModalTitle"></div>
-          <button type="button" class="icon-btn home-modal__close" id="homeModalClose" aria-label="Close" data-i18n-attr="aria-label: ui.close">
-            <svg class="icon"><use href="#close"></use></svg>
-          </button>
-        </div>
-        <div style="padding: var(--pad); overflow-y: auto;" id="homeModalBody"></div>
-      </div>
-    </div></div></div>
-  </div>
+  {{ modals.contentModal() }}
 
 </div>

@@ -1,22 +1,17 @@
+{% import "partials/modals.njk" as modals %}
+
 {% macro renderChartWidget() %}
+{% set tabList = [
+  { "id": "messages", "chart": "messages", "i18n": "profile.messages", "text": "Messages" },
+  { "id": "voice", "chart": "voice", "i18n": "profile.voice", "text": "Voice" },
+  { "id": "activities", "chart": "activities", "i18n": "profile.activities", "text": "Activity" },
+  { "id": "members", "chart": "members", "i18n": "server.analytics.members", "text": "Members", "field": "members-tab", "hidden": true }
+] %}
 <div class="card section chart-widget" data-widget="chart-demo" id="chartModal">
   <div class="modal__head">
     <div class="modal__title" id="chartTitle" data-i18n="chart.title">Graphic</div>
 
-    <div class="modal__tabs" role="tablist">
-      <button class="modal__tab is-active" type="button" data-chart-type="messages" role="tab" aria-selected="true" tabindex="0">
-        <span data-i18n="profile.messages">Messages</span>
-      </button>
-      <button class="modal__tab" type="button" data-chart-type="voice" role="tab" aria-selected="false" tabindex="-1">
-        <span data-i18n="profile.voice">Voice</span>
-      </button>
-      <button class="modal__tab" type="button" data-chart-type="activities" role="tab" aria-selected="false" tabindex="-1">
-        <span data-i18n="profile.activities">Activity</span>
-      </button>
-      <button class="modal__tab" type="button" data-chart-type="members" data-field="members-tab" role="tab" aria-selected="false" tabindex="-1" hidden>
-        <span data-i18n="server.analytics.members">Members</span>
-      </button>
-    </div>
+    {{ modals.tabs(tabList, "Chart type") }}
   </div>
 
   <div class="modal__controls">
@@ -31,14 +26,6 @@
     <div class="modal__sum skeleton" id="chartSum">—</div>
   </div>
 
-  <div class="chart">
-    <canvas class="chart__canvas skeleton" id="chartCanvas"></canvas>
-
-    <div class="tooltip" id="chartTooltip">
-      <div class="tooltip__time" id="tipTime">—</div>
-      <div class="tooltip__val" id="tipVal">—</div>
-      <div class="preview" id="tipPreview"></div>
-    </div>
-  </div>
+  {{ modals.chartCanvas(false) }}
 </div>
 {% endmacro %}

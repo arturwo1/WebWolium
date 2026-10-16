@@ -1,4 +1,4 @@
-import { $, $$, t, formatNumber, formatDuration } from "@/lib/index.js";
+import { $, $$, t, formatNumber, formatDuration, createModalController } from "@/lib/index.js";
 import { apiPublic } from "@/services/index.js";
 import { createRng } from "@/lib/demo/rng.js";
 import { generateFakeProfileData } from "@/lib/demo/fakeProfile.js";
@@ -502,9 +502,10 @@ function setupRevealHandlers() {
   });
 }
 
+let homeModal = null;
+
 function openHomeModal(sourceEl) {
-  const modal = document.getElementById("homeModal");
-  if (!modal) return;
+  if (!homeModal) return;
 
   const titleEl = document.getElementById("homeModalTitle");
   const bodyEl = document.getElementById("homeModalBody");
@@ -518,15 +519,7 @@ function openHomeModal(sourceEl) {
     bodyEl.appendChild(child.cloneNode(true));
   });
 
-  modal.classList.add("is-open");
-  modal.setAttribute("aria-hidden", "false");
-}
-
-function closeHomeModal() {
-  const modal = document.getElementById("homeModal");
-  if (!modal) return;
-  modal.classList.remove("is-open");
-  modal.setAttribute("aria-hidden", "true");
+  homeModal.open();
 }
 
 function setupHomeModal() {
@@ -537,16 +530,7 @@ function setupHomeModal() {
     document.body.appendChild(modal);
   }
 
-  const closeBtn = document.getElementById("homeModalClose");
-  closeBtn?.addEventListener("click", closeHomeModal);
-
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) closeHomeModal();
-  });
-
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && modal.classList.contains("is-open")) closeHomeModal();
-  });
+  homeModal = createModalController(modal, { param: null });
 }
 
 const widgetInitializers = {
