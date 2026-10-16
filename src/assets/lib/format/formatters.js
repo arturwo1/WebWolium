@@ -83,7 +83,7 @@ export function formatDuration(sec, { maxUnits = 3, decimals = 2 } = {}) {
     if (slotsLeft === 1) {
       const amt = remaining / value;
       const rounded = Number(amt.toFixed(decimals));
-      parts.push(rounded + name);
+      if (rounded > 0 || parts.length === 0) parts.push(rounded + name);
       remaining = 0;
     } else {
       const amt = Math.floor(remaining / value);
