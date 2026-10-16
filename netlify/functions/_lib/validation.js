@@ -21,7 +21,8 @@ export const BOT_KINDS = new Set([
   "guild_messages_series",
   "guild_voice_series",
   "user_guilds",
-  "leaderboard"
+  "leaderboard",
+  "resolve_discord_entities"
 ]);
 
 export const ALL_KINDS = new Set([
@@ -101,6 +102,40 @@ export function clampInt(value, lo, hi, fallback) {
   const n = Number.parseInt(value, 10);
   const x = Number.isFinite(n) ? n : fallback;
   return Math.min(hi, Math.max(lo, x));
+}
+
+const ENTITY_FIELDS = ["users", "channels", "guilds", "roles"];
+
+export function sanitizeEntityPayload(payload, maxTotal = 50) {
+  const out = {};
+  let total = 0;
+
+  for (const field of ENTITY_FIELDS) {
+    const raw = Array.isArray(payload?.[field]) ? payload[field] : [];
+    const ids = [];
+
+    for (const value of raw) {
+      if (total >= maxTotal) break;
+      const id = safeBigIntString(value);
+      if (id && id.length >= 15 && !ids.includes(id)) {
+        ids.push(id);
+        total++;
+      }
+    }
+
+    if (ids.length) out[field] = ids;
+  }
+
+  const guildId = safeBigIntString(payload?.guild_id);
+  if (guildId && guildId.length >= 15) out.guild_id = guildId;
+
+  if (!total) {
+    const err = new Error("EMPTY_ENTITY_REQUEST");
+    err.status = 400;
+    throw err;
+  }
+
+  return out;
 }
 
 export function seriesParams(payload) {

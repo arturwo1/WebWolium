@@ -22,7 +22,7 @@ const DEFAULT_ALLOWED_KINDS = new Set([
   "user_guilds",
   "leaderboard",
   "get_guild_config",
-  "save_guild_config"
+  "resolve_discord_entities"
 ]);
 
 function resultCacheKey(userId, kind, payload) {

@@ -4,7 +4,7 @@ import { cleanupLimits, rateLimit } from "./_lib/limits.js";
 import { errorJson, json, method, readJson, clientIp, publicHeaders } from "./_lib/http.js";
 import { handleDirectKind, assertLeaderboardPayload, assertGuildAdmin, fetchGuildConfig } from "./_lib/direct.js";
 import { createAndMaybeWaitQueuedRequest, readQueuedRequest } from "./_lib/queue.js";
-import { assertKnownKind, assertPayloadSize, BOT_KINDS, DIRECT_KINDS, normalizePayload } from "./_lib/validation.js";
+import { assertKnownKind, assertPayloadSize, BOT_KINDS, DIRECT_KINDS, normalizePayload, sanitizeEntityPayload } from "./_lib/validation.js";
 import { intEnv } from "./_lib/env.js";
 import { cacheGet, cacheSet, cacheKey, statusKey, ttlSecondsFor, withCache } from "./_lib/cache.js";
 
@@ -102,6 +102,12 @@ async function handleRequest(client, req, body) {
 
   if (kind === "leaderboard") {
     assertLeaderboardPayload(payload);
+  }
+
+  if (kind === "resolve_discord_entities") {
+    const clean = sanitizeEntityPayload(payload);
+    for (const key of Object.keys(payload)) delete payload[key];
+    Object.assign(payload, clean);
   }
 
   const identity = identityFor(kind, auth, payload);
