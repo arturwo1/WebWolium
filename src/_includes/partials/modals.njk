@@ -3,7 +3,7 @@
   {% for tab in items %}
   <button class="modal__tab{% if loop.first %} is-active{% endif %}" type="button"{% if tab.domId %} id="{{ tab.domId }}"{% endif %} data-modal-tab="{{ tab.id }}" data-panel="{{ tab.panel or 'chart' }}" data-title-key="{{ tab.i18n }}"{% if tab.chart %} data-chart-type="{{ tab.chart }}"{% endif %}{% if tab.field %} data-field="{{ tab.field }}"{% endif %} role="tab" aria-selected="{{ 'true' if loop.first else 'false' }}" tabindex="{{ 0 if loop.first else -1 }}"{% if tab.hidden %} hidden{% endif %}>
     <span data-i18n="{{ tab.i18n }}">{{ tab.text }}</span>
-        </button>
+  </button>
   {% endfor %}
 </div>
 {% endmacro %}
@@ -15,92 +15,92 @@
 {% endmacro %}
 
 {% macro shellEnd(fly=false) %}
-      </div>
+  </div>
   {% if fly %}</div></div></div>{% endif %}
-    </div>
+</div>
 {% endmacro %}
 
 {% macro chartControls() %}
 <div class="modal__controls" data-modal-panel="chart">
-      <select class="input input--sm" id="chartPreset">
-        <option value="7d" data-i18n="chart.preset.7d">7 days</option>
-        <option value="30d" selected data-i18n="chart.preset.30d">30 days</option>
-        <option value="90d" data-i18n="chart.preset.90d">90 days</option>
-        <option value="custom" data-i18n="chart.preset.custom">Period...</option>
-      </select>
+  <select class="input input--sm" id="chartPreset">
+    <option value="7d" data-i18n="chart.preset.7d">7 days</option>
+    <option value="30d" selected data-i18n="chart.preset.30d">30 days</option>
+    <option value="90d" data-i18n="chart.preset.90d">90 days</option>
+    <option value="custom" data-i18n="chart.preset.custom">Period...</option>
+  </select>
 
-      <input class="input input--sm" id="chartFrom" type="datetime-local"/>
-      <input class="input input--sm" id="chartTo" type="datetime-local"/>
+  <input class="input input--sm" id="chartFrom" type="datetime-local"/>
+  <input class="input input--sm" id="chartTo" type="datetime-local"/>
 
-      <select class="input input--sm" id="chartGuildId" hidden>
-        <option value="" selected data-i18n="chart.preset.guild">Choose guild</option>
-      </select>
+  <select class="input input--sm" id="chartGuildId" hidden>
+    <option value="" selected data-i18n="chart.preset.guild">Choose guild</option>
+  </select>
 
-      <select class="input input--sm" id="chartChannelId" disabled hidden>
-        <option value="" selected disabled data-i18n="chart.preset.channel.locked">Choose guild firstly</option>
-      </select>
+  <select class="input input--sm" id="chartChannelId" disabled hidden>
+    <option value="" selected disabled data-i18n="chart.preset.channel.locked">Choose guild firstly</option>
+  </select>
 
-      <select class="input input--sm" id="chartRoleId" hidden>
-        <option value="" selected disabled data-i18n="chart.preset.role">Choose role</option>
-      </select>
+  <select class="input input--sm" id="chartRoleId" hidden>
+    <option value="" selected disabled data-i18n="chart.preset.role">Choose role</option>
+  </select>
 
-      <input class="input input--sm modal__context" id="chartContext" type="text" hidden data-i18n-attr="placeholder: chart.preset.context"/>
-      <input class="input input--sm modal__context" id="chartCommandName" type="text" hidden data-i18n-attr="placeholder: chart.preset.command_name"/>
+  <input class="input input--sm modal__context" id="chartContext" type="text" hidden data-i18n-attr="placeholder: chart.preset.context"/>
+  <input class="input input--sm modal__context" id="chartCommandName" type="text" hidden data-i18n-attr="placeholder: chart.preset.command_name"/>
 
-      <input class="input input--sm" id="chartVoiceMinDuration" type="number" min="0" step="1" hidden data-i18n-attr="placeholder: chart.filter.min_sec"/>
-      <input class="input input--sm" id="chartVoiceMaxDuration" type="number" min="0" step="1" hidden data-i18n-attr="placeholder: chart.filter.max_sec"/>
+  <input class="input input--sm" id="chartVoiceMinDuration" type="number" min="0" step="1" hidden data-i18n-attr="placeholder: chart.filter.min_sec"/>
+  <input class="input input--sm" id="chartVoiceMaxDuration" type="number" min="0" step="1" hidden data-i18n-attr="placeholder: chart.filter.max_sec"/>
 
-      <label class="dd-item input" id="chartJumpBox" hidden>
-        <input type="checkbox" id="chartJump">
-        <span data-i18n="chart.preset.jump">Only moves</span>
-      </label>
+  <label class="dd-item input" id="chartJumpBox" hidden>
+    <input type="checkbox" id="chartJump">
+    <span data-i18n="chart.preset.jump">Only moves</span>
+  </label>
 
-      <input class="input input--sm" id="chartActivityName" type="text" hidden data-i18n-attr="placeholder: chart.filter.activity"/>
-      <select class="input input--sm" id="chartActivityStatus" hidden></select>
-      <input class="input input--sm" id="chartActivityMinDuration" type="number" min="0" step="1" hidden data-i18n-attr="placeholder: chart.filter.min_sec"/>
-      <input class="input input--sm" id="chartActivityMaxDuration" type="number" min="0" step="1" hidden data-i18n-attr="placeholder: chart.filter.max_sec"/>
+  <input class="input input--sm" id="chartActivityName" type="text" hidden data-i18n-attr="placeholder: chart.filter.activity"/>
+  <select class="input input--sm" id="chartActivityStatus" hidden></select>
+  <input class="input input--sm" id="chartActivityMinDuration" type="number" min="0" step="1" hidden data-i18n-attr="placeholder: chart.filter.min_sec"/>
+  <input class="input input--sm" id="chartActivityMaxDuration" type="number" min="0" step="1" hidden data-i18n-attr="placeholder: chart.filter.max_sec"/>
 
-      <button class="input input--sm" id="chartActivityMore" type="button" hidden data-i18n="chart.filter.media_toggle">Music / media</button>
+  <button class="input input--sm" id="chartActivityMore" type="button" hidden data-i18n="chart.filter.media_toggle">Music / media</button>
 
-      <input class="input input--sm" id="chartActivityTrack" type="text" hidden data-i18n-attr="placeholder: chart.filter.track"/>
-      <input class="input input--sm" id="chartActivityAlbum" type="text" hidden data-i18n-attr="placeholder: chart.filter.album"/>
-      <input class="input input--sm" id="chartActivityArtist" type="text" hidden data-i18n-attr="placeholder: chart.filter.artist"/>
+  <input class="input input--sm" id="chartActivityTrack" type="text" hidden data-i18n-attr="placeholder: chart.filter.track"/>
+  <input class="input input--sm" id="chartActivityAlbum" type="text" hidden data-i18n-attr="placeholder: chart.filter.album"/>
+  <input class="input input--sm" id="chartActivityArtist" type="text" hidden data-i18n-attr="placeholder: chart.filter.artist"/>
 
-      <button class="icon-btn" id="btnChartOptions" type="button" aria-haspopup="true" aria-expanded="false">
-        <svg class="icon">
-          <use href="#more"></use>
-        </svg>
-      </button>
-      <div class="dropdown" id="chartOptionsDropdown">
-        <label class="dd-item input" style="display:flex;gap:8px;align-items:center;">
-          <input type="checkbox" id="chartOptionsAverage">
-          <span data-i18n="chart.options.average">Average line</span>
-        </label>
+  <button class="icon-btn" id="btnChartOptions" type="button" aria-haspopup="true" aria-expanded="false">
+    <svg class="icon">
+      <use href="#more"></use>
+    </svg>
+  </button>
+  <div class="dropdown" id="chartOptionsDropdown">
+    <label class="dd-item input" style="display:flex;gap:8px;align-items:center;">
+      <input type="checkbox" id="chartOptionsAverage">
+      <span data-i18n="chart.options.average">Average line</span>
+    </label>
 
-        <label class="dd-item input" style="display:flex;gap:8px;align-items:center;">
-          <input type="checkbox" id="chartOptionsCompare">
-          <span data-i18n="chart.options.compare">Compare with previous period</span>
-        </label>
+    <label class="dd-item input" style="display:flex;gap:8px;align-items:center;">
+      <input type="checkbox" id="chartOptionsCompare">
+      <span data-i18n="chart.options.compare">Compare with previous period</span>
+    </label>
 
-        <label class="dd-item input" style="display:flex;gap:8px;align-items:center;">
-          <input type="checkbox" id="chartOptionsDelta">
-          <span data-i18n="chart.options.delta">Show changes</span>
-        </label>
-      </div>
+    <label class="dd-item input" style="display:flex;gap:8px;align-items:center;">
+      <input type="checkbox" id="chartOptionsDelta">
+      <span data-i18n="chart.options.delta">Show changes</span>
+    </label>
+  </div>
 
-      <div class="modal__sum skeleton" id="chartSum">—</div>
-    </div>
+  <div class="modal__sum skeleton" id="chartSum">—</div>
+</div>
 {% endmacro %}
 
 {% macro chartCanvas(panel=true) %}
 <div class="chart"{% if panel %} data-modal-panel="chart"{% endif %}>
-      <canvas class="chart__canvas skeleton" id="chartCanvas"></canvas>
+  <canvas class="chart__canvas skeleton" id="chartCanvas"></canvas>
 
-      <div class="tooltip" id="chartTooltip">
-        <div class="tooltip__time" id="tipTime">—</div>
-        <div class="tooltip__val" id="tipVal">—</div>
-        <div class="preview" id="tipPreview"></div>
-      </div>
+  <div class="tooltip" id="chartTooltip">
+    <div class="tooltip__time" id="tipTime">—</div>
+    <div class="tooltip__val" id="tipVal">—</div>
+    <div class="preview" id="tipPreview"></div>
+  </div>
 </div>
 {% endmacro %}
 
@@ -122,9 +122,29 @@
   { "id": "members", "chart": "members", "i18n": "server.analytics.members", "text": "Members", "domId": "membersTab", "hidden": true }
 ], "Chart type") }}
 {% endmacro %}
+
+{% macro bunkerPanel() %}
+<div class="bunker" id="bunkerPanel" data-modal-panel="bunker" hidden>
+  <div class="bunker__state" data-bunker="state" hidden></div>
+  <button class="btn bunker__retry" type="button" data-bunker="retry" hidden></button>
+  <div class="bunker__body" data-bunker="body" hidden>
+    <div class="bunker__bar">
+      <div data-bunker="select"></div>
+      <div data-bunker="chips"></div>
+    </div>
+    <div class="modal__tabs" role="tablist" data-bunker="tabs">
+      <button class="modal__tab is-active" type="button" role="tab" aria-selected="true" data-bunker-tab="story" data-i18n="bunker.tab.story">History</button>
+      <button class="modal__tab" type="button" role="tab" aria-selected="false" data-bunker-tab="players" data-i18n="bunker.tab.players">Players</button>
+      <button class="modal__tab" type="button" role="tab" aria-selected="false" data-bunker-tab="replay" data-i18n="bunker.tab.replay">Replay</button>
+      <button class="modal__tab" type="button" role="tab" aria-selected="false" data-bunker-tab="info" data-i18n="bunker.tab.info">Info</button>
+    </div>
+    <div class="bunker__scroll" data-bunker="scroll">
+      <div data-bunker="content"></div>
     </div>
   </div>
 </div>
+{% endmacro %}
+
 {% macro appModal(scope="user") %}
 {{ shellStart("appModal", loading=true, scope=scope) }}
   <div class="modal__head">
