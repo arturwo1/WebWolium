@@ -1,5 +1,8 @@
 import { escapeHtml, formatDiscordTime, formatDuration, formatNumber, formatTsFull, t, renderDiscordMarkdownToHtml } from "@/lib/index.js";
 import { parseJsonObject, parseAttachments, renderAttachmentsHtml, replaceImageLinksInHtml, formatArgsInline } from "./chart-utils.js";
+import { getEntityResolver, mentionLabels } from "@/lib/discord/entityService.js";
+import { createMentionResolvers, guildHref, channelHref } from "@/lib/discord/mentions.js";
+import { isSnowflake } from "@/lib/discord/entities.js";
 
 function hasSpriteSymbol(id) {
   if (!id) return false;
@@ -145,17 +148,46 @@ function buildPresenceBadgeHtml(status, desktop, mobile, web) {
 function resolveGuildChannel(meta, fallbacks = {}) {
   const guildName = firstNonEmpty(meta?.guild_name, meta?.guild_id, meta?.guild) || fallbacks.guild || "";
   const channelName = firstNonEmpty(meta?.channel_name, meta?.channel_id, meta?.channel) || fallbacks.channel || "";
-  return { guildName, channelName };
+  const guildId = isSnowflake(meta?.guild_id) ? String(meta.guild_id) : null;
+  const channelId = isSnowflake(meta?.channel_id) ? String(meta.channel_id) : null;
+  return { guildName, channelName, guildId, channelId };
 }
 
-function renderSourceBar(guildName, channelName) {
+function renderSourceBar(guildName, channelName, ids = {}) {
   if (!guildName && !channelName) return "";
+
+  const entities = getEntityResolver();
+  const guildId = ids.guildId ?? null;
+  const channelId = ids.channelId ?? null;
+
+  if (guildId) entities?.request("guild", guildId)?.catch?.(() => { });
+  if (channelId) entities?.request("channel", channelId, { guildId })?.catch?.(() => { });
+
+  const guildText = (guildId && entities?.peek("guild", guildId)?.name) || guildName;
+  const channelText = (channelId && entities?.peek("channel", channelId)?.name) || channelName;
+
+  const guildAttrs = guildId ? ` data-entity="guild:${guildId}" data-prefix=""` : "";
+  const channelAttrs = channelId ? ` data-entity="channel:${channelId}" data-prefix=""` : "";
+  const siteLink = guildHref(guildId);
+  const discordLink = channelHref(guildId, channelId);
+
+  const guildHtml = guildText
+    ? siteLink
+      ? `<a class="msg-preview__guild" href="${escapeHtml(siteLink)}" title="${escapeHtml(guildText)}"${guildAttrs}>${escapeHtml(guildText)}</a>`
+      : `<div class="msg-preview__guild" title="${escapeHtml(guildText)}">${escapeHtml(guildText)}</div>`
+    : "";
+
+  const channelHtml = channelText
+    ? discordLink
+      ? `<a class="msg-preview__channel text-muted-sm" href="${escapeHtml(discordLink)}" target="_blank" rel="noopener noreferrer" title="#${escapeHtml(channelText)}"${channelAttrs}>${escapeHtml(channelText)}</a>`
+      : `<div class="msg-preview__channel text-muted-sm" title="#${escapeHtml(channelText)}">${escapeHtml(channelText)}</div>`
+    : "";
 
   return `
     <div class="msg-preview__bar">
       <span class="msg-preview__dot" aria-hidden="true"></span>
-      ${guildName ? `<div class="msg-preview__guild" title="${escapeHtml(guildName)}">${escapeHtml(guildName)}</div>` : ""}
-      ${channelName ? `<div class="msg-preview__channel text-muted-sm" title="#${escapeHtml(channelName)}">${escapeHtml(channelName)}</div>` : ""}
+      ${guildHtml}
+      ${channelHtml}
     </div>
   `;
 }
@@ -255,7 +287,7 @@ function renderGuildBucketStat(p, { useTsFallback = false } = {}) {
 export function renderUserMessagePreview(p, viewer) {
   const meta = p?.meta ?? {};
 
-  const { guildName, channelName } = resolveGuildChannel(meta, { guild: t("common.server"), channel: t("common.channel") });
+  const { guildName, channelName, guildId, channelId } = resolveGuildChannel(meta, { guild: t("common.server"), channel: t("common.channel") });
   const ts = meta.created_at ?? meta.timestamp ?? null;
   const authorName = viewer.name ?? t("common.user");
   const authorAvatar = viewer.avatar ?? null;
@@ -264,11 +296,12 @@ export function renderUserMessagePreview(p, viewer) {
   const url = p?.sample_url ?? meta.url ?? null;
   const attachments = parseAttachments(p?.sample_attachments);
   const safeText = !text && attachments.length ? "" : text ? text : t("chart.preview.no_preview");
-  const bodyHtml = replaceImageLinksInHtml(renderDiscordMarkdownToHtml(safeText));
+  const mentions = createMentionResolvers({ entities: getEntityResolver(), guildId, labels: mentionLabels() });
+  const bodyHtml = replaceImageLinksInHtml(renderDiscordMarkdownToHtml(safeText, mentions));
   const attachmentsHtml = renderAttachmentsHtml(attachments);
 
   return `
-    ${renderSourceBar(guildName, channelName)}
+    ${renderSourceBar(guildName, channelName, { guildId, channelId })}
 
     <div class="msg-preview__row">
       <div class="msg-preview__avatar" aria-hidden="true">
@@ -494,7 +527,7 @@ export function renderUserActivityPreview(p, viewer) {
 
 export function renderUserCommandsPreview(p, viewer) {
   const meta = p?.meta ?? {};
-  const { guildName, channelName } = resolveGuildChannel(meta, { guild: t("common.server"), channel: t("common.channel") });
+  const { guildName, channelName, guildId, channelId } = resolveGuildChannel(meta, { guild: t("common.server"), channel: t("common.channel") });
 
   const ts = meta.created_at ?? meta.timestamp ?? null;
   const authorName = viewer.name ?? t("common.user");
@@ -517,7 +550,7 @@ export function renderUserCommandsPreview(p, viewer) {
     : `<span class="muted">${escapeHtml(t("common.args"))}</span>`;
 
   return `
-    ${renderSourceBar(guildName, channelName)}
+    ${renderSourceBar(guildName, channelName, { guildId, channelId })}
 
     <div class="msg-preview__row">
       <div class="msg-preview__avatar" aria-hidden="true">

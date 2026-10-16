@@ -2,7 +2,7 @@ import { escapeHtml } from "../security/html.js";
 import { safeLink } from "../security/url.js";
 import hljs from "highlight.js/lib/common";
 
-export function renderDiscordMarkdownToHtml(input) {
+export function renderDiscordMarkdownToHtml(input, { resolveUser = null, resolveChannel = null, resolveRole = null } = {}) {
   const raw = String(input ?? "").replace(/\r\n?/g, "\n");
   if (!raw) return "";
 
@@ -56,6 +56,39 @@ export function renderDiscordMarkdownToHtml(input) {
   s = s.replace(/`([^`\n]+)`/g, (_m, code) => {
     return put(inlines, "INLINE", `<code class="md-code">${code}</code>`);
   });
+
+  const mentionHtml = (resolved, className) => {
+    if (!resolved?.label) return null;
+    const label = escapeHtml(resolved.label);
+    const entity = resolved.kind && resolved.id
+      ? ` data-entity="${escapeHtml(`${resolved.kind}:${resolved.id}`)}" data-prefix="${escapeHtml(resolved.prefix ?? "")}"`
+      : "";
+    if (!resolved.href) return `<span class="${className}"${entity}>${label}</span>`;
+    const external = /^https?:/i.test(resolved.href);
+    const attrs = external ? ` target="_blank" rel="noopener noreferrer"` : "";
+    return `<a class="${className}" href="${escapeHtml(resolved.href)}"${attrs}${entity}>${label}</a>`;
+  };
+
+  if (resolveUser) {
+    s = s.replace(/&lt;@!?(\d{15,25})&gt;/g, (m, id) => {
+      const html = mentionHtml(resolveUser(id), "md-mention");
+      return html ? put(links, "LINK", html) : m;
+    });
+  }
+
+  if (resolveChannel) {
+    s = s.replace(/&lt;#(\d{15,25})&gt;/g, (m, id) => {
+      const html = mentionHtml(resolveChannel(id), "md-mention md-mention--channel");
+      return html ? put(links, "LINK", html) : m;
+    });
+  }
+
+  if (resolveRole) {
+    s = s.replace(/&lt;@&amp;(\d{15,25})&gt;/g, (m, id) => {
+      const html = mentionHtml(resolveRole(id), "md-mention md-mention--role");
+      return html ? put(links, "LINK", html) : m;
+    });
+  }
 
   s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/gi, (_m, text, url) => {
     return put(links, "LINK", makeLinkHtml(text, url));
