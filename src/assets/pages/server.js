@@ -1,6 +1,10 @@
-import { $, lsJSONGet, lsJSONSet, lsCleanExpired, t, onLangChange, hud, on, initCollapsible } from "@/lib/index.js";
+import { $, lsJSONGet, lsJSONSet, lsCleanExpired, t, onLangChange, hud, initCollapsible, createModalController } from "@/lib/index.js";
 import { createWebRequestService } from "@/services/index.js";
 import { initChart } from "@/lib/chart/chart.js";
+import { createEntityResolver } from "@/lib/discord/entities.js";
+import { setEntityResolver } from "@/lib/discord/entityService.js";
+import { createUserFetcher } from "@/lib/discord/fetchers.js";
+import { CHART_PARAM_KEYS, collectChartParams, readChartParams, applyChartParams, snapshotChartSelects, restoreChartSelects } from "@/lib/chart/chartUrlState.js";
 import { getDiscordProviderToken, logout } from "@/lib/auth/discordProviderToken.js";
 import { buildServerSettingsForm, collectFormPayload } from "@/lib/server/settingsForm.js";
 import { applyServerAnalyticsData } from "@/lib/server/serverAnalytics.js";
@@ -31,20 +35,6 @@ function normalizeServerTab(tab) {
   return SERVER_TABS.has(tab) ? tab : "analytics";
 }
 
-function setModalOpen(modal, open) {
-  if (!modal) return;
-  modal.classList.toggle("is-open", open);
-  modal.setAttribute("aria-hidden", open ? "false" : "true");
-}
-
-function chartTitle(type) {
-  if (type === "guild_messages") return t("profile.messages");
-  if (type === "guild_voice") return t("profile.voice");
-  if (type === "guild_activities") return t("profile.activities");
-  if (type === "guild_members") return t("server.analytics.members");
-  return t("chart.title");
-}
-
 function getParam(key) {
   const params = new URLSearchParams(window.location.search);
   return (params.get(key) || "").trim();
@@ -69,9 +59,7 @@ export async function initServerPage(sb) {
   const serverTabs = Array.from(document.querySelectorAll("[data-server-tab]"));
   const serverViews = Array.from(document.querySelectorAll("[data-server-view]"));
 
-  const chartModal = $("#chartModal");
-  const chartClose = $("#chartClose");
-  const chartTitleEl = $("#chartTitle");
+  const chartModal = $("#appModal");
   const chartTabs = Array.from(document.querySelectorAll("[data-chart-type]"));
   const chartChannelId = $("#chartChannelId");
   const chartRoleId = $("#chartRoleId");
@@ -95,7 +83,7 @@ export async function initServerPage(sb) {
 
   const Ids = { channels: {}, roles: {} };
 
-  if (!serverApp || !serverBotMissing || !statsRoot || !profileRoot || !chartModal || !chartClose || !chartTitleEl || !chartChannelId || !guildId) {
+  if (!serverApp || !serverBotMissing || !statsRoot || !profileRoot || !chartModal || !chartChannelId || !guildId) {
     return null;
   }
 
@@ -111,6 +99,18 @@ export async function initServerPage(sb) {
     defaultTimeoutMs: 15_000
   });
 
+  const entityWr = createWebRequestService(sb, {
+    defaultCacheTtlMs: 0,
+    defaultCooldownMs: 0,
+    defaultTimeoutMs: 8_000,
+    hud: { loading: () => () => { }, error: () => { } }
+  });
+
+  setEntityResolver(createEntityResolver({
+    fetchers: { user: createUserFetcher((kind, payload, opts) => entityWr.queue(kind, payload, opts)) },
+    storage: { get: lsJSONGet, set: lsJSONSet }
+  }));
+
   const queueChart = wr.makeLatestDebouncedQueue({
     debounceMs: 200,
     kinds: new Set(["guild_messages_series", "guild_voice_series", "guild_activities_series", "guild_members_series"]),
@@ -118,6 +118,7 @@ export async function initServerPage(sb) {
 
   let lastProfileResponse = null;
   let chart = null;
+  let modalCtl = null;
   let currentServerConfig = null;
   let isConfigLoaded = false;
 
@@ -205,17 +206,8 @@ export async function initServerPage(sb) {
     statsRoot.classList.remove("loading");
   }
 
-  function syncChartUi(type) {
-    const normalizedType = normalizeChartType(type);
-    chartModal.dataset.chartType = normalizedType;
-    setText(chartTitleEl, chartTitle(normalizedType));
-
-    for (const tab of chartTabs) {
-      const isActive = normalizeChartType(tab.dataset.chartType) === normalizedType;
-      tab.classList.toggle("is-active", isActive);
-      tab.setAttribute("aria-selected", isActive ? "true" : "false");
-      tab.setAttribute("tabindex", isActive ? "0" : "-1");
-    }
+  function currentChartType() {
+    return normalizeChartType(modalCtl?.current()?.chartType || "guild_messages");
   }
 
   function renderOptions(type = "guild_messages") {
@@ -291,7 +283,7 @@ export async function initServerPage(sb) {
 
       Ids.channels = res?.channels ?? {};
       Ids.roles = res?.roles ?? {};
-      renderOptions(normalizeChartType(chartModal?.dataset?.chartType || "guild_messages"));
+      renderOptions(currentChartType());
 
       if (administrator) {
         loadServerConfig();
@@ -312,7 +304,7 @@ export async function initServerPage(sb) {
         renderStats(saved.res);
         Ids.channels = saved.res?.channels ?? {};
         Ids.roles = saved.res?.roles ?? {};
-        renderOptions(normalizeChartType(chartModal?.dataset?.chartType || "guild_messages"));
+        renderOptions(currentChartType());
         if (administrator) {
           loadServerConfig();
           document.querySelector('[data-server-tab="settings"]').disabled = !administrator;
@@ -333,27 +325,34 @@ export async function initServerPage(sb) {
       cooldownMs: 1_500,
       timeoutMs: 80_000,
       defaultDays: 30,
-      viewer: { name: t("common.user"), avatar: null },
-      onTypeChange: syncChartUi
+      viewer: { name: t("common.user"), avatar: null }
     });
 
     return chart;
   }
 
-  function openChart(type) {
-    const normalizedType = normalizeChartType(type);
-    syncChartUi(normalizedType);
-    renderOptions(normalizedType);
-    chartChannelId.value = "";
-    setModalOpen(chartModal, true);
-
-    const c = ensureChart();
-    c?.setType(normalizedType);
-  }
-
-  function closeChart() {
-    setModalOpen(chartModal, false);
-  }
+  modalCtl = createModalController(chartModal, {
+    extraKeys: CHART_PARAM_KEYS,
+    getParams: () => collectChartParams(chartModal),
+    onOpen: (tab, info) => {
+      const type = normalizeChartType(tab.chartType);
+      const kept = snapshotChartSelects(chartModal);
+      renderOptions(type);
+      restoreChartSelects(chartModal, kept);
+      const params = info?.fromUrl ? readChartParams(new URLSearchParams(window.location.search)) : null;
+      const applyParams = (notify) => applyChartParams(chartModal, params, { notify });
+      if (params) applyParams(false);
+      ensureChart()?.setType(type);
+      if (params) applyParams(true);
+    },
+    onTab: (tab) => {
+      const type = normalizeChartType(tab.chartType);
+      const kept = snapshotChartSelects(chartModal);
+      ensureChart()?.setType(type);
+      renderOptions(type);
+      restoreChartSelects(chartModal, kept);
+    }
+  });
 
   setActiveTab(readServerTab());
 
@@ -363,15 +362,9 @@ export async function initServerPage(sb) {
 
   window.addEventListener("popstate", () => setActiveTab(readServerTab()));
 
-  document.querySelectorAll("[data-chart-type]").forEach((el) => {
-    on(el, "click", (e) => {
-      e.stopPropagation();
-      setTimeout(() => renderOptions(normalizeChartType(chartModal?.dataset?.chartType || "guild_messages")), 0);
-    });
-  });
-
   try {
-    await loadStats();
+    const stats = await loadStats();
+    if (stats && stats.me !== false) modalCtl.syncFromUrl();
   } catch (e) {
     console.warn("[server] init failed:", e);
   }
@@ -380,24 +373,14 @@ export async function initServerPage(sb) {
     const btn = e.target.closest(".stat--link");
     const type = btn?.dataset?.chart;
     if (!type) return;
-    openChart(type);
+    modalCtl.open(type);
   });
-
-  chartClose.addEventListener("click", closeChart);
-  chartModal.addEventListener("click", (e) => {
-    if (e.target === chartModal) closeChart();
-  });
-
-  syncChartUi("guild_messages");
 
   onLangChange(() => {
-    const currentType = chartModal?.dataset?.chartType || "guild_messages";
-
-    if (chartModal?.classList.contains("is-open")) {
-      syncChartUi(currentType);
-      renderOptions(currentType);
-    } else {
-      setText(chartTitleEl, t("chart.title"));
+    if (modalCtl.isOpen()) {
+      const kept = snapshotChartSelects(chartModal);
+      renderOptions(currentChartType());
+      restoreChartSelects(chartModal, kept);
     }
 
     if (lastProfileResponse && lastProfileResponse?.me !== false) {
