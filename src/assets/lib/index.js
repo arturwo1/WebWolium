@@ -14,6 +14,7 @@ export * from "./text/i18n.js";
 export * from "./format/formatters.js";
 export * from "./format/datetime.js";
 export * from "./format/axisTime.js";
+export * from "./format/compression.js";
 
 export * from "./auth/identity.js";
 export * from "./auth/oauth.js";
