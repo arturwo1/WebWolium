@@ -30,8 +30,8 @@ function enumText(group, slug, ctx) {
   return translated(ctx, `bunker.${group}.${slug}`) ?? humanizeSlug(slug);
 }
 
-function catastropheText(slug, ctx) {
-  return translated(ctx, `bunker_config.catastrophes.${slug}`) ?? translated(ctx, `bunker.catastrophe.${slug}`) ?? humanizeSlug(slug);
+function catastropheName(catastrophe, ctx) {
+  return catastrophe.type_key ? keyText(catastrophe.type_key, ctx) : humanizeSlug(catastrophe.slug);
 }
 
 function traitText(item, ctx) {
@@ -80,7 +80,7 @@ function serverChip(game, ctx) {
 }
 
 function channelChip(game, ctx) {
-  const channelName = game.payload?.discord?.channel_name ?? game.payload?.ai?.channel_name;
+  const channelName = game.payload?.discord?.channel_name;
   const guildId = guildIdOf(game);
   const rawId = game.payload?.discord?.channel_id;
   const channelId = typeof rawId === "string" && SNOWFLAKE_RE.test(rawId) ? rawId : null;
@@ -124,7 +124,7 @@ export function renderGameChips(game, ctx) {
   const summary = gameSummary(game);
   const chips = [serverChip(game, ctx), channelChip(game, ctx)];
 
-  if (summary.catastrophe) chips.push(chip(catastropheText(summary.catastrophe, ctx)));
+  if (summary.catastrophe) chips.push(chip(catastropheName({ slug: summary.catastrophe, type_key: summary.catastropheKey }, ctx)));
   if (summary.years != null) chips.push(chip(ctx.t("bunker.years", { count: summary.years })));
   if (summary.difficulty) chips.push(chip(enumText("difficulty", summary.difficulty, ctx)));
   if (summary.playersCount) chips.push(chip(ctx.t("bunker.players_count", { count: summary.playersCount })));
@@ -371,7 +371,7 @@ export function renderReplay(game, ctx) {
     root.append(section);
   }
 
-  const finalists = (game.payload.finalists ?? game.payload.ai?.finalists ?? []).map(String);
+  const finalists = (game.payload.finalists ?? []).map(String);
   if (finalists.length) {
     const block = node("div", "bround bround--final");
     block.append(node("div", "bround__title", ctx.t("bunker.finalists")));
@@ -438,8 +438,10 @@ export function renderInfo(game, ctx) {
 
   const catastrophe = payload.catastrophe;
   section("bunker.info.catastrophe", catastrophe ? [
-    catastrophe.slug ? infoRow(ctx.t("bunker.info.name"), catastropheText(catastrophe.slug, ctx)) : null,
-    catastrophe.years != null ? infoRow(ctx.t("bunker.info.duration_years"), ctx.t("bunker.years", { count: catastrophe.years })) : null
+    catastrophe.slug ? infoRow(ctx.t("bunker.info.name"), catastropheName(catastrophe, ctx)) : null,
+    catastrophe.years != null ? infoRow(ctx.t("bunker.info.duration_years"), ctx.t("bunker.years", { count: catastrophe.years })) : null,
+    catastrophe.description_key ? infoRow(ctx.t("bunker.info.description"), keyText(catastrophe.description_key, ctx)) : null,
+    catastrophe.history_key ? infoRow(ctx.t("bunker.info.history"), keyText(catastrophe.history_key, ctx)) : null
   ] : []);
 
   const bunker = payload.bunker;

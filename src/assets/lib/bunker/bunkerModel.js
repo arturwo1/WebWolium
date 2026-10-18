@@ -71,7 +71,7 @@ export function playerName(payload, id) {
 
 export function buildPlayers(payload) {
   const players = payload?.players ?? {};
-  const finalists = new Set((payload?.finalists ?? payload?.ai?.finalists ?? []).map(String));
+  const finalists = new Set((payload?.finalists ?? []).map(String));
   const revealed = new Map();
   const eliminated = new Map();
 
@@ -199,6 +199,7 @@ export function gameSummary(game) {
     roundsCount: Object.keys(payload?.rounds ?? {}).length || null,
     difficulty: payload?.difficulty ?? null,
     catastrophe: payload?.catastrophe?.slug ?? null,
+    catastropheKey: payload?.catastrophe?.type_key ?? null,
     years: payload?.catastrophe?.years ?? null
   };
 }
