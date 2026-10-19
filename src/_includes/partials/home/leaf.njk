@@ -4,6 +4,7 @@
 {% import "partials/accountSettingsPage.njk" as accountSettingsPage %}
 {% import "partials/leaderboardDemo.njk" as leaderboardDemo %}
 {% import "partials/chartWidget.njk" as chartWidget %}
+{% import "partials/bunkerDemo.njk" as bunkerDemo %}
 
 {% macro renderDemoWidget(node, leafKeyBase, locales) %}
   {% set teaserKey = leafKeyBase + ".teaser" %}
@@ -37,6 +38,10 @@
   {% elif node.meta.widget == "leaderboard-demo" %}
     <div class="home-shot home-shot--leaderboard-demo" data-widget="leaderboard-demo">
       {{ leaderboardDemo.renderLeaderboardDemo() }}
+    </div>
+  {% elif node.meta.widget == "bunker-demo" %}
+    <div class="home-shot home-shot--bunker-demo" data-widget="bunker-demo">
+      {{ bunkerDemo.renderBunkerDemo() }}
     </div>
   {% else %}
     <div class="home-shot" data-widget="{{ node.meta.widget }}">

@@ -123,8 +123,8 @@
 ], "Chart type") }}
 {% endmacro %}
 
-{% macro bunkerPanel() %}
-<div class="bunker" id="bunkerPanel" data-modal-panel="bunker" hidden>
+{% macro bunkerPanel(demo=false) %}
+<div class="bunker"{% if demo %} data-bunker-demo{% else %} id="bunkerPanel" data-modal-panel="bunker" hidden{% endif %}>
   <div class="bunker__state" data-bunker="state" hidden></div>
   <button class="btn bunker__retry" type="button" data-bunker="retry" hidden></button>
   <div class="bunker__body" data-bunker="body" hidden>

@@ -110,6 +110,7 @@ export default function () {
         children: [
           { id: "word-game", display: "leaf", audience: ["admin", "user"], reveal: "modal", text: { teaser: true, short: true, full: true }, meta: {} },
           { id: "count-game", display: "leaf", audience: ["admin", "user"], reveal: "modal", text: { teaser: true, short: true, full: true }, meta: {} },
+          { id: "bunker", display: "leaf", audience: ["user"], reveal: "modal", text: { teaser: true, short: true, full: true }, meta: { command: "/bunker" } },
         ],
       },
 
@@ -175,6 +176,7 @@ export default function () {
       { id: "chart", display: "leaf", category: "analytics", audience: ["user"], reveal: "none", text: { teaser: true, short: true, full: true }, meta: { widget: "chart-demo" } },
       { id: "leaderboard-page", display: "leaf", category: "social", audience: ["user"], reveal: "none", text: { teaser: true, short: true, full: true }, meta: { widget: "leaderboard-demo" } },
       { id: "profile-page", display: "leaf", category: "social", audience: ["user"], reveal: "none", text: { teaser: true, short: true, full: true }, meta: { widget: "profile-demo" } },
+      { id: "bunker-games", display: "leaf", category: "fun", audience: ["user"], reveal: "none", text: { teaser: true, short: true, full: true }, meta: { widget: "bunker-demo" } },
       { id: "server-page", display: "leaf", category: "social", audience: ["user"], reveal: "none", text: { teaser: true, short: true, full: true }, meta: { widget: "server-demo" } },
       { id: "servers-list-user", display: "leaf", category: "social", audience: ["user"], reveal: "none", text: { teaser: true, short: true }, meta: { widget: "servers-demo" } },
       { id: "account-settings", display: "leaf", category: "privacy", audience: ["user"], reveal: "none", text: { teaser: true, short: true, full: true }, meta: { widget: "settings-account-demo" } },

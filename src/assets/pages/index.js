@@ -6,6 +6,8 @@ import { generateFakeServersData } from "@/lib/demo/fakeServers.js";
 import { generateFakeServerAnalytics, generateFakeServerConfig } from "@/lib/demo/fakeServer.js";
 import { generateFakeAccountSettingsState } from "@/lib/demo/fakeAccountSettings.js";
 import { generateFakeLeaderboardEntries } from "@/lib/demo/fakeLeaderboard.js";
+import { generateFakeBunkerGames, createFakeBunkerStore } from "@/lib/demo/fakeBunker.js";
+import { createBunkerPanel } from "@/lib/bunker/bunkerPanel.js";
 import { createFakeChartQueue, BASE_DAYS } from "@/lib/demo/fakeChartData.js";
 import { applyProfileDisplayData } from "@/pages/profile.js";
 import { createServerListController } from "@/lib/servers/serverListController.js";
@@ -71,6 +73,19 @@ function initAccountSettingsDemoPlaceholder(root) {
       syncAccountSettingsInputs(sectionsEl, state);
     });
   });
+}
+
+function initBunkerDemoPlaceholder(root) {
+  const panelRoot = root.querySelector("[data-bunker-demo]");
+  if (!panelRoot) return;
+
+  const { games, meId } = generateFakeBunkerGames(createRng(Date.now() + Math.floor(Math.random() * 1e6)));
+  const panel = createBunkerPanel({
+    root: panelRoot,
+    createStore: async () => ({ store: createFakeBunkerStore(games), meId })
+  });
+
+  panel?.show().catch((e) => console.warn("[home] bunker demo failed:", e));
 }
 
 function initLeaderboardDemoPlaceholder(root) {
@@ -541,6 +556,7 @@ const widgetInitializers = {
   "settings-account-demo": initAccountSettingsDemoPlaceholder,
   "servers-demo": initServersDemoPlaceholder,
   "server-demo": initServerDemoPlaceholder,
+  "bunker-demo": initBunkerDemoPlaceholder,
 };
 
 const initializedWidgets = new Set();

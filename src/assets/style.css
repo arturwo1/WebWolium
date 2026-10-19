@@ -5552,3 +5552,40 @@ html.pt-enter-shell.pt-ready .topbar {
     height: 320px;
   }
 }
+
+.home-shot--bunker-demo {
+  overflow: visible;
+  border: 0;
+  background: transparent;
+}
+
+.bunker-demo {
+  display: flex;
+  flex-direction: column;
+  height: 600px;
+  max-height: 85vh;
+  border-radius: var(--r-lg);
+  border: var(--line);
+  background: var(--c-panel);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.bunker-demo__tabs .modal__tab {
+  cursor: default;
+  pointer-events: none;
+}
+
+.bunker-demo__close {
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .bunker-demo {
+    height: 560px;
+  }
+
+  .bunker-demo__tabs {
+    display: none;
+  }
+}

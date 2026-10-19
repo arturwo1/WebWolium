@@ -1,0 +1,22 @@
+{% import "partials/modals.njk" as modals %}
+
+{% macro renderBunkerDemo() %}
+<div class="bunker-demo">
+  <div class="modal__head">
+    <div class="modal__title" data-i18n="profile.bunker">Bunker</div>
+
+    <div class="modal__tabs bunker-demo__tabs" aria-hidden="true">
+      <span class="modal__tab" data-i18n="profile.messages">Messages</span>
+      <span class="modal__tab" data-i18n="profile.voice">Voice</span>
+      <span class="modal__tab" data-i18n="profile.activities">Activity</span>
+      <span class="modal__tab is-active" data-i18n="profile.bunker">Bunker</span>
+    </div>
+
+    <span class="icon-btn bunker-demo__close" aria-hidden="true">
+      <svg class="icon"><use href="#close"></use></svg>
+    </span>
+  </div>
+
+  {{ modals.bunkerPanel(true) }}
+</div>
+{% endmacro %}
