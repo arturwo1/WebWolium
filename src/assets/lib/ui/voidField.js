@@ -23,15 +23,15 @@ export function initVoidField() {
   window.addEventListener("resize", resize);
   resize();
 
-  let t = 0;
-  function draw() {
-    t += 0.016;
+  function draw(now = performance.now()) {
+    const t = now * 0.001;
     ctx.clearRect(0, 0, W, H);
+    
     for (const d of dots) {
       const twinkle = d.baseAlpha + Math.sin(t * d.speed * 10 + d.phase) * 0.2;
       ctx.beginPath();
       ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(var(--rgb-primary), ${Math.max(0, twinkle)})`.replace("var(--rgb-primary)", "128, 224, 245");
+      ctx.fillStyle = `rgba(128, 224, 245, ${Math.max(0, twinkle)})`;
       ctx.shadowColor = "rgba(128, 224, 245, 0.35)";
       ctx.shadowBlur = 2;
       ctx.fill();

@@ -85,6 +85,8 @@ export async function initSettingsPage(sb) {
       await saveAccountSettingsState(currentAccountSettings);
     });
 
+    $("#displaySettings").classList.remove("loading");
+    $("#consentSettings").classList.remove("loading");
     $("#privacySettings").classList.remove("loading");
     initCollapsible(accountSettingsSections, ["messages", "voice", "activity", "diagnostics", "visibility"]);
   }

@@ -138,6 +138,7 @@ async function fetchGuilds(sb) {
 }
 
 export async function initServersPage(sb) {
+  const statsEl = $("#srvStats");
   const listEl = $("#srvList");
   const errorEl = $("#srvError");
   const errorTextEl = $("#srvErrorText");
@@ -152,6 +153,7 @@ export async function initServersPage(sb) {
   const controller = createServerListController(document, { interactive: true, emptyMessages: true });
 
   function renderSkeleton() {
+    statsEl.classList.add("loading");
     listEl.classList.add("loading");
     listEl.replaceChildren();
     for (let i = 0; i < 6; i++) {

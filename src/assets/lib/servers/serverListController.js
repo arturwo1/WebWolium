@@ -38,6 +38,7 @@ function matchesSearch(guild, query) {
 
 export function createServerListController(root, { interactive = true, emptyMessages = true } = {}) {
   const nodes = {
+    stats: field(root, "stats"),
     list: field(root, "list"),
     empty: field(root, "empty"),
     emptyTitle: field(root, "empty-title"),
@@ -99,6 +100,7 @@ export function createServerListController(root, { interactive = true, emptyMess
     const isFiltered = state.guilds.length > 0 && visible.length === 0;
 
     nodes.list.classList.remove("loading");
+    nodes.stats.classList.remove("loading");
     nodes.list.replaceChildren();
 
     if (emptyMessages && (!state.guilds.length || isFiltered)) {

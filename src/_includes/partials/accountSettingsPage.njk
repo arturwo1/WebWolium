@@ -2,16 +2,16 @@
 <article class="card section">
   <h2 class="section-title" data-i18n="settings.display">Display</h2>
 
-  <div class="kv" style="gap:10px">
+  <div class="kv{% if interactive %} loading{% endif %}" style="gap:10px" id="displaySettings">
     <label class="k"{% if interactive %} for="lang"{% endif %} data-i18n="language">Language</label>
-    <select class="input" data-field="lang-select"{% if interactive %} id="lang" data-lang-select{% else %} disabled{% endif %}>
+    <select class="input{% if interactive %} skeleton{% endif %}" data-field="lang-select"{% if interactive %} id="lang" data-lang-select{% else %} disabled{% endif %}>
       {% for code in locales %}
         <option value="{{ code }}"{% if not interactive and prefill and code == prefill.lang %} selected{% endif %}>{{ code }}</option>
       {% endfor %}
     </select>
 
     <label class="k"{% if interactive %} for="variation"{% endif %} data-i18n="settings.number_format">Number Format</label>
-    <select class="input" data-field="variation-select"{% if interactive %} id="variation" data-variation-select{% else %} disabled{% endif %}>
+    <select class="input{% if interactive %} skeleton{% endif %}" data-field="variation-select"{% if interactive %} id="variation" data-variation-select{% else %} disabled{% endif %}>
       <option value="normal" data-i18n="settings.format_normal">Normal (1.23K)</option>
       <option value="none" data-i18n="settings.format_none">Nothing (1,234)</option>
       <option value="scientific" data-i18n="settings.format_scientific">Scientific (1.23e3)</option>
@@ -19,11 +19,11 @@
   </div>
 </article>
 
-<article class="card section">
+<article class="card section{% if interactive %} loading{% endif %}" id="consentSettings">
   <h2 class="section-title" data-i18n="settings.consent">Consent</h2>
 
   <div class="kv" style="gap:10px">
-    <label class="input">
+    <label class="input{% if interactive %} skeleton{% endif %}">
       <input type="checkbox" data-field="cookie-consent"{% if interactive %} id="cookie-consent"{% else %} disabled{% endif %}{% if not interactive and prefill and prefill.cookieConsent %} checked{% endif %}>
       <span data-i18n="cookie.details">I accept the use of cookies</span>
     </label>
@@ -33,7 +33,7 @@
 <article class="card section{% if interactive %} loading{% endif %}" data-field="privacy-card"{% if interactive %} id="privacySettings"{% endif %}>
   <h2 class="section-title" data-i18n="privacy.section">Privacy</h2>
 
-  <div class="privacy-presets" style="margin-bottom: 16px;">
+  <div class="privacy-presets{% if interactive %} skeleton{% endif %}" style="margin-bottom: 16px;">
     <div style="margin-bottom: 10px; font-weight: 800; font-size: 13px; color: var(--c-muted); text-transform: uppercase; letter-spacing: 0.05em;" data-i18n="privacy.presets">Presets</div>
     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
       <button class="btn-preset" data-preset="private" type="button" data-field="preset" data-i18n="privacy.preset_private">Private</button>

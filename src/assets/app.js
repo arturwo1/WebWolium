@@ -30,19 +30,9 @@ import { createWebRequestService } from "@/services/index.js";
 
 import { DISCORD_AUTH_LOST_EVENT, clearDiscordTokenCache, initDiscordTokenCache, initDiscordAuth } from "@/lib/auth/discordProviderToken.js";
 
-import { initProfilePage } from "./pages/profile.js";
-import { initHomePage } from "./pages/index.js";
-import { initSettingsPage } from "./pages/settings.js";
-import { initNewsPage } from "./pages/news.js";
-import { initLeaderboardPage } from "./pages/leaderboard.js";
-import { initServersPage } from "./pages/servers.js";
-import { initServerPage } from "./pages/server.js";
-
 import { initPageTransitions } from "@/lib/ui/pageTransitions.js";
 
 import "highlight.js/styles/github-dark.css";
-
-import { DiscordSDK } from "@discord/embedded-app-sdk";
 
 const DISCORD_PARAM_KEYS = ["frame_id", "instance_id", "platform"];
 
@@ -69,16 +59,15 @@ if (params.has("frame_id")) {
 }
 
 let discordSdk = null;
+
 if (params.has("frame_id") && params.has("instance_id")) {
   try {
+    const { DiscordSDK } = await import("@discord/embedded-app-sdk");
     discordSdk = new DiscordSDK("1051105900116574250");
   } catch (e) {
     console.warn("[app] DiscordSDK init skipped:", e);
   }
 }
-
-await initI18n();
-initConsent();
 
 const mo = new MutationObserver((muts) => {
   for (const m of muts) {
@@ -136,56 +125,59 @@ async function syncAuthUI(sb) {
 
 async function initCurrentPage(sb, session) {
   const pid = pageId();
+  if (!pid || started.has(pid)) return;
 
-  if (pid === "login") {
-    if (started.has("login")) return;
-    started.add("login");
-    await showGate();
-    return;
-  } else if (pid === "profile") {
-    if (!session) return;
-    if (started.has("profile")) return;
-    started.add("profile");
-    await initProfilePage(sb);
-    return;
-  } else if (pid === "home") {
-    if (started.has("home")) return;
-    started.add("home");
-    await initHomePage();
-    return;
-  } else if (pid === "settings") {
-    if (!session) return;
-    if (started.has("settings")) return;
-    started.add("settings");
-    await initSettingsPage(sb);
-    return;
-  } else if (pid === "news") {
-    if (started.has("news")) return;
-    started.add("news");
-    await initNewsPage();
-    return;
-  } else if (pid === "leaderboard") {
-    if (!session) return;
-    if (started.has("leaderboard")) return;
-    started.add("leaderboard");
-    await initLeaderboardPage(sb);
-    return;
-  } else if (pid === "server") {
-    if (!session) return;
-    if (started.has("server")) return;
-    started.add("server");
-    await initServerPage(sb);
-    return;
-  } else if (pid === "servers") {
-    if (!session) return;
-    if (started.has("servers")) return;
-    started.add("servers");
-    await initServersPage(sb);
-    return;
+  const authPages = ["profile", "settings", "leaderboard", "server", "servers"];
+  if (authPages.includes(pid) && !session) return;
+
+  started.add(pid);
+
+  switch (pid) {
+    case "login":
+      await showGate();
+      break;
+    case "home": {
+      const { initHomePage } = await import("./pages/index.js");
+      await initHomePage();
+      break;
+    }
+    case "profile": {
+      const { initProfilePage } = await import("./pages/profile.js");
+      await initProfilePage(sb);
+      break;
+    }
+    case "settings": {
+      const { initSettingsPage } = await import("./pages/settings.js");
+      await initSettingsPage(sb);
+      break;
+    }
+    case "news": {
+      const { initNewsPage } = await import("./pages/news.js");
+      await initNewsPage();
+      break;
+    }
+    case "leaderboard": {
+      const { initLeaderboardPage } = await import("./pages/leaderboard.js");
+      await initLeaderboardPage(sb);
+      break;
+    }
+    case "server": {
+      const { initServerPage } = await import("./pages/server.js");
+      await initServerPage(sb);
+      break;
+    }
+    case "servers": {
+      const { initServersPage } = await import("./pages/servers.js");
+      await initServersPage(sb);
+      break;
+    }
   }
 }
 
 async function boot() {
+  await initI18n();
+  initConsent();
+
   const btnAvatar = $("#btnAvatar");
   const userDropdown = $("#userDropdown");
 
@@ -193,6 +185,10 @@ async function boot() {
   const chartOptionsDropdown = $("#chartOptionsDropdown");
 
   initPageTransitions();
+
+  setTimeout(() => {
+    document.documentElement.classList.add("pt-ready");
+  }, 50);
 
   if (!isDiscord) {
     registerServiceWorker();
@@ -343,12 +339,7 @@ async function boot() {
 
   await initCurrentPage(sb, session);
 
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      document.documentElement.classList.add("pt-ready");
-      window.dispatchEvent(new Event("app:page-ready"));
-    });
-  });
+  window.dispatchEvent(new Event("app:page-ready"));
 
   if (sb) {
     sb.auth.onAuthStateChange(async (_e, newSession) => {

@@ -63,15 +63,24 @@ export function initVoidFly({ scrollRoot, excludeSelector = null } = {}) {
     });
   }
 
-  let animationTime = 0;
-  function animateIdle() {
-    animationTime += 0.016;
+  let lastTime = performance.now();
+  function animateIdle(now = performance.now()) {
+    const dt = Math.min((now - lastTime) * 0.001, 0.1);
+    lastTime = now;
+
+    const time = now * 0.001;
+
+    const lerpRate = 1 - Math.pow(1 - 0.07, dt * 60);
+
     for (const reveal of wobbling) {
       if (!reveal._inner || !reveal.classList.contains("fly-visible")) continue;
-      const y = Math.sin(animationTime * reveal._floatSpeed + reveal._floatPhase) * reveal._floatAmp;
-      const rotation = Math.sin(animationTime * reveal._floatSpeed * 0.7 + reveal._floatPhase) * reveal._floatAmpRot;
-      reveal._repelX += (reveal._repelTargetX - reveal._repelX) * 0.07;
-      reveal._repelY += (reveal._repelTargetY - reveal._repelY) * 0.07;
+
+      const y = Math.sin(time * reveal._floatSpeed + reveal._floatPhase) * reveal._floatAmp;
+      const rotation = Math.sin(time * reveal._floatSpeed * 0.7 + reveal._floatPhase) * reveal._floatAmpRot;
+
+      reveal._repelX += (reveal._repelTargetX - reveal._repelX) * lerpRate;
+      reveal._repelY += (reveal._repelTargetY - reveal._repelY) * lerpRate;
+
       reveal._inner.style.transform = `translate(${reveal._repelX}px, ${y + reveal._repelY}px) rotate(${rotation}deg)`;
     }
     requestAnimationFrame(animateIdle);
