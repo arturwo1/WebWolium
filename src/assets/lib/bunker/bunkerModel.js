@@ -54,6 +54,14 @@ export function traitValues(card, spec) {
   if (Array.isArray(raw)) return raw.filter((key) => key != null && key !== "").map((key) => ({ key: String(key) }));
   if (raw == null || raw === "") return [];
   if (spec.field === "age") return [{ value: String(raw) }];
+
+  if (spec.category === "gender") {
+    return [{
+      key: String(raw),
+      orientationKey: card.orientation_key ? String(card.orientation_key) : null
+    }];
+  }
+
   return [{ key: String(raw) }];
 }
 

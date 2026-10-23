@@ -105,6 +105,7 @@ function buildCard(rng, extraTraits) {
       card.age = between(rng, 18, 80);
     } else if (spec.category === "gender") {
       card.gender_key = pick(rng, poolOf(TRAIT_POOLS.gender));
+      card.orientation_key = pick(rng, poolOf(TRAIT_POOLS.orientation));
     } else {
       card[spec.field] = sampleKeys(rng, TRAIT_POOLS[spec.category], 1);
     }

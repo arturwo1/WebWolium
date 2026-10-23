@@ -35,7 +35,15 @@ function catastropheName(catastrophe, ctx) {
 }
 
 function traitText(item, ctx) {
-  return item.key ? keyText(item.key, ctx) : String(item.value ?? "");
+  if (!item) return "";
+  if (item.key) {
+    const main = keyText(item.key, ctx);
+    if (item.orientationKey) {
+      return `${main} | ${keyText(item.orientationKey, ctx)}`;
+    }
+    return main;
+  }
+  return String(item.value ?? "");
 }
 
 function emptyState(ctx, key) {
