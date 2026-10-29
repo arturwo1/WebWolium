@@ -1,8 +1,9 @@
 import en from "@/locales/en.json";
-import { pick } from "@/lib/demo/rng.js";
+import { between, pick } from "@/lib/demo/rng.js";
+import { buildLimitedSettings } from "@/lib/demo/fakeBunkerSettings.js";
 import { DEMO_USER_NAMES, DEMO_CHANNEL_NAMES, DEMO_MESSAGES } from "@/lib/demo/demoNames.js";
 import { getLang, getSupportedLangs, t } from "@/lib/text/i18n.js";
-import { TRAIT_FIELDS, parseReveal, traitValues } from "@/lib/bunker/bunkerModel.js";
+import { TRAIT_FIELDS, parseReveal, roundSeconds, traitValues } from "@/lib/bunker/bunkerModel.js";
 
 const LOCALE_KEYS = Object.keys(en);
 const GAMES_COUNT = 2;
@@ -19,17 +20,6 @@ const TRAIT_POOLS = {
   baggage: "bunker_config.baggage."
 };
 
-const SETTING_LIMITS = {
-  max_players: [4, 20, 1],
-  bunker_capacity: [2, 10, 1],
-  extra_traits_count: [0, 5, 1],
-  game_duration: [1800, 259200, 60],
-  trait_selection_duration: [15, 300, 5],
-  discussion_duration: [30, 600, 5],
-  voting_duration: [15, 300, 5],
-  round_pause_duration: [5, 120, 5]
-};
-
 const poolOf = (prefix) => LOCALE_KEYS.filter((key) => key.startsWith(prefix));
 const slugsOf = (prefix) => poolOf(prefix).map((key) => key.slice(prefix.length)).filter((slug) => !slug.includes("."));
 
@@ -41,10 +31,6 @@ const DIFFICULTIES = slugsOf("bunker.difficulty.");
 const END_REASONS = slugsOf("bunker.end_reason.");
 const SWITCH_VALUES = slugsOf("bunker.value.");
 const MULTI_TRAITS = TRAIT_FIELDS.filter((spec) => spec.field.endsWith("_keys"));
-
-function between(rng, min, max) {
-  return min + Math.floor(rng() * (max - min + 1));
-}
 
 function shuffled(rng, list) {
   const out = [...list];
@@ -82,14 +68,7 @@ function listOf(items) {
 }
 
 function buildSettings(rng) {
-  const settings = {};
-
-  for (const [key, [min, max, step]] of Object.entries(SETTING_LIMITS)) {
-    settings[key] = min + step * Math.floor(rng() * ((max - min) / step + 1));
-  }
-
-  const [capacityMin, capacityMax] = SETTING_LIMITS.bunker_capacity;
-  settings.bunker_capacity = between(rng, capacityMin, Math.min(capacityMax, settings.max_players - 2));
+  const settings = buildLimitedSettings(rng);
   settings.anonymity = pick(rng, SWITCH_VALUES);
   settings.catastrophe_mode = pick(rng, SWITCH_VALUES);
   settings.ai_story = "on";
@@ -218,9 +197,9 @@ function buildGame(rng, now, meId) {
   });
 
   const introSeconds = settings.discussion_duration;
-  const roundSeconds = settings.trait_selection_duration + settings.discussion_duration + settings.voting_duration + settings.round_pause_duration;
+  const roundLength = roundSeconds(settings);
   const roundsCount = total - capacity;
-  const durationSeconds = introSeconds + roundsCount * roundSeconds;
+  const durationSeconds = introSeconds + roundsCount * roundLength;
   const finishedAt = Math.floor(now / 1000) - between(rng, HOUR, 3 * DAY);
   const startedAt = finishedAt - durationSeconds;
 
@@ -232,7 +211,7 @@ function buildGame(rng, now, meId) {
   const eliminatedOrder = [];
 
   for (let number = 1; alive.size > capacity; number++) {
-    const roundStart = startedAt + introSeconds + (number - 1) * roundSeconds;
+    const roundStart = startedAt + introSeconds + (number - 1) * roundLength;
     const participants = ids.filter((id) => alive.has(id));
     const reveals = {};
 

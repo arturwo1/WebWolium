@@ -12,7 +12,8 @@ import { createFakeChartQueue, BASE_DAYS } from "@/lib/demo/fakeChartData.js";
 import { applyProfileDisplayData } from "@/pages/profile.js";
 import { createServerListController } from "@/lib/servers/serverListController.js";
 import { applyServerAnalyticsData } from "@/lib/server/serverAnalytics.js";
-import { buildServerSettingsForm } from "@/lib/server/settingsForm.js";
+import { mountSettings } from "@/lib/server/settings/settingsView.js";
+import { settingsRegistry } from "@/lib/server/settings/registry/index.js";
 import { buildAccountSettingsForm, syncAccountSettingsInputs, applyAccountSettingsPreset } from "@/lib/settings/accountSettingsForm.js"
 import { buildRow, fmtValue, METRICS } from "@/lib/leaderboard/leaderboardRow.js";
 import { buildMetricChips } from "@/lib/leaderboard/metricChips.js";
@@ -49,11 +50,21 @@ function initServerDemoPlaceholder(root) {
   applyServerAnalyticsData(root, data, t, hasSpriteSymbol);
 }
 
+const settingsDemos = new WeakMap();
+
 function initSettingsDemoPlaceholder(root) {
-  const { config, channels } = generateFakeServerConfig(createRng(Date.now() + Math.floor(Math.random() * 1e6)));
-  const sectionsEl = root.querySelector('[data-field="settings-sections"]');
-  if (!sectionsEl) return;
-  buildServerSettingsForm(sectionsEl, config, channels, t);
+  const mountEl = root.querySelector('[data-field="settings-root"]');
+  if (!mountEl) return;
+  const { config, bunker, channels, roles } = generateFakeServerConfig(createRng(Date.now() + Math.floor(Math.random() * 1e6)));
+  settingsDemos.get(mountEl)?.destroy();
+  settingsDemos.set(mountEl, mountSettings(mountEl, {
+    registry: settingsRegistry,
+    values: { guild_config: config, guild_settings_bunker: bunker },
+    channels,
+    roles,
+    translate: t,
+    demo: true
+  }));
   root.querySelector('[data-field="settings-card"]')?.classList.remove("loading");
 }
 

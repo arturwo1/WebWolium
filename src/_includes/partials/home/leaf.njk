@@ -22,9 +22,9 @@
     </div>
   {% elif node.meta.widget == "settings-demo" %}
     <div class="home-shot home-shot--settings-demo" data-widget="settings-demo">
-      <div class="card section loading" data-field="settings-card">
+      <div class="loading" data-field="settings-card">
         <div class="section-title" data-i18n="home.webwolium.admin.server-settings.teaser">{{ "home.webwolium.admin.server-settings.teaser" | t }}</div>
-        <div class="privacy-sections" data-field="settings-sections"></div>
+        <div data-field="settings-root"></div>
       </div>
     </div>
   {% elif node.meta.widget == "settings-account-demo" %}

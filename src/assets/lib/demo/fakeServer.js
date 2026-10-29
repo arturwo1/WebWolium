@@ -1,5 +1,7 @@
 import { createRng, pick } from "./rng.js";
-import { DEMO_GUILD_NAMES, DEMO_CHANNEL_NAMES, DEMO_SERVER_BADGES as DEMO_BADGES } from "./demoNames.js";
+import { DEMO_GUILD_NAMES, DEMO_CHANNEL_NAMES, DEMO_USER_BADGES, DEMO_SERVER_BADGES as DEMO_BADGES } from "./demoNames.js";
+import { settingsRegistry } from "@/lib/server/settings/registry/index.js";
+import { buildLimitedSettings } from "./fakeBunkerSettings.js";
 
 function pad(n) {
   return String(n).padStart(2, "0");
@@ -43,7 +45,28 @@ export function generateFakeServerAnalytics(seed) {
 function fakeChannels() {
   const message_channels = {};
   DEMO_CHANNEL_NAMES.forEach((name, i) => { message_channels[`demo-ch-${i}`] = { name }; });
-  return { message_channels, voice_channels: { "demo-vc-0": { name: "General Voice" } } };
+  const category_channels = {};
+  DEMO_CHANNEL_NAMES.slice(0, 2).forEach((name, i) => { category_channels[`demo-cat-${i}`] = { name: name.toUpperCase() }; });
+  return { message_channels, voice_channels: { "demo-vc-0": { name: "General Voice" } }, category_channels };
+}
+
+function fakeRoles() {
+  return DEMO_USER_BADGES.map((name, i) => ({ id: `demo-role-${i}`, name: name.charAt(0).toUpperCase() + name.slice(1) }));
+}
+
+function fakeBunkerSettings(rng, channels, roles) {
+  const bunker = settingsRegistry.find((category) => category.id === "bunker");
+  const generated = buildLimitedSettings(rng);
+  const values = {};
+  for (const group of bunker.groups) {
+    for (const field of group.fields) {
+      if (field.type === "count" || field.type === "duration") values[field.key] = generated[field.key];
+      if (field.type === "select") values[field.key] = pick(rng, field.options);
+      if (field.type === "channel") values[field.key] = pick(rng, Object.keys(channels[field.source]));
+      if (field.type === "roles") values[field.key] = roles.filter(() => rng() > 0.5).map((role) => role.id);
+    }
+  }
+  return values;
 }
 
 export function generateFakeServerConfig(seed) {
@@ -53,7 +76,7 @@ export function generateFakeServerConfig(seed) {
   const config = {
     mod_log_channel: "demo-ch-2",
     moderation: rng() > 0.4,
-    moderation_type: rng() > 0.5 ? "ai" : "normal",
+    moderation_type: rng() > 0.5 ? "AI" : "normal",
     rules: "Be respectful. No spam. Keep it civil.",
     aibot: rng() > 0.5,
     ai_message_delete: rng() > 0.6,
@@ -75,5 +98,8 @@ export function generateFakeServerConfig(seed) {
     save_activity: rng() > 0.3,
   };
 
-  return { config, channels };
+  const roles = fakeRoles();
+  const bunker = fakeBunkerSettings(rng, channels, roles);
+
+  return { config, bunker, channels, roles };
 }

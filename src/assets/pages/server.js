@@ -1,4 +1,4 @@
-import { $, lsJSONGet, lsJSONSet, lsCleanExpired, t, onLangChange, hud, initCollapsible, createModalController } from "@/lib/index.js";
+import { $, lsJSONGet, lsJSONSet, lsCleanExpired, t, onLangChange, hud, createModalController, getParam, setParam } from "@/lib/index.js";
 import { createWebRequestService } from "@/services/index.js";
 import { initChart } from "@/lib/chart/chart.js";
 import { createEntityResolver } from "@/lib/discord/entities.js";
@@ -6,7 +6,8 @@ import { setEntityResolver } from "@/lib/discord/entityService.js";
 import { createUserFetcher } from "@/lib/discord/fetchers.js";
 import { CHART_PARAM_KEYS, collectChartParams, readChartParams, applyChartParams, snapshotChartSelects, restoreChartSelects } from "@/lib/chart/chartUrlState.js";
 import { getDiscordProviderToken, logout } from "@/lib/auth/discordProviderToken.js";
-import { buildServerSettingsForm, collectFormPayload } from "@/lib/server/settingsForm.js";
+import { mountSettings } from "@/lib/server/settings/settingsView.js";
+import { settingsRegistry } from "@/lib/server/settings/registry/index.js";
 import { applyServerAnalyticsData } from "@/lib/server/serverAnalytics.js";
 
 const SERVER_TABS = new Set(["analytics", "settings"]);
@@ -35,19 +36,13 @@ function normalizeServerTab(tab) {
   return SERVER_TABS.has(tab) ? tab : "analytics";
 }
 
-function getParam(key) {
-  const params = new URLSearchParams(window.location.search);
-  return (params.get(key) || "").trim();
-}
-
 function readServerTab() {
   return normalizeServerTab(getParam("tab"));
 }
 
 function writeServerTab(tab, replace = false) {
-  const url = new URL(window.location.href);
-  url.searchParams.set("tab", normalizeServerTab(tab));
-  window.history[replace ? "replaceState" : "pushState"]({}, "", url);
+  const nextTab = normalizeServerTab(tab);
+  setParam("tab", nextTab, { replace, drop: nextTab === "settings" ? [] : ["s"] });
 }
 
 export async function initServerPage(sb) {
@@ -64,8 +59,7 @@ export async function initServerPage(sb) {
   const chartChannelId = $("#chartChannelId");
   const chartRoleId = $("#chartRoleId");
 
-  const serverSettingsSections = $("#serverSettingsSections");
-  const serverSettingsForm = $("#serverSettingsForm");
+  const serverSettingsRoot = $("#serverSettingsRoot");
   const serverSettingsCard = $("#serverSettings");
 
   const guildId = getParam("guild_id") || "";
@@ -122,36 +116,47 @@ export async function initServerPage(sb) {
   let currentServerConfig = null;
   let isConfigLoaded = false;
 
+  let settingsController = null;
+  const searchPanel = chartModal.querySelector('[data-modal-panel="settingsSearch"]');
+
   function buildServerSettingsDOM(configData) {
-    if (!serverSettingsSections) return;
-    buildServerSettingsForm(serverSettingsSections, configData, Ids.channels, t);
+    if (!serverSettingsRoot) return;
+    settingsController?.destroy();
+    settingsController = mountSettings(serverSettingsRoot, {
+      registry: settingsRegistry,
+      values: { guild_config: configData, guild_settings_bunker: configData.guild_settings_bunker },
+      channels: Ids.channels,
+      roles: Ids.roles,
+      translate: t,
+      search: searchPanel && modalCtl ? { controller: modalCtl, tabId: "settingsSearch", panel: searchPanel } : null,
+      onSave: saveServerSettings
+    });
     serverSettingsCard?.classList.remove("loading");
-    initCollapsible(serverSettingsSections, ["ttl", "ai"]);
   }
 
-  serverSettingsForm?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const payload = collectFormPayload(serverSettingsSections, serverSettingsForm);
-    payload.guild_id = guildId;
-    payload.discord_token = discordToken;
+  async function saveServerSettings(changes) {
+    const payload = { ...changes.guild_config, guild_id: guildId, discord_token: discordToken };
+    if (changes.guild_settings_bunker) payload.guild_settings_bunker = changes.guild_settings_bunker;
 
     try {
       const res = await wr.queue("save_guild_config", payload, {
         cacheTtlMs: 0, cooldownMs: 1_000, timeoutMs: 7_000
       });
 
-      if (res && !res.error) {
-        hud.success(t("settings.privacy_saved"));
-        currentServerConfig = { ...currentServerConfig, ...payload };
-      } else {
-        throw new Error(res?.error || "Save error");
-      }
+      if (!res || res.error) throw new Error(res?.error || "Save error");
+
+      hud.success(t("settings.privacy_saved"));
+      currentServerConfig = {
+        ...currentServerConfig,
+        ...changes.guild_config,
+        guild_settings_bunker: { ...currentServerConfig.guild_settings_bunker, ...changes.guild_settings_bunker }
+      };
     } catch (e) {
       console.error("[server] Failed to save settings:", e);
       hud.error(t("settings.privacy_save_error"));
+      throw e;
     }
-  });
+  }
 
   async function loadServerConfig() {
     if (isConfigLoaded || !administrator) return;
@@ -333,8 +338,9 @@ export async function initServerPage(sb) {
 
   modalCtl = createModalController(chartModal, {
     extraKeys: CHART_PARAM_KEYS,
-    getParams: () => collectChartParams(chartModal),
+    getParams: () => (modalCtl.current()?.panel === "chart" ? collectChartParams(chartModal) : {}),
     onOpen: (tab, info) => {
+      if (tab.panel !== "chart") return;
       const type = normalizeChartType(tab.chartType);
       const kept = snapshotChartSelects(chartModal);
       renderOptions(type);
@@ -346,6 +352,7 @@ export async function initServerPage(sb) {
       if (params) applyParams(true);
     },
     onTab: (tab) => {
+      if (tab.panel !== "chart") return;
       const type = normalizeChartType(tab.chartType);
       const kept = snapshotChartSelects(chartModal);
       ensureChart()?.setType(type);
@@ -377,7 +384,7 @@ export async function initServerPage(sb) {
   });
 
   onLangChange(() => {
-    if (modalCtl.isOpen()) {
+    if (modalCtl.isOpen() && modalCtl.current()?.panel === "chart") {
       const kept = snapshotChartSelects(chartModal);
       renderOptions(currentChartType());
       restoreChartSelects(chartModal, kept);

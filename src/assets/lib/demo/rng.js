@@ -18,3 +18,7 @@ export function detectDemoDeviceKey() {
 export function pick(rng, list) {
   return list[Math.floor(rng() * list.length)];
 }
+
+export function between(rng, min, max) {
+  return min + Math.floor(rng() * (max - min + 1));
+}
