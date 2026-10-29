@@ -607,7 +607,30 @@ export async function fetchGuildConfig(client, guildId) {
     where gs.guild_id = $1::bigint;
   `, [guildId]);
 
-  return res.rows[0] || {};
+  const bunker = await client.query(`
+    select
+      category_id,
+      max_players,
+      bunker_capacity,
+      game_duration,
+      trait_selection_duration,
+      discussion_duration,
+      voting_duration,
+      round_pause_duration,
+      extra_traits_count,
+      launch_access,
+      (
+        select coalesce(jsonb_agg(to_jsonb(item #>> '{}')), '[]'::jsonb)
+        from jsonb_array_elements(coalesce(launch_role_ids, '[]'::jsonb)) as item
+      ) as launch_role_ids
+    from guild_settings_bunker
+    where guild_id = $1::bigint;
+  `, [guildId]);
+
+  return {
+    ...(res.rows[0] || {}),
+    guild_settings_bunker: bunker.rows[0] || {}
+  };
 }
 
 export async function handleGetGuildConfig(client, auth, payload) {
@@ -615,171 +638,187 @@ export async function handleGetGuildConfig(client, auth, payload) {
   return await fetchGuildConfig(client, payload.guild_id);
 }
 
+const TTL_REGEX = /^((\d+)d\s*)?((\d+)h\s*)?((\d+)m\s*)?((\d+)s\s*)?$/;
+const MAX_TTL_SECONDS = 365 * 24 * 60 * 60;
+
+const COLUMN_CASTS = { id: "::bigint", json: "::jsonb", idList: "::jsonb" };
+
+const GUILD_SETTINGS_COLUMNS = {
+  mod_log_channel: { kind: "id" },
+  moderation: { kind: "boolean" },
+  moderation_type: { kind: "enum", values: ["AI", "normal"], error: "INVALID_MODERATION_TYPE" },
+  rules: { kind: "text" },
+  aibot: { kind: "boolean" },
+  ai_message_delete: { kind: "boolean" },
+  ai_message_ttl: { kind: "integer", min: 0 },
+  ai_long_message_ttl: { kind: "integer", min: 0 },
+  word_channel: { kind: "id" },
+  words: { kind: "json", validate: validateWordsJson, error: "INVALID_WORDS_FORMAT" },
+  filter: { kind: "enum", values: ["normal", "extreme"], error: "INVALID_FILTER" },
+  number_channel: { kind: "id" },
+  news: { kind: "boolean" },
+  news_channel: { kind: "id" },
+  important: { kind: "boolean" },
+  important_channel: { kind: "id" },
+  critical_channel: { kind: "id" },
+  ttl_channel: { kind: "json", validate: validateTtlJson, error: "INVALID_TTL_FORMAT" },
+  aibot_blacklist_channels: { kind: "idList" },
+  aibot_whitelist_channels: { kind: "idList" },
+  moderation_blacklist_channels: { kind: "idList" },
+  moderation_whitelist_channels: { kind: "idList" }
+};
+
+const PRIVACY_COLUMNS = {
+  save_messages: { kind: "boolean" },
+  save_voice: { kind: "boolean" },
+  save_activity: { kind: "boolean" }
+};
+
+const BUNKER_COLUMNS = {
+  category_id: { kind: "id" },
+  max_players: { kind: "integer", min: 4, max: 20 },
+  bunker_capacity: { kind: "integer", min: 2, max: 10 },
+  extra_traits_count: { kind: "integer", min: 0, max: 5 },
+  game_duration: { kind: "integer", min: 1800, max: 259200 },
+  trait_selection_duration: { kind: "integer", min: 15, max: 300 },
+  discussion_duration: { kind: "integer", min: 30, max: 600 },
+  voting_duration: { kind: "integer", min: 15, max: 300 },
+  round_pause_duration: { kind: "integer", min: 5, max: 120 },
+  launch_access: { kind: "enum", values: ["admins", "everyone", "roles"], error: "INVALID_LAUNCH_ACCESS" },
+  launch_role_ids: { kind: "idList" }
+};
+
+function validateWordsJson(value) {
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) && parsed.every((word) => typeof word === "string");
+  } catch {
+    return false;
+  }
+}
+
+function validateTtlJson(value) {
+  let parsed;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    return false;
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return false;
+
+  for (const [channelId, ttl] of Object.entries(parsed)) {
+    if (safeBigIntString(channelId) === null) throw new Error(`TTL_INVALID_CHANNEL_ID: ${channelId}`);
+    if (typeof ttl !== "string" || !TTL_REGEX.test(ttl.trim())) throw new Error(`TTL_INVALID_FORMAT: ${channelId}`);
+
+    const days = Number(ttl.match(/(\d+)d/)?.[1] ?? 0);
+    const hours = Number(ttl.match(/(\d+)h/)?.[1] ?? 0);
+    const minutes = Number(ttl.match(/(\d+)m/)?.[1] ?? 0);
+    const seconds = Number(ttl.match(/(\d+)s/)?.[1] ?? 0);
+    const total = days * 86400 + hours * 3600 + minutes * 60 + seconds;
+
+    if (total === 0) throw new Error(`TTL_ZERO: ${channelId}`);
+    if (total > MAX_TTL_SECONDS) throw new Error(`TTL_EXCEEDS_365_DAYS: ${channelId}`);
+  }
+  return true;
+}
+
+function validateColumnValue(name, rule, value) {
+  const invalid = () => new Error(rule.error ?? `INVALID_VALUE: ${name}`);
+
+  if (value === null) {
+    if (rule.kind === "id" || rule.kind === "text") return null;
+    throw invalid();
+  }
+
+  if (rule.kind === "boolean") {
+    if (typeof value !== "boolean") throw invalid();
+    return value;
+  }
+
+  if (rule.kind === "integer") {
+    if (!Number.isInteger(value) || value < rule.min || (rule.max !== undefined && value > rule.max)) throw invalid();
+    return value;
+  }
+
+  if (rule.kind === "enum") {
+    if (!rule.values.includes(value)) throw invalid();
+    return value;
+  }
+
+  if (rule.kind === "text") {
+    if (typeof value !== "string") throw invalid();
+    return value;
+  }
+
+  if (rule.kind === "id") {
+    const id = safeBigIntString(value);
+    if (id === null) throw invalid();
+    return id;
+  }
+
+  if (rule.kind === "json") {
+    if (typeof value !== "string" || !rule.validate(value)) throw invalid();
+    return value;
+  }
+
+  if (rule.kind === "idList") {
+    const ids = Array.isArray(value) ? value.map(safeBigIntString) : null;
+    if (!ids || ids.includes(null)) throw invalid();
+    return JSON.stringify(ids);
+  }
+
+  throw invalid();
+}
+
+function collectColumns(source, spec) {
+  const columns = [];
+  for (const [name, rule] of Object.entries(spec)) {
+    if (source[name] === undefined) continue;
+    columns.push({ name, rule, value: validateColumnValue(name, rule, source[name]) });
+  }
+  return columns;
+}
+
+async function upsertColumns(client, table, guildId, columns) {
+  if (!columns.length) return;
+
+  const names = ["guild_id", ...columns.map((column) => column.name)];
+  const placeholders = ["$1::bigint", ...columns.map((column, index) => `$${index + 2}${COLUMN_CASTS[column.rule.kind] ?? ""}`)];
+  const updates = columns.map((column) => `${column.name} = excluded.${column.name}`).join(", ");
+
+  await client.query(
+    `insert into ${table} (${names.join(", ")}) values (${placeholders.join(", ")}) on conflict (guild_id) do update set ${updates}`,
+    [guildId, ...columns.map((column) => column.value)]
+  );
+}
+
 export async function handleSaveGuildConfig(client, auth, payload) {
   const guildId = payload.guild_id;
-  const discordToken = payload.discord_token;
-  await assertGuildAdmin(guildId, discordToken);
+  await assertGuildAdmin(guildId, payload.discord_token);
 
-  const {
-    mod_log_channel,
-    moderation,
-    moderation_type,
-    rules,
-    aibot,
-    ai_message_delete,
-    ai_message_ttl,
-    ai_long_message_ttl,
-    word_channel,
-    words,
-    filter,
-    number_channel,
-    news,
-    news_channel,
-    important,
-    important_channel,
-    critical_channel,
-    ttl_channel,
-    aibot_blacklist_channels,
-    aibot_whitelist_channels,
-    moderation_blacklist_channels,
-    moderation_whitelist_channels,
-    save_messages,
-    save_voice,
-    save_activity,
-  } = payload;
-
-  if (moderation_type !== undefined && !["AI", "normal"].includes(moderation_type))
-    throw new Error("INVALID_MODERATION_TYPE");
-
-  if (filter !== undefined && !["normal", "extreme"].includes(filter))
-    throw new Error("INVALID_FILTER");
-
-  if (words !== undefined) {
-    try {
-      const parsed = JSON.parse(words);
-      if (!Array.isArray(parsed) || !parsed.every(w => typeof w === "string"))
-        throw new Error();
-    } catch {
-      throw new Error("INVALID_WORDS_FORMAT");
+  const bunker = payload.guild_settings_bunker;
+  if (bunker !== undefined) {
+    if (bunker === null || typeof bunker !== "object" || Array.isArray(bunker)) throw new Error("INVALID_BUNKER_SETTINGS");
+    for (const key of Object.keys(bunker)) {
+      if (!(key in BUNKER_COLUMNS)) throw new Error(`UNKNOWN_BUNKER_FIELD: ${key}`);
     }
   }
 
-  const TTL_REGEX = /^((\d+)d\s*)?((\d+)h\s*)?((\d+)m\s*)?((\d+)s\s*)?$/;
-  const MAX_DAYS = 365 * 24 * 60 * 60;
+  const settingsColumns = collectColumns(payload, GUILD_SETTINGS_COLUMNS);
+  const privacyColumns = collectColumns(payload, PRIVACY_COLUMNS);
+  const bunkerColumns = collectColumns(bunker ?? {}, BUNKER_COLUMNS);
 
-  if (ttl_channel !== undefined) {
-    let parsed;
-    try {
-      parsed = JSON.parse(ttl_channel);
-      if (typeof parsed !== "object" || Array.isArray(parsed)) throw new Error();
-    } catch {
-      throw new Error("INVALID_TTL_FORMAT");
-    }
+  if (!settingsColumns.length && !privacyColumns.length && !bunkerColumns.length) return { success: true };
 
-    const channelIds = Object.keys(parsed);
-    if (new Set(channelIds).size !== channelIds.length)
-      throw new Error("TTL_DUPLICATE_CHANNELS");
-
-    for (const [channelId, ttl] of Object.entries(parsed)) {
-      if (!/^\d+$/.test(channelId)) throw new Error(`TTL_INVALID_CHANNEL_ID: ${channelId}`);
-      if (!TTL_REGEX.test(ttl.trim())) throw new Error(`TTL_INVALID_FORMAT: ${channelId}`);
-
-      const d = ttl.match(/(\d+)d/)?.[1] ?? 0;
-      const h = ttl.match(/(\d+)h/)?.[1] ?? 0;
-      const m = ttl.match(/(\d+)m/)?.[1] ?? 0;
-      const s = ttl.match(/(\d+)s/)?.[1] ?? 0;
-      const totalSeconds = Number(d) * 86400 + Number(h) * 3600 + Number(m) * 60 + Number(s);
-
-      if (totalSeconds === 0) throw new Error(`TTL_ZERO: ${channelId}`);
-      if (totalSeconds > MAX_DAYS) throw new Error(`TTL_EXCEEDS_365_DAYS: ${channelId}`);
-    }
-  }
-
-  await client.query('BEGIN');
+  await client.query("BEGIN");
   try {
-    await client.query(`
-      insert into guild_settings (
-        guild_id, mod_log_channel, moderation, moderation_type, rules, aibot, ai_message_delete,
-        ai_message_ttl, ai_long_message_ttl, word_channel, words, filter,
-        number_channel, news, news_channel, important, important_channel,
-        critical_channel, ttl_channel, aibot_blacklist_channels, aibot_whitelist_channels,
-        moderation_blacklist_channels, moderation_whitelist_channels
-      ) values (
-        $1::bigint, $2::bigint, $3, $4, $5, $6, $7,
-        $8, $9, $10::bigint, $11::jsonb, $12,
-        $13::bigint, $14, $15::bigint, $16, $17::bigint,
-        $18::bigint, $19::jsonb, $20::jsonb, $21::jsonb, $22::jsonb, $23::jsonb
-      )
-      on conflict (guild_id) do update set
-        mod_log_channel = excluded.mod_log_channel,
-        moderation = excluded.moderation,
-        moderation_type = excluded.moderation_type,
-        rules = excluded.rules,
-        aibot = excluded.aibot,
-        ai_message_delete = excluded.ai_message_delete,
-        ai_message_ttl = excluded.ai_message_ttl,
-        ai_long_message_ttl = excluded.ai_long_message_ttl,
-        word_channel = excluded.word_channel,
-        words = excluded.words,
-        filter = excluded.filter,
-        number_channel = excluded.number_channel,
-        news = excluded.news,
-        news_channel = excluded.news_channel,
-        important = excluded.important,
-        important_channel = excluded.important_channel,
-        critical_channel = excluded.critical_channel,
-        ttl_channel = excluded.ttl_channel,
-        aibot_blacklist_channels = excluded.aibot_blacklist_channels,
-        aibot_whitelist_channels = excluded.aibot_whitelist_channels,
-        moderation_blacklist_channels = excluded.moderation_blacklist_channels,
-        moderation_whitelist_channels = excluded.moderation_whitelist_channels
-    `, [
-      guildId,
-      mod_log_channel ?? null,
-      moderation ?? null,
-      moderation_type ?? null,
-      rules ?? null,
-      aibot ?? null,
-      ai_message_delete ?? null,
-      ai_message_ttl ?? null,
-      ai_long_message_ttl ?? null,
-      word_channel ?? null,
-      words ?? null,
-      filter ?? null,
-      number_channel ?? null,
-      news ?? null,
-      news_channel ?? null,
-      important ?? null,
-      important_channel ?? null,
-      critical_channel ?? null,
-      ttl_channel ?? null,
-      aibot_blacklist_channels ? JSON.stringify(aibot_blacklist_channels) : null,
-      aibot_whitelist_channels ? JSON.stringify(aibot_whitelist_channels) : null,
-      moderation_blacklist_channels ? JSON.stringify(moderation_blacklist_channels) : null,
-      moderation_whitelist_channels ? JSON.stringify(moderation_whitelist_channels) : null
-    ]);
-
-    await client.query(`
-      insert into guild_settings_privacy (
-        guild_id, save_messages, save_voice, save_activity
-      ) values (
-        $1::bigint, $2, $3, $4
-      )
-      on conflict (guild_id) do update set
-        save_messages = excluded.save_messages,
-        save_voice = excluded.save_voice,
-        save_activity = excluded.save_activity
-    `, [
-      guildId,
-      save_messages ?? null,
-      save_voice ?? null,
-      save_activity ?? null
-    ]);
-
-    await client.query('COMMIT');
+    await upsertColumns(client, "guild_settings", guildId, settingsColumns);
+    await upsertColumns(client, "guild_settings_privacy", guildId, privacyColumns);
+    await upsertColumns(client, "guild_settings_bunker", guildId, bunkerColumns);
+    await client.query("COMMIT");
     return { success: true };
   } catch (err) {
-    await client.query('ROLLBACK');
+    await client.query("ROLLBACK");
     throw err;
   }
 }
