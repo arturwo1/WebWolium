@@ -1218,7 +1218,7 @@ a.chip--link:hover {
   top: calc(100% + 6px);
   left: 0;
   right: 0;
-  z-index: 40;
+  z-index: 80;
   display: flex;
   flex-direction: column;
   max-height: min(55vh, 380px);
@@ -1268,6 +1268,64 @@ a.chip--link:hover {
   content: "✓";
   margin-right: 8px;
   color: var(--c-text);
+}
+
+.cselect__item {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  transition: background .12s ease, border-color .12s ease;
+}
+
+.cselect__trigger .cselect__item {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.cselect__option.is-active .cselect__item {
+  background: rgba(var(--rgb-primary), .12);
+  border-color: rgba(var(--rgb-primary), .35);
+}
+
+.cselect__option.is-selected .cselect__item {
+  background: rgba(var(--rgb-primary), .2);
+  border-color: rgba(var(--rgb-primary), .75);
+}
+
+.cselect__option.is-selected.is-active .cselect__item {
+  background: rgba(var(--rgb-primary), .28);
+}
+
+.cselect__option.is-selected .cselect__item::before {
+  content: "✓";
+  color: var(--c-text);
+}
+
+.cselect__search {
+  flex: 0 0 auto;
+  width: auto;
+  margin: 6px 6px 0;
+  font-size: 16px;
+}
+
+.cselect__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(var(--rgb-black), .5);
+}
+
+.cselect__backdrop .cselect__popup {
+  position: static;
+  width: min(100%, 420px);
+  max-height: min(70dvh, 480px);
 }
 
 .cselect__footer {

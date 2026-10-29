@@ -41,8 +41,12 @@ export function createModalController(modal, opts = {}) {
     return describe(tabEls.find((el) => el.dataset.modalTab === wanted));
   }
 
+  function isVirtual(tab) {
+    return !!tab && tab.el.dataset.virtual !== undefined;
+  }
+
   function isAvailable(tab) {
-    return !!tab && !tab.el.hidden && !tab.el.disabled;
+    return !!tab && (!tab.el.hidden || isVirtual(tab)) && !tab.el.disabled;
   }
 
   function renderTitle() {
@@ -65,6 +69,7 @@ export function createModalController(modal, opts = {}) {
       panel.hidden = panel.dataset.modalPanel !== tab.panel;
     }
 
+    modal.classList.toggle("is-virtual", isVirtual(tab));
     renderTitle();
   }
 
@@ -156,7 +161,7 @@ export function createModalController(modal, opts = {}) {
     if (!id) return false;
 
     const tab = findTab(id);
-    if (isAvailable(tab)) return open(tab.id, { updateUrl: false });
+    if (isAvailable(tab) && !isVirtual(tab)) return open(tab.id, { updateUrl: false });
 
     writeUrl("", "replace");
     return false;
@@ -196,6 +201,7 @@ export function createModalController(modal, opts = {}) {
 
   return {
     open,
+    close,
     syncFromUrl,
     refreshUrl,
     isOpen: () => isOpen,

@@ -49,6 +49,7 @@ export function createBunkerPanel({ root, createStore, getGuildName = null, onSt
   const select = createCustomSelect({
     root: selectRoot,
     ariaLabel: t("bunker.select.label"),
+    searchPlaceholder: t("common.search"),
     getKey: (game) => game.id,
     renderOption: (game) => renderGameCard(game, ctx()),
     onChange: (game) => {

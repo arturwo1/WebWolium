@@ -1,7 +1,7 @@
 {% macro tabs(items, label="Tabs") %}
 <div class="modal__tabs" role="tablist" aria-label="{{ label }}">
   {% for tab in items %}
-  <button class="modal__tab{% if loop.first %} is-active{% endif %}" type="button"{% if tab.domId %} id="{{ tab.domId }}"{% endif %} data-modal-tab="{{ tab.id }}" data-panel="{{ tab.panel or 'chart' }}" data-title-key="{{ tab.i18n }}"{% if tab.chart %} data-chart-type="{{ tab.chart }}"{% endif %}{% if tab.field %} data-field="{{ tab.field }}"{% endif %} role="tab" aria-selected="{{ 'true' if loop.first else 'false' }}" tabindex="{{ 0 if loop.first else -1 }}"{% if tab.hidden %} hidden{% endif %}>
+  <button class="modal__tab{% if loop.first %} is-active{% endif %}" type="button"{% if tab.domId %} id="{{ tab.domId }}"{% endif %} data-modal-tab="{{ tab.id }}" data-panel="{{ tab.panel or 'chart' }}" data-title-key="{{ tab.i18n }}"{% if tab.chart %} data-chart-type="{{ tab.chart }}"{% endif %}{% if tab.field %} data-field="{{ tab.field }}"{% endif %} role="tab" aria-selected="{{ 'true' if loop.first else 'false' }}" tabindex="{{ 0 if loop.first else -1 }}"{% if tab.hidden or tab.virtual %} hidden{% endif %}{% if tab.virtual %} data-virtual{% endif %}>
     <span data-i18n="{{ tab.i18n }}">{{ tab.text }}</span>
   </button>
   {% endfor %}
@@ -119,8 +119,16 @@
   { "id": "messages", "chart": "messages", "i18n": "profile.messages", "text": "Messages" },
   { "id": "voice", "chart": "voice", "i18n": "profile.voice", "text": "Voice" },
   { "id": "activities", "chart": "activities", "i18n": "profile.activities", "text": "Activity" },
-  { "id": "members", "chart": "members", "i18n": "server.analytics.members", "text": "Members", "domId": "membersTab", "hidden": true }
+  { "id": "members", "chart": "members", "i18n": "server.analytics.members", "text": "Members", "domId": "membersTab", "hidden": true },
+  { "id": "settingsSearch", "panel": "settingsSearch", "i18n": "server.settings.search", "text": "Search settings", "virtual": true }
 ], "Chart type") }}
+{% endmacro %}
+
+{% macro settingsSearchPanel() %}
+<div class="modal__body" data-modal-panel="settingsSearch" hidden>
+  <input class="input" type="search" id="settingsSearchInput" name="settingsSearch" autocomplete="off" data-settings-search data-i18n-attr="placeholder: server.settings.search_placeholder">
+  <div class="st-hits" data-settings-hits></div>
+</div>
 {% endmacro %}
 
 {% macro bunkerPanel(demo=false) %}
@@ -165,7 +173,9 @@
 
   {{ chartControls() }}
   {{ chartCanvas() }}
-  {% if scope != "guild" %}
+  {% if scope == "guild" %}
+  {{ settingsSearchPanel() }}
+  {% else %}
   {{ bunkerPanel() }}
   {% endif %}
 {{ shellEnd() }}
