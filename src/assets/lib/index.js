@@ -2,6 +2,7 @@ export * from "./dom.js";
 export * from "./time.js";
 export * from "./storage.js";
 export * from "./json.js";
+export * from "./urlState.js";
 
 export * from "./cache/ttl.js";
 export * from "./cache/inflight.js";

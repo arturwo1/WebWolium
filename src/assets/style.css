@@ -448,7 +448,7 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
 
 .profile-top {
   display: grid;
-  grid-template-columns: 62px 1fr auto;
+  grid-template-columns: 62px minmax(0, 1fr) auto;
   gap: 14px;
   align-items: center;
 }
@@ -462,13 +462,24 @@ input[type="datetime-local"]::-webkit-datetime-edit-second-field {
   color: transparent;
 }
 
+.user-lines {
+  min-width: 0;
+}
+
 .user-lines .name {
   font-size: 24px;
   font-weight: 900;
   line-height: 1.1;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .user-lines .tag {
+  overflow-wrap: anywhere;
   color: var(--c-muted);
   font-weight: 700;
   margin-top: 2px;

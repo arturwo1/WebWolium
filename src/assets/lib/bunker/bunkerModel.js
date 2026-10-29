@@ -25,6 +25,17 @@ const SETTINGS_ORDER = [
   "ai_story"
 ];
 
+export const ROUND_PHASE_KEYS = [
+  "trait_selection_duration",
+  "discussion_duration",
+  "voting_duration",
+  "round_pause_duration"
+];
+
+export function roundSeconds(settings) {
+  return ROUND_PHASE_KEYS.reduce((sum, key) => sum + settings[key], 0);
+}
+
 const MESSAGE_PHASES = ["initial_discussion", "reveal", "discussion", "voting", "pause"];
 const MESSAGE_RE = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2}) - ([\s\S]*)$/;
 const REVEAL_RE = /^([a-z_]+):(\d+)$/;

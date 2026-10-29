@@ -1,4 +1,4 @@
-import { $, lsJSONGet, lsJSONSet, lsCleanExpired, readIdentity, escapeHtml, t, onLangChange, hud, formatNumber, createModalController } from "@/lib/index.js";
+import { $, lsJSONGet, lsJSONSet, lsCleanExpired, readIdentity, escapeHtml, t, onLangChange, hud, formatNumber, createModalController, getParam, safeJsonParse } from "@/lib/index.js";
 import { createWebRequestService } from "@/services/index.js";
 import { initChart } from "@/lib/chart/chart.js";
 import { CHART_PARAM_KEYS, collectChartParams, readChartParams, applyChartParams, snapshotChartSelects, restoreChartSelects } from "@/lib/chart/chartUrlState.js";
@@ -164,15 +164,7 @@ function renderBadgeRow(root, badges) {
   const badgeRowEl = field(root, "badges");
   if (!badgeRowEl) return;
 
-  let list = badges;
-
-  if (typeof badges === "string") {
-    try {
-      list = JSON.parse(badges);
-    } catch {
-      list = [];
-    }
-  }
+  let list = safeJsonParse(badges, []);
 
   if (!Array.isArray(list)) list = [];
 
@@ -235,11 +227,6 @@ export function applyProfileDisplayData(root, res, { interactive = false } = {})
 
   root.querySelector(".profile-card")?.classList.remove("loading");
   root.querySelector(".stats")?.classList.remove("loading");
-}
-
-function getParam(key) {
-  const params = new URLSearchParams(window.location.search);
-  return (params.get(key) || "").trim();
 }
 
 export async function initProfilePage(sb) {

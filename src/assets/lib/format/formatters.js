@@ -98,3 +98,15 @@ export function formatDuration(sec, { maxUnits = 3, decimals = 2 } = {}) {
   if (result === '') result = '0s';
   return result;
 }
+
+const DURATION_INPUT_PATTERN = /^(?:(\d+)d\s*)?(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s\s*)?$/;
+
+export function parseDuration(text) {
+  const source = String(text ?? "").trim().toLowerCase();
+  if (!source) return NaN;
+  if (/^\d+$/.test(source)) return Number(source);
+  const match = source.match(DURATION_INPUT_PATTERN);
+  if (!match) return NaN;
+  const [days, hours, minutes, seconds] = match.slice(1).map((part) => Number(part || 0));
+  return days * timeUNITS.d + hours * timeUNITS.h + minutes * timeUNITS.m + seconds * timeUNITS.s;
+}

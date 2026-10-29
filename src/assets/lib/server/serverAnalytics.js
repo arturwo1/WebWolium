@@ -1,4 +1,4 @@
-import { formatNumber } from "@/lib/index.js";
+import { formatNumber, safeJsonParse } from "@/lib/index.js";
 
 function formatMoney(n) {
   return `${formatNumber(n)}₩`;
@@ -65,10 +65,7 @@ export function applyServerAnalyticsData(root, res, translate, hasSpriteSymbol) 
 
   const badgeRowEl = field(root, "badges");
   if (badgeRowEl) {
-    let list = display.badges;
-    if (typeof list === "string") {
-      try { list = JSON.parse(list); } catch { list = []; }
-    }
+    let list = safeJsonParse(display.badges, []);
     if (!Array.isArray(list)) list = [];
 
     const valid = list

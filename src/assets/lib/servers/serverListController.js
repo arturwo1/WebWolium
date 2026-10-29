@@ -100,7 +100,7 @@ export function createServerListController(root, { interactive = true, emptyMess
     const isFiltered = state.guilds.length > 0 && visible.length === 0;
 
     nodes.list.classList.remove("loading");
-    nodes.stats.classList.remove("loading");
+    nodes.stats?.classList.remove("loading");
     nodes.list.replaceChildren();
 
     if (emptyMessages && (!state.guilds.length || isFiltered)) {
